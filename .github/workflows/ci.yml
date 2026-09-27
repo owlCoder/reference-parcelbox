@@ -21,6 +21,8 @@ jobs:
       - name: Smoke test ParcelBox Web assets
         working-directory: src/ParcelBox.Web
         shell: bash
+        env:
+          ASPNETCORE_ENVIRONMENT: Development
         run: |
           set -euo pipefail
 
