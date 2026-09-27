@@ -28,9 +28,20 @@ jobs:
           web_pid=$!
           trap 'kill "$web_pid" 2>/dev/null || true' EXIT
 
+          home_ready=false
           for attempt in {1..30}; do
-            if curl --fail --silent --show-error http://127.0.0.1:5000/ --output /tmp/parcelbox-home.html; then
+            status=$(curl --silent --output /tmp/parcelbox-home.html --write-out '%{http_code}' http://127.0.0.1:5000/ || true)
+
+            if [ "$status" = "200" ]; then
+              home_ready=true
               break
+            fi
+
+            if [ "$status" != "000" ]; then
+              echo "Home request returned HTTP $status"
+              cat /tmp/parcelbox-web.log
+              cat /tmp/parcelbox-home.html || true
+              exit 1
             fi
 
             if ! kill -0 "$web_pid" 2>/dev/null; then
@@ -41,11 +52,16 @@ jobs:
             sleep 1
           done
 
+          if [ "$home_ready" != "true" ]; then
+            cat /tmp/parcelbox-web.log
+            exit 1
+          fi
+
           css_path=$(grep -oE 'href="[^"]*app[^"]*\.css"' /tmp/parcelbox-home.html | head -1 | cut -d'"' -f2)
           js_path=$(grep -oE 'src="[^"]*blazor\.web[^"]*\.js"' /tmp/parcelbox-home.html | head -1 | cut -d'"' -f2)
 
           test -n "$css_path"
           test -n "$js_path"
 
-          curl --fail --silent --show-error "http://127.0.0.1:5000/${css_path#/}" --output /dev/null
-          curl --fail --silent --show-error "http://127.0.0.1:5000/${js_path#/}" --output /dev/null
+          curl --fail --silent --show-error "http://127.0.0.1:5000/${css_path#/}" --output /dev/null || { cat /tmp/parcelbox-web.log; exit 1; }
+          curl --fail --silent --show-error "http://127.0.0.1:5000/${js_path#/}" --output /dev/null || { cat /tmp/parcelbox-web.log; exit 1; }
