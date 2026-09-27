@@ -18,3 +18,34 @@ jobs:
       - run: dotnet format --verify-no-changes --no-restore
       - run: dotnet build --configuration Release --no-restore
       - run: dotnet test --configuration Release --no-build
+      - name: Smoke test ParcelBox Web assets
+        working-directory: src/ParcelBox.Web
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          dotnet run --configuration Release --no-build --no-launch-profile --urls http://127.0.0.1:5000 > /tmp/parcelbox-web.log 2>&1 &
+          web_pid=$!
+          trap 'kill "$web_pid" 2>/dev/null || true' EXIT
+
+          for attempt in {1..30}; do
+            if curl --fail --silent --show-error http://127.0.0.1:5000/ --output /tmp/parcelbox-home.html; then
+              break
+            fi
+
+            if ! kill -0 "$web_pid" 2>/dev/null; then
+              cat /tmp/parcelbox-web.log
+              exit 1
+            fi
+
+            sleep 1
+          done
+
+          css_path=$(grep -oE 'href="[^"]*app[^"]*\.css"' /tmp/parcelbox-home.html | head -1 | cut -d'"' -f2)
+          js_path=$(grep -oE 'src="[^"]*blazor\.web[^"]*\.js"' /tmp/parcelbox-home.html | head -1 | cut -d'"' -f2)
+
+          test -n "$css_path"
+          test -n "$js_path"
+
+          curl --fail --silent --show-error "http://127.0.0.1:5000/${css_path#/}" --output /dev/null
+          curl --fail --silent --show-error "http://127.0.0.1:5000/${js_path#/}" --output /dev/null
