@@ -1,6 +1,6 @@
 using System.Net.Http.Json;
-using ParcelBox.Application.Abstractions.External;
-using ParcelBox.Domain.Common.Results;
+using ParcelBox.Application.Common.Results;
+using ParcelBox.Application.Interfaces.External;
 
 namespace ParcelBox.Infrastructure.External;
 

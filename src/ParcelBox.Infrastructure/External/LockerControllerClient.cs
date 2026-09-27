@@ -1,6 +1,6 @@
 using System.Net;
-using ParcelBox.Application.Abstractions.External;
-using ParcelBox.Domain.Common.Results;
+using ParcelBox.Application.Common.Results;
+using ParcelBox.Application.Interfaces.External;
 
 namespace ParcelBox.Infrastructure.External;
 
@@ -30,12 +30,9 @@ internal sealed class LockerControllerClient : ILockerController
                 return Result<LockerControllerError>.Success();
             }
 
-            if (response.StatusCode == HttpStatusCode.Conflict)
-            {
-                return Result<LockerControllerError>.Failure(LockerControllerError.Jammed);
-            }
-
-            return Result<LockerControllerError>.Failure(LockerControllerError.Unavailable);
+            return response.StatusCode == HttpStatusCode.Conflict
+                ? Result<LockerControllerError>.Failure(LockerControllerError.Jammed)
+                : Result<LockerControllerError>.Failure(LockerControllerError.Unavailable);
         }
         catch (OperationCanceledException) when (!cancellationToken.IsCancellationRequested)
         {

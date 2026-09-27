@@ -1,4 +1,4 @@
-using ParcelBox.Application.Lockers;
+using ParcelBox.Application.Interfaces.Services;
 
 namespace ParcelBox.Api.Endpoints;
 
@@ -13,10 +13,10 @@ public static class LockerEndpoints
     }
 
     private static async Task<IResult> ListAsync(
-        ListCompartmentsHandler handler,
+        ILockerService service,
         CancellationToken cancellationToken)
     {
-        var compartments = await handler.HandleAsync(cancellationToken);
+        var compartments = await service.GetCompartmentsAsync(cancellationToken);
         return Results.Ok(compartments);
     }
 }

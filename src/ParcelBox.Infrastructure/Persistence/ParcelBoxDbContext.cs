@@ -1,12 +1,12 @@
 using Microsoft.EntityFrameworkCore;
-using ParcelBox.Application.Abstractions.Persistence;
+using ParcelBox.Application.Interfaces.Repositories;
 using ParcelBox.Domain.Lockers;
 using ParcelBox.Domain.Parcels;
 using ParcelBox.Domain.Pickup;
 
 namespace ParcelBox.Infrastructure.Persistence;
 
-public sealed class ParcelBoxDbContext : DbContext, IAppDbSession
+public sealed class ParcelBoxDbContext : DbContext, IUnitOfWork
 {
     public ParcelBoxDbContext(DbContextOptions<ParcelBoxDbContext> options)
         : base(options)
@@ -14,9 +14,7 @@ public sealed class ParcelBoxDbContext : DbContext, IAppDbSession
     }
 
     public DbSet<Parcel> Parcels => Set<Parcel>();
-
     public DbSet<Compartment> Compartments => Set<Compartment>();
-
     public DbSet<PickupAccess> PickupAccesses => Set<PickupAccess>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)

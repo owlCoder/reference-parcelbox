@@ -1,6 +1,6 @@
 using ParcelBox.Api.Contracts;
 using ParcelBox.Api.Extensions;
-using ParcelBox.Application.Pickup;
+using ParcelBox.Application.Interfaces.Services;
 
 namespace ParcelBox.Api.Endpoints;
 
@@ -17,19 +17,16 @@ public static class PickupEndpoints
     private static async Task<IResult> PickupAsync(
         string trackingCode,
         PickupRequest request,
-        PickupParcelHandler handler,
+        IPickupService service,
         CancellationToken cancellationToken)
     {
-        var result = await handler.HandleAsync(
+        var result = await service.CompletePickupAsync(
             trackingCode,
             request.Code,
             cancellationToken);
 
-        if (result.IsFailure)
-        {
-            return result.Error.ToProblemResult();
-        }
-
-        return Results.Ok(new { status = "picked-up" });
+        return result.IsFailure
+            ? result.Error.ToProblemResult()
+            : Results.Ok(new { status = "picked-up" });
     }
 }

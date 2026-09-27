@@ -1,7 +1,7 @@
 using System.Globalization;
 using System.Security.Cryptography;
 using System.Text;
-using ParcelBox.Application.Abstractions.Security;
+using ParcelBox.Application.Interfaces.Security;
 
 namespace ParcelBox.Infrastructure.Security;
 

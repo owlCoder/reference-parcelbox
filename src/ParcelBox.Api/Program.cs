@@ -1,8 +1,6 @@
 using System.Text.Json.Serialization;
 using ParcelBox.Api.Endpoints;
-using ParcelBox.Application.Lockers;
-using ParcelBox.Application.Parcels;
-using ParcelBox.Application.Pickup;
+using ParcelBox.Api.Extensions;
 using ParcelBox.Infrastructure;
 using ParcelBox.Infrastructure.Persistence;
 
@@ -15,11 +13,7 @@ builder.Services.ConfigureHttpJsonOptions(options =>
     options.SerializerOptions.Converters.Add(
         new JsonStringEnumConverter(allowIntegerValues: false));
 });
-builder.Services.AddScoped<RegisterParcelHandler>();
-builder.Services.AddScoped<GetParcelHandler>();
-builder.Services.AddScoped<StoreParcelHandler>();
-builder.Services.AddScoped<ListCompartmentsHandler>();
-builder.Services.AddScoped<PickupParcelHandler>();
+builder.Services.AddApplicationServices();
 builder.Services.AddInfrastructure(builder.Configuration);
 
 var app = builder.Build();
@@ -39,16 +33,7 @@ app.MapPickupEndpoints();
 await using (var scope = app.Services.CreateAsyncScope())
 {
     var initializer = scope.ServiceProvider.GetRequiredService<DatabaseInitializer>();
-    var initializationResult = await initializer.InitializeAsync();
-
-    if (initializationResult.IsFailure)
-    {
-        app.Logger.LogCritical(
-            "Database initialization failed: {Error}",
-            initializationResult.Error);
-
-        return;
-    }
+    await initializer.InitializeAsync();
 }
 
 await app.RunAsync();

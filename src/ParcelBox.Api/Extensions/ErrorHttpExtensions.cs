@@ -1,5 +1,4 @@
-using ParcelBox.Application.Parcels;
-using ParcelBox.Application.Pickup;
+using ParcelBox.Application.Enums;
 
 namespace ParcelBox.Api.Extensions;
 
@@ -19,6 +18,7 @@ internal static class ErrorHttpExtensions
             ParcelOperationError.LockerJammed => Problem(error, 503, "Locker compartment is jammed."),
             ParcelOperationError.LockerUnavailable => Problem(error, 503, "Locker controller is unavailable."),
             ParcelOperationError.CompartmentUnavailable => Problem(error, 409, "Compartment is no longer available."),
+            ParcelOperationError.PickupAccessInvalid => Problem(error, 500, "Pickup access could not be prepared."),
             _ => Problem(error, 500, "The operation could not be completed.")
         };
     }
@@ -39,8 +39,6 @@ internal static class ErrorHttpExtensions
             PickupOperationError.CompartmentNotFound => Problem(error, 404, "Compartment was not found."),
             PickupOperationError.LockerJammed => Problem(error, 503, "Locker compartment is jammed."),
             PickupOperationError.LockerUnavailable => Problem(error, 503, "Locker controller is unavailable."),
-            PickupOperationError.PickupAccessNotActive => Problem(error, 409, "Pickup access is not active."),
-            PickupOperationError.PickupAccessExpired => Problem(error, 409, "Pickup access has expired."),
             PickupOperationError.CompartmentStateConflict => Problem(error, 409, "Compartment state changed during pickup."),
             _ => Problem(error, 500, "The operation could not be completed.")
         };

@@ -16,8 +16,6 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "LockerController", "simulat
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MessageGateway", "simulators\ParcelBox.Simulators.MessageGateway\ParcelBox.Simulators.MessageGateway.csproj", "{76E0A274-2929-45EF-A084-92B60DE85BA8}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ParcelBox.Domain.Tests", "tests\ParcelBox.Domain.Tests\ParcelBox.Domain.Tests.csproj", "{13CD8C89-38B4-4876-BE9B-6AAC9B114402}"
-EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ParcelBox.Application.Tests", "tests\ParcelBox.Application.Tests\ParcelBox.Application.Tests.csproj", "{34DCDB1B-E8D7-4427-BA55-DCEECFD2A3DB}"
 EndProject
 Global
@@ -54,10 +52,6 @@ Global
         {76E0A274-2929-45EF-A084-92B60DE85BA8}.Debug|Any CPU.Build.0 = Debug|Any CPU
         {76E0A274-2929-45EF-A084-92B60DE85BA8}.Release|Any CPU.ActiveCfg = Release|Any CPU
         {76E0A274-2929-45EF-A084-92B60DE85BA8}.Release|Any CPU.Build.0 = Release|Any CPU
-        {13CD8C89-38B4-4876-BE9B-6AAC9B114402}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-        {13CD8C89-38B4-4876-BE9B-6AAC9B114402}.Debug|Any CPU.Build.0 = Debug|Any CPU
-        {13CD8C89-38B4-4876-BE9B-6AAC9B114402}.Release|Any CPU.ActiveCfg = Release|Any CPU
-        {13CD8C89-38B4-4876-BE9B-6AAC9B114402}.Release|Any CPU.Build.0 = Release|Any CPU
         {34DCDB1B-E8D7-4427-BA55-DCEECFD2A3DB}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
         {34DCDB1B-E8D7-4427-BA55-DCEECFD2A3DB}.Debug|Any CPU.Build.0 = Debug|Any CPU
         {34DCDB1B-E8D7-4427-BA55-DCEECFD2A3DB}.Release|Any CPU.ActiveCfg = Release|Any CPU

@@ -1,39 +1,34 @@
-using ParcelBox.Application.Abstractions.Persistence;
+using ParcelBox.Application.Interfaces.Repositories;
 using ParcelBox.Domain.Parcels;
 
 namespace ParcelBox.Application.Tests.TestDoubles;
 
 internal sealed class ParcelRepositoryFake : IParcelRepository
 {
-    private readonly Parcel _parcel;
-
-    public ParcelRepositoryFake(Parcel parcel)
-    {
-        _parcel = parcel;
-    }
+    public List<Parcel> Items { get; } = [];
 
     public Task<bool> TrackingCodeExistsAsync(
         string trackingCode,
         CancellationToken cancellationToken)
     {
-        return Task.FromResult(false);
+        return Task.FromResult(Items.Any(x => x.TrackingCode == trackingCode));
     }
 
     public Task<Parcel?> GetByIdAsync(Guid id, CancellationToken cancellationToken)
     {
-        return Task.FromResult<Parcel?>(_parcel.Id == id ? _parcel : null);
+        return Task.FromResult(Items.SingleOrDefault(x => x.Id == id));
     }
 
     public Task<Parcel?> GetByTrackingCodeAsync(
         string trackingCode,
         CancellationToken cancellationToken)
     {
-        return Task.FromResult<Parcel?>(
-            _parcel.TrackingCode == trackingCode ? _parcel : null);
+        return Task.FromResult(Items.SingleOrDefault(x => x.TrackingCode == trackingCode));
     }
 
     public Task AddAsync(Parcel parcel, CancellationToken cancellationToken)
     {
+        Items.Add(parcel);
         return Task.CompletedTask;
     }
 }

@@ -1,6 +1,7 @@
 using ParcelBox.Api.Contracts;
 using ParcelBox.Api.Extensions;
-using ParcelBox.Application.Parcels;
+using ParcelBox.Application.DTOs.Parcels;
+using ParcelBox.Application.Interfaces.Services;
 
 namespace ParcelBox.Api.Endpoints;
 
@@ -19,51 +20,42 @@ public static class ParcelEndpoints
 
     private static async Task<IResult> RegisterAsync(
         RegisterParcelRequest request,
-        RegisterParcelHandler handler,
+        IParcelService service,
         CancellationToken cancellationToken)
     {
-        var command = new RegisterParcelCommand(
+        var input = new RegisterParcelInput(
             request.TrackingCode,
             request.RecipientPhone,
             request.Size);
 
-        var result = await handler.HandleAsync(command, cancellationToken);
+        var result = await service.RegisterAsync(input, cancellationToken);
 
-        if (result.IsFailure)
-        {
-            return result.Error.ToProblemResult();
-        }
-
-        return Results.Created($"/api/parcels/{result.Value.Id}", result.Value);
+        return result.IsFailure
+            ? result.Error.ToProblemResult()
+            : Results.Created($"/api/parcels/{result.Value.Id}", result.Value);
     }
 
     private static async Task<IResult> GetAsync(
         Guid id,
-        GetParcelHandler handler,
+        IParcelService service,
         CancellationToken cancellationToken)
     {
-        var result = await handler.HandleAsync(id, cancellationToken);
+        var result = await service.GetAsync(id, cancellationToken);
 
-        if (result.IsFailure)
-        {
-            return result.Error.ToProblemResult();
-        }
-
-        return Results.Ok(result.Value);
+        return result.IsFailure
+            ? result.Error.ToProblemResult()
+            : Results.Ok(result.Value);
     }
 
     private static async Task<IResult> StoreAsync(
         Guid id,
-        StoreParcelHandler handler,
+        IParcelService service,
         CancellationToken cancellationToken)
     {
-        var result = await handler.HandleAsync(id, cancellationToken);
+        var result = await service.StoreAsync(id, cancellationToken);
 
-        if (result.IsFailure)
-        {
-            return result.Error.ToProblemResult();
-        }
-
-        return Results.Ok(result.Value);
+        return result.IsFailure
+            ? result.Error.ToProblemResult()
+            : Results.Ok(result.Value);
     }
 }

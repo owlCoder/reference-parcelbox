@@ -1,9 +1,9 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
-using ParcelBox.Application.Abstractions.External;
-using ParcelBox.Application.Abstractions.Persistence;
-using ParcelBox.Application.Abstractions.Security;
+using ParcelBox.Application.Interfaces.External;
+using ParcelBox.Application.Interfaces.Repositories;
+using ParcelBox.Application.Interfaces.Security;
 using ParcelBox.Infrastructure.External;
 using ParcelBox.Infrastructure.Persistence;
 using ParcelBox.Infrastructure.Security;
@@ -24,14 +24,13 @@ public static class DependencyInjection
             options.UseSqlite(connectionString);
         });
 
-        services.AddScoped<IAppDbSession>(serviceProvider =>
+        services.AddScoped<IUnitOfWork>(serviceProvider =>
             serviceProvider.GetRequiredService<ParcelBoxDbContext>());
         services.AddScoped<IParcelRepository, ParcelRepository>();
         services.AddScoped<ICompartmentRepository, CompartmentRepository>();
         services.AddScoped<IPickupAccessRepository, PickupAccessRepository>();
         services.AddScoped<DatabaseInitializer>();
         services.AddSingleton<IPickupCodeService, PickupCodeService>();
-        services.AddSingleton(TimeProvider.System);
 
         var lockerUrl = configuration["ExternalServices:LockerController"]
             ?? "http://localhost:5101";

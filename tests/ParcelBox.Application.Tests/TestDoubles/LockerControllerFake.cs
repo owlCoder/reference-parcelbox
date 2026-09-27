@@ -1,22 +1,21 @@
-using ParcelBox.Application.Abstractions.External;
-using ParcelBox.Domain.Common.Results;
+using ParcelBox.Application.Common.Results;
+using ParcelBox.Application.Interfaces.External;
 
 namespace ParcelBox.Application.Tests.TestDoubles;
 
 internal sealed class LockerControllerFake : ILockerController
 {
-    private readonly Result<LockerControllerError> _result;
-
-    public LockerControllerFake(Result<LockerControllerError> result)
-    {
-        _result = result;
-    }
+    public LockerControllerError Error { get; set; }
 
     public Task<Result<LockerControllerError>> OpenAsync(
         string lockerCode,
         string compartmentNumber,
         CancellationToken cancellationToken)
     {
-        return Task.FromResult(_result);
+        var result = Error == LockerControllerError.None
+            ? Result<LockerControllerError>.Success()
+            : Result<LockerControllerError>.Failure(Error);
+
+        return Task.FromResult(result);
     }
 }

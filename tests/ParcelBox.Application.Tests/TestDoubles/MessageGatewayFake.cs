@@ -1,17 +1,11 @@
-using ParcelBox.Application.Abstractions.External;
-using ParcelBox.Domain.Common.Results;
+using ParcelBox.Application.Common.Results;
+using ParcelBox.Application.Interfaces.External;
 
 namespace ParcelBox.Application.Tests.TestDoubles;
 
 internal sealed class MessageGatewayFake : IMessageGateway
 {
-    private readonly Result<MessageGatewayError> _result;
-
-    public MessageGatewayFake(Result<MessageGatewayError> result)
-    {
-        _result = result;
-    }
-
+    public MessageGatewayError Error { get; set; }
     public OutboundMessage? LastMessage { get; private set; }
 
     public Task<Result<MessageGatewayError>> SendAsync(
@@ -19,6 +13,11 @@ internal sealed class MessageGatewayFake : IMessageGateway
         CancellationToken cancellationToken)
     {
         LastMessage = message;
-        return Task.FromResult(_result);
+
+        var result = Error == MessageGatewayError.None
+            ? Result<MessageGatewayError>.Success()
+            : Result<MessageGatewayError>.Failure(Error);
+
+        return Task.FromResult(result);
     }
 }

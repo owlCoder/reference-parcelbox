@@ -2,15 +2,15 @@ namespace ParcelBox.Application.Tests.TestDoubles;
 
 internal sealed class FixedTimeProvider : TimeProvider
 {
-    private readonly DateTimeOffset _now;
+    private readonly DateTimeOffset _utcNow;
 
-    public FixedTimeProvider(DateTimeOffset now)
+    public FixedTimeProvider(DateTimeOffset utcNow)
     {
-        _now = now;
+        _utcNow = utcNow;
     }
 
     public override DateTimeOffset GetUtcNow()
     {
-        return _now;
+        return _utcNow;
     }
 }

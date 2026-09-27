@@ -1,5 +1,5 @@
 using Microsoft.EntityFrameworkCore;
-using ParcelBox.Application.Abstractions.Persistence;
+using ParcelBox.Application.Interfaces.Repositories;
 using ParcelBox.Domain.Parcels;
 
 namespace ParcelBox.Infrastructure.Persistence;
