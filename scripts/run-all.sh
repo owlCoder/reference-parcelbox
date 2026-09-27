@@ -16,19 +16,24 @@ cleanup() {
   wait 2>/dev/null || true
 }
 
+start_project() {
+  local project_path="$1"
+  local url="$2"
+
+  (
+    cd "$repo_root/$project_path"
+    exec dotnet run --no-build --no-launch-profile --urls "$url"
+  ) &
+
+  pids+=("$!")
+}
+
 trap cleanup EXIT INT TERM
 
-dotnet run --project simulators/ParcelBox.Simulators.LockerController --no-build --no-launch-profile --urls http://localhost:5101 &
-pids+=("$!")
-
-dotnet run --project simulators/ParcelBox.Simulators.MessageGateway --no-build --no-launch-profile --urls http://localhost:5102 &
-pids+=("$!")
-
-dotnet run --project src/ParcelBox.Api --no-build --no-launch-profile --urls http://localhost:5100 &
-pids+=("$!")
-
-dotnet run --project src/ParcelBox.Web --no-build --no-launch-profile --urls http://localhost:5000 &
-pids+=("$!")
+start_project "simulators/ParcelBox.Simulators.LockerController" "http://localhost:5101"
+start_project "simulators/ParcelBox.Simulators.MessageGateway" "http://localhost:5102"
+start_project "src/ParcelBox.Api" "http://localhost:5100"
+start_project "src/ParcelBox.Web" "http://localhost:5000"
 
 echo "ParcelBox Web:             http://localhost:5000"
 echo "ParcelBox API:             http://localhost:5100"
