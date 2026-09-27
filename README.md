@@ -137,16 +137,18 @@ Linux/macOS:
 ./scripts/run-all.sh
 ```
 
-Skripta prvo build-uje solution, zatim pokreće Web, API i oba simulatora. `Ctrl+C` zaustavlja procese.
+Skripta prvo build-uje solution, zatim pokreće Web, API i oba simulatora i proverava da su endpoint-i dostupni. Windows skripta dodatno prekida pokretanje sa jasnom porukom ako je neki od potrebnih portova već zauzet. `Ctrl+C` zaustavlja procese.
 
 Podrazumevani portovi:
 
-- ParcelBox Web: `http://localhost:5000`
+- ParcelBox Web: `http://localhost:5200`
 - ParcelBox API: `http://localhost:5100`
 - Locker Controller Simulator: `http://localhost:5101`
 - Message Gateway Simulator: `http://localhost:5102`
 
-Otvori `http://localhost:5000` za kompletan demo.
+Web je namerno na portu `5200`, a ne na često korišćenom portu `5000`, kako bi se izbegli konflikti sa drugim lokalnim servisima.
+
+Otvori `http://localhost:5200` za kompletan demo.
 
 ### Docker Compose
 
