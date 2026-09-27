@@ -1,10 +1,12 @@
-using ParcelBox.Domain.Common;
+using ParcelBox.Domain.Common.Results;
 
 namespace ParcelBox.Domain.Lockers;
 
 public sealed class Compartment
 {
-    private Compartment() { }
+    private Compartment()
+    {
+    }
 
     private Compartment(Guid id, string lockerCode, string number, CompartmentSize size)
     {
@@ -16,47 +18,76 @@ public sealed class Compartment
     }
 
     public Guid Id { get; private set; }
+
     public string LockerCode { get; private set; } = string.Empty;
+
     public string Number { get; private set; } = string.Empty;
+
     public CompartmentSize Size { get; private set; }
+
     public CompartmentStatus Status { get; private set; }
+
     public Guid? ParcelId { get; private set; }
 
-    public static Compartment Create(string lockerCode, string number, CompartmentSize size)
+    public static Result<Compartment> Create(string lockerCode, string number, CompartmentSize size)
     {
         if (string.IsNullOrWhiteSpace(lockerCode))
-            throw new DomainException("Locker code is required.");
+        {
+            return Result<Compartment>.Failure(CompartmentErrors.LockerCodeRequired);
+        }
 
         if (string.IsNullOrWhiteSpace(number))
-            throw new DomainException("Compartment number is required.");
+        {
+            return Result<Compartment>.Failure(CompartmentErrors.NumberRequired);
+        }
 
         if (!Enum.IsDefined(size))
-            throw new DomainException("Compartment size is invalid.");
+        {
+            return Result<Compartment>.Failure(CompartmentErrors.InvalidSize);
+        }
 
-        return new Compartment(Guid.NewGuid(), lockerCode.Trim(), number.Trim(), size);
+        var compartment = new Compartment(
+            Guid.NewGuid(),
+            lockerCode.Trim(),
+            number.Trim(),
+            size);
+
+        return Result<Compartment>.Success(compartment);
     }
 
-    public bool CanFit(CompartmentSize requiredSize) =>
-        Status == CompartmentStatus.Available && (int)Size >= (int)requiredSize;
+    public bool CanFit(CompartmentSize requiredSize)
+    {
+        return Status == CompartmentStatus.Available && (int)Size >= (int)requiredSize;
+    }
 
-    public void Occupy(Guid parcelId)
+    public Result Occupy(Guid parcelId)
     {
         if (parcelId == Guid.Empty)
-            throw new DomainException("Parcel id is required.");
+        {
+            return Result.Failure(CompartmentErrors.ParcelIdRequired);
+        }
 
         if (Status != CompartmentStatus.Available)
-            throw new DomainException("Compartment is not available.");
+        {
+            return Result.Failure(CompartmentErrors.NotAvailable);
+        }
 
         Status = CompartmentStatus.Occupied;
         ParcelId = parcelId;
+
+        return Result.Success();
     }
 
-    public void Release(Guid parcelId)
+    public Result Release(Guid parcelId)
     {
         if (Status != CompartmentStatus.Occupied || ParcelId != parcelId)
-            throw new DomainException("Compartment is not occupied by this parcel.");
+        {
+            return Result.Failure(CompartmentErrors.NotOccupiedByParcel);
+        }
 
         Status = CompartmentStatus.Available;
         ParcelId = null;
+
+        return Result.Success();
     }
 }

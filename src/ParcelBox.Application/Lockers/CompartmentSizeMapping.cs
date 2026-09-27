@@ -1,3 +1,4 @@
+using ParcelBox.Domain.Common.Results;
 using ParcelBox.Domain.Lockers;
 using ParcelBox.Domain.Parcels;
 
@@ -5,11 +6,18 @@ namespace ParcelBox.Application.Lockers;
 
 internal static class CompartmentSizeMapping
 {
-    public static CompartmentSize ToCompartmentSize(this ParcelSize size) => size switch
+    public static Result<CompartmentSize> ToCompartmentSize(ParcelSize size)
     {
-        ParcelSize.Small => CompartmentSize.Small,
-        ParcelSize.Medium => CompartmentSize.Medium,
-        ParcelSize.Large => CompartmentSize.Large,
-        _ => throw new ArgumentOutOfRangeException(nameof(size), size, "Unsupported parcel size.")
-    };
+        switch (size)
+        {
+            case ParcelSize.Small:
+                return Result<CompartmentSize>.Success(CompartmentSize.Small);
+            case ParcelSize.Medium:
+                return Result<CompartmentSize>.Success(CompartmentSize.Medium);
+            case ParcelSize.Large:
+                return Result<CompartmentSize>.Success(CompartmentSize.Large);
+            default:
+                return Result<CompartmentSize>.Failure(ParcelErrors.InvalidSize);
+        }
+    }
 }

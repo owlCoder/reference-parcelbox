@@ -1,14 +1,31 @@
 using Microsoft.EntityFrameworkCore;
-using ParcelBox.Application.Abstractions;
+using ParcelBox.Application.Abstractions.Persistence;
 using ParcelBox.Domain.Pickup;
 
 namespace ParcelBox.Infrastructure.Persistence;
 
-internal sealed class PickupAccessRepository(ParcelBoxDbContext db) : IPickupAccessRepository
+internal sealed class PickupAccessRepository : IPickupAccessRepository
 {
-    public Task<PickupAccess?> GetByParcelIdAsync(Guid parcelId, CancellationToken cancellationToken) =>
-        db.PickupAccesses.SingleOrDefaultAsync(x => x.ParcelId == parcelId, cancellationToken);
+    private readonly ParcelBoxDbContext _db;
 
-    public async Task AddAsync(PickupAccess pickupAccess, CancellationToken cancellationToken) =>
-        await db.PickupAccesses.AddAsync(pickupAccess, cancellationToken);
+    public PickupAccessRepository(ParcelBoxDbContext db)
+    {
+        _db = db;
+    }
+
+    public Task<PickupAccess?> GetByParcelIdAsync(
+        Guid parcelId,
+        CancellationToken cancellationToken)
+    {
+        return _db.PickupAccesses.SingleOrDefaultAsync(
+            x => x.ParcelId == parcelId,
+            cancellationToken);
+    }
+
+    public async Task AddAsync(
+        PickupAccess pickupAccess,
+        CancellationToken cancellationToken)
+    {
+        await _db.PickupAccesses.AddAsync(pickupAccess, cancellationToken);
+    }
 }

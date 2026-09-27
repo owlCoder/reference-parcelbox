@@ -1,15 +1,28 @@
-using ParcelBox.Application.Abstractions;
-using ParcelBox.Application.Common;
+using ParcelBox.Application.Abstractions.Persistence;
+using ParcelBox.Domain.Common.Results;
 
 namespace ParcelBox.Application.Parcels;
 
-public sealed class GetParcelHandler(IParcelRepository parcels)
+public sealed class GetParcelHandler
 {
-    public async Task<OperationResult<ParcelDetails>> HandleAsync(Guid id, CancellationToken cancellationToken)
+    private readonly IParcelRepository _parcels;
+
+    public GetParcelHandler(IParcelRepository parcels)
     {
-        var parcel = await parcels.GetByIdAsync(id, cancellationToken);
-        return parcel is null
-            ? OperationResult<ParcelDetails>.Failure("Parcel not found.")
-            : OperationResult<ParcelDetails>.Success(parcel.ToDetails());
+        _parcels = parcels;
+    }
+
+    public async Task<Result<ParcelDetails>> HandleAsync(
+        Guid id,
+        CancellationToken cancellationToken)
+    {
+        var parcel = await _parcels.GetByIdAsync(id, cancellationToken);
+
+        if (parcel is null)
+        {
+            return Result<ParcelDetails>.Failure(ParcelApplicationErrors.NotFound);
+        }
+
+        return Result<ParcelDetails>.Success(parcel.ToDetails());
     }
 }

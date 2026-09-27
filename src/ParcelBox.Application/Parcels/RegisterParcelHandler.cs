@@ -1,30 +1,53 @@
-using ParcelBox.Application.Abstractions;
-using ParcelBox.Application.Common;
+using ParcelBox.Application.Abstractions.Persistence;
+using ParcelBox.Domain.Common.Results;
 using ParcelBox.Domain.Parcels;
 
 namespace ParcelBox.Application.Parcels;
 
-public sealed class RegisterParcelHandler(
-    IParcelRepository parcels,
-    IAppDbSession db,
-    TimeProvider timeProvider)
+public sealed class RegisterParcelHandler
 {
-    public async Task<OperationResult<ParcelDetails>> HandleAsync(
+    private readonly IParcelRepository _parcels;
+    private readonly IAppDbSession _db;
+    private readonly TimeProvider _timeProvider;
+
+    public RegisterParcelHandler(
+        IParcelRepository parcels,
+        IAppDbSession db,
+        TimeProvider timeProvider)
+    {
+        _parcels = parcels;
+        _db = db;
+        _timeProvider = timeProvider;
+    }
+
+    public async Task<Result<ParcelDetails>> HandleAsync(
         RegisterParcelCommand command,
         CancellationToken cancellationToken)
     {
-        if (await parcels.TrackingCodeExistsAsync(command.TrackingCode, cancellationToken))
-            return OperationResult<ParcelDetails>.Failure("Tracking code already exists.");
-
-        var parcel = Parcel.Register(
+        var parcelResult = Parcel.Register(
             command.TrackingCode,
             command.RecipientPhone,
             command.Size,
-            timeProvider.GetUtcNow());
+            _timeProvider.GetUtcNow());
 
-        await parcels.AddAsync(parcel, cancellationToken);
-        await db.SaveChangesAsync(cancellationToken);
+        if (parcelResult.IsFailure)
+        {
+            return Result<ParcelDetails>.Failure(parcelResult.Error);
+        }
 
-        return OperationResult<ParcelDetails>.Success(parcel.ToDetails());
+        var parcel = parcelResult.Value;
+        var trackingCodeExists = await _parcels.TrackingCodeExistsAsync(
+            parcel.TrackingCode,
+            cancellationToken);
+
+        if (trackingCodeExists)
+        {
+            return Result<ParcelDetails>.Failure(ParcelApplicationErrors.TrackingCodeAlreadyExists);
+        }
+
+        await _parcels.AddAsync(parcel, cancellationToken);
+        await _db.SaveChangesAsync(cancellationToken);
+
+        return Result<ParcelDetails>.Success(parcel.ToDetails());
     }
 }

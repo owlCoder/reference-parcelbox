@@ -1,12 +1,15 @@
 using System.Security.Cryptography;
 using System.Text;
-using ParcelBox.Application.Abstractions;
+using ParcelBox.Application.Abstractions.Security;
 
 namespace ParcelBox.Infrastructure.Security;
 
 internal sealed class PickupCodeService : IPickupCodeService
 {
-    public string Generate() => RandomNumberGenerator.GetInt32(100000, 1000000).ToString();
+    public string Generate()
+    {
+        return RandomNumberGenerator.GetInt32(100000, 1000000).ToString();
+    }
 
     public string Hash(string code)
     {

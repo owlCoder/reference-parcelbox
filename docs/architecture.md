@@ -12,42 +12,84 @@ Sadrži:
 
 - domenske modele (`Parcel`, `Compartment`, `PickupAccess`);
 - enum-e koji predstavljaju domenska stanja i ishode;
-- poslovna pravila u samim domenskim objektima;
-- domenske greške.
-
-Tipovi su organizovani po maloj domenskoj oblasti, a zatim po ulozi:
+- poslovna pravila u domenskim objektima;
+- kataloge domenskih grešaka;
+- `Result` i `Result<T>` kao eksplicitan način vraćanja očekivanog uspeha ili neuspeha.
 
 ```text
 Domain/
+├── Common/
+│   └── Results/
 ├── Parcels/
 │   ├── Models/
-│   └── Enums/
+│   ├── Enums/
+│   └── Errors/
 ├── Lockers/
 │   ├── Models/
-│   └── Enums/
-├── Pickup/
-│   ├── Models/
-│   └── Enums/
-└── Common/
+│   ├── Enums/
+│   └── Errors/
+└── Pickup/
+    ├── Models/
+    ├── Enums/
+    └── Errors/
 ```
 
-Domain ne zna za ASP.NET Core, EF Core, HTTP klijente, konfiguraciju ili simulatore. Domenske oblasti ne koriste međusobno svoje tipove: `Parcel` koristi `ParcelSize`, dok `Compartment` koristi `CompartmentSize`. Prevođenje između tih modela pripada Application sloju.
+Očekivana poslovna stanja ne predstavljaju exception. Neispravan status, nevalidan unos, istekao pickup kod ili zauzet pretinac vraćaju `Result` sa strukturiranim `Error` objektom. Exception ostaje zaštita runtime-a za zaista neočekivane kvarove framework-a ili infrastrukture i ne koristi se kao poslovni kontrolni tok.
+
+Domenske oblasti ne koriste međusobno svoje tipove: `Parcel` koristi `ParcelSize`, dok `Compartment` koristi `CompartmentSize`. Prevođenje između tih modela pripada Application sloju.
 
 ### Application
 
-Sadrži use-case handlere i portove prema persistence-u i spoljnim sistemima. Handler koordinira tok, ali poslovne odluke poput dozvoljenih statusnih tranzicija ostaju u domenskim objektima.
+Application orkestrira use-case-ove. Ne sadrži EF Core ni `HttpClient` implementacije.
 
-Vreme je spoljašnja zavisnost use-case-a, pa se koristi ugrađeni .NET `TimeProvider`. Time su testovi deterministički bez uvođenja sopstvenog clock framework-a.
+Portovi su grupisani po nameni:
 
-Interfejs i prateći enum/model nisu spojeni u isti source fajl. Jedan javni tip ima jedan fajl kako bi struktura bila jasna studentima.
+```text
+Abstractions/
+├── Persistence/
+├── External/
+└── Security/
+```
+
+`ILockerController` i `IMessageGateway` takođe vraćaju `Result`, pa očekivani kvar simulatora ne postaje exception u poslovnom toku.
+
+Vreme se dobija preko ugrađenog .NET `TimeProvider` tipa, što omogućava determinističke testove bez dodatnog clock framework-a.
 
 ### Infrastructure
 
-Implementira repository interfejse preko EF Core-a, `ILockerController` preko `HttpClient` adaptera i `IMessageGateway` preko drugog `HttpClient` adaptera. Svaki repository ima svoj fajl, a EF mapiranja su izdvojena u `Persistence/Configurations` i automatski se registruju iz assembly-ja.
+Infrastructure implementira repository interfejse preko EF Core-a, spoljne portove preko `HttpClient` adaptera i generisanje/hash pickup koda preko standardnih kriptografskih API-ja.
+
+EF mapiranja su izdvojena u `Persistence/Configurations`, repository implementacije u `Persistence/Repositories`, a `DbContext` ostaje fokusiran na EF session i registraciju konfiguracija.
 
 ### Api
 
-Mapira HTTP zahteve na application use-case-ove. Request modeli su u `Contracts`, endpoint klase u `Endpoints`, a `Program.cs` je composition root.
+API mapira HTTP zahteve na application use-case-ove. Ne ponavlja domenska pravila. `ErrorHttpExtensions` na jednom mestu prevodi `ErrorType` na HTTP status kod i Problem Details odgovor.
+
+## Result pattern
+
+Osnovni tok je eksplicitan:
+
+```text
+Domain/Application operation
+        |
+        +-- Result.Success(...)
+        |
+        +-- Result.Failure(Error)
+                         |
+                         +-- Code
+                         +-- Message
+                         +-- Type
+```
+
+Time pozivalac mora da obradi neuspeh, a poslovni tok nije sakriven kroz `try/catch` blokove.
+
+## SOLID u ovom primeru
+
+- **SRP**: entitet čuva svoja pravila, handler orkestrira use-case, repository radi persistence, adapter komunicira sa spoljnim sistemom, API prevodi transport.
+- **OCP**: novi EF mapping se dodaje kroz novu `IEntityTypeConfiguration<T>` klasu bez širenja `DbContext.OnModelCreating` metode.
+- **LSP**: application kod zavisi od malih ugovora; test doubles mogu da zamene infrastrukturu bez promene ponašanja handlera.
+- **ISP**: persistence, external i security portovi su mali i namenski umesto jednog velikog servisnog interfejsa.
+- **DIP**: Application zavisi od apstrakcija, dok EF Core, `HttpClient` i kriptografija ostaju u Infrastructure sloju.
 
 ## Granice celina
 
@@ -60,15 +102,7 @@ flowchart LR
     Pickup --> MessagePort[IMessageGateway]
 ```
 
-`Parcels`, `Lockers` i `Pickup` dele isti proces i bazu u ovom malom primeru, ali ne dele poslovna pravila niti direktno koriste međusobne domenske modele. Application sloj je mesto na kome se te oblasti koordiniraju. Repository interfejsi su fokusirani na potrebe konkretnog use-case-a.
-
-## SOLID u ovom primeru
-
-- **SRP**: domen, orkestracija, persistence, HTTP adapteri i API transport imaju odvojene odgovornosti.
-- **OCP**: novi EF mapping se dodaje kroz novu `IEntityTypeConfiguration<T>` klasu bez širenja `DbContext.OnModelCreating` metode.
-- **LSP**: application kod zavisi od malih ugovora (`ILockerController`, `IMessageGateway`, repository interfejsi), pa test doubles mogu da zamene infrastrukturu bez promene ponašanja use-case-a.
-- **ISP**: nema velikog servisnog interfejsa; portovi su mali i namenski.
-- **DIP**: Application ne zavisi od EF Core-a ni `HttpClient` implementacija. Vreme koristi `TimeProvider`, a spoljne sisteme i persistence vidi kroz apstrakcije.
+`Parcels`, `Lockers` i `Pickup` dele isti proces i bazu u ovom malom primeru, ali ne dele poslovna pravila niti direktno koriste međusobne domenske modele. Application sloj koordinira njihove rezultate.
 
 ## Namerna pojednostavljenja
 
@@ -78,4 +112,4 @@ flowchart LR
 - nema message bus-a, MediatR-a, generic repository-ja ni posebnog Unit of Work wrappera;
 - nema outbox-a; neuspešna isporuka poruke se pamti kao `Failed` i scenario se može ponoviti ručno.
 
-Primer ostaje mali, ali granice slojeva i odgovornosti treba da budu eksplicitne i dosledne.
+Primer ostaje mali, ali granice slojeva, Result pattern i odgovornosti treba da budu eksplicitni i dosledni.

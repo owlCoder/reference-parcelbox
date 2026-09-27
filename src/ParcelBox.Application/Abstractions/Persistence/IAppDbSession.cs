@@ -1,4 +1,4 @@
-namespace ParcelBox.Application.Abstractions;
+namespace ParcelBox.Application.Abstractions.Persistence;
 
 public interface IAppDbSession
 {

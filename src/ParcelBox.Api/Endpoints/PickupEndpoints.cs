@@ -1,4 +1,5 @@
 using ParcelBox.Api.Contracts;
+using ParcelBox.Api.Extensions;
 using ParcelBox.Application.Pickup;
 
 namespace ParcelBox.Api.Endpoints;
@@ -19,12 +20,16 @@ public static class PickupEndpoints
         PickupParcelHandler handler,
         CancellationToken cancellationToken)
     {
-        if (string.IsNullOrWhiteSpace(trackingCode) || string.IsNullOrWhiteSpace(request.Code))
-            return Results.BadRequest(new { error = "Tracking code and pickup code are required." });
+        var result = await handler.HandleAsync(
+            trackingCode,
+            request.Code,
+            cancellationToken);
 
-        var result = await handler.HandleAsync(trackingCode, request.Code, cancellationToken);
-        return result.IsSuccess
-            ? Results.Ok(new { status = "picked-up" })
-            : Results.BadRequest(new { error = result.Error });
+        if (result.IsFailure)
+        {
+            return result.Error.ToProblemResult();
+        }
+
+        return Results.Ok(new { status = "picked-up" });
     }
 }

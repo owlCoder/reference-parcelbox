@@ -1,12 +1,19 @@
-using ParcelBox.Domain.Common;
+using ParcelBox.Domain.Common.Results;
 
 namespace ParcelBox.Domain.Parcels;
 
 public sealed class Parcel
 {
-    private Parcel() { }
+    private Parcel()
+    {
+    }
 
-    private Parcel(Guid id, string trackingCode, string recipientPhone, ParcelSize size, DateTimeOffset createdAt)
+    private Parcel(
+        Guid id,
+        string trackingCode,
+        string recipientPhone,
+        ParcelSize size,
+        DateTimeOffset createdAt)
     {
         Id = id;
         TrackingCode = trackingCode;
@@ -17,58 +24,101 @@ public sealed class Parcel
     }
 
     public Guid Id { get; private set; }
+
     public string TrackingCode { get; private set; } = string.Empty;
+
     public string RecipientPhone { get; private set; } = string.Empty;
+
     public ParcelSize Size { get; private set; }
+
     public ParcelStatus Status { get; private set; }
+
     public string? LockerCode { get; private set; }
+
     public string? CompartmentNumber { get; private set; }
+
     public DateTimeOffset CreatedAt { get; private set; }
+
     public DateTimeOffset? StoredAt { get; private set; }
+
     public DateTimeOffset? PickedUpAt { get; private set; }
 
-    public static Parcel Register(string trackingCode, string recipientPhone, ParcelSize size, DateTimeOffset now)
+    public bool CanBeStored => Status == ParcelStatus.Registered;
+
+    public bool CanBePickedUp => Status == ParcelStatus.Stored;
+
+    public static Result<Parcel> Register(
+        string trackingCode,
+        string recipientPhone,
+        ParcelSize size,
+        DateTimeOffset now)
     {
         if (string.IsNullOrWhiteSpace(trackingCode))
-            throw new DomainException("Tracking code is required.");
+        {
+            return Result<Parcel>.Failure(ParcelErrors.TrackingCodeRequired);
+        }
 
         if (string.IsNullOrWhiteSpace(recipientPhone))
-            throw new DomainException("Recipient phone is required.");
+        {
+            return Result<Parcel>.Failure(ParcelErrors.RecipientPhoneRequired);
+        }
 
         if (!Enum.IsDefined(size))
-            throw new DomainException("Parcel size is invalid.");
+        {
+            return Result<Parcel>.Failure(ParcelErrors.InvalidSize);
+        }
 
-        return new Parcel(Guid.NewGuid(), trackingCode.Trim(), recipientPhone.Trim(), size, now);
+        var parcel = new Parcel(
+            Guid.NewGuid(),
+            trackingCode.Trim(),
+            recipientPhone.Trim(),
+            size,
+            now);
+
+        return Result<Parcel>.Success(parcel);
     }
 
-    public void Store(string lockerCode, string compartmentNumber, DateTimeOffset now)
+    public Result Store(string lockerCode, string compartmentNumber, DateTimeOffset now)
     {
-        if (Status != ParcelStatus.Registered)
-            throw new DomainException("Only a registered parcel can be stored.");
+        if (!CanBeStored)
+        {
+            return Result.Failure(ParcelErrors.NotRegisteredForStorage);
+        }
 
         if (string.IsNullOrWhiteSpace(lockerCode) || string.IsNullOrWhiteSpace(compartmentNumber))
-            throw new DomainException("Locker and compartment are required.");
+        {
+            return Result.Failure(ParcelErrors.StorageLocationRequired);
+        }
 
-        LockerCode = lockerCode;
-        CompartmentNumber = compartmentNumber;
+        LockerCode = lockerCode.Trim();
+        CompartmentNumber = compartmentNumber.Trim();
         StoredAt = now;
         Status = ParcelStatus.Stored;
+
+        return Result.Success();
     }
 
-    public void MarkPickedUp(DateTimeOffset now)
+    public Result MarkPickedUp(DateTimeOffset now)
     {
-        if (Status != ParcelStatus.Stored)
-            throw new DomainException("Only a stored parcel can be picked up.");
+        if (!CanBePickedUp)
+        {
+            return Result.Failure(ParcelErrors.NotStoredForPickup);
+        }
 
         PickedUpAt = now;
         Status = ParcelStatus.PickedUp;
+
+        return Result.Success();
     }
 
-    public void Cancel()
+    public Result Cancel()
     {
         if (Status != ParcelStatus.Registered)
-            throw new DomainException("Only a registered parcel can be cancelled.");
+        {
+            return Result.Failure(ParcelErrors.NotRegisteredForCancellation);
+        }
 
         Status = ParcelStatus.Cancelled;
+        return Result.Success();
     }
 }

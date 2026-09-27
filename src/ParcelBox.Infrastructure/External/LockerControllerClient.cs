@@ -1,36 +1,49 @@
 using System.Net;
-using ParcelBox.Application.Abstractions;
+using ParcelBox.Application.Abstractions.External;
+using ParcelBox.Domain.Common.Results;
 
 namespace ParcelBox.Infrastructure.External;
 
-internal sealed class LockerControllerClient(HttpClient httpClient) : ILockerController
+internal sealed class LockerControllerClient : ILockerController
 {
-    public async Task<LockerOpenResult> OpenAsync(
+    private readonly HttpClient _httpClient;
+
+    public LockerControllerClient(HttpClient httpClient)
+    {
+        _httpClient = httpClient;
+    }
+
+    public async Task<Result> OpenAsync(
         string lockerCode,
         string compartmentNumber,
         CancellationToken cancellationToken)
     {
         try
         {
-            using var response = await httpClient.PostAsync(
+            using var response = await _httpClient.PostAsync(
                 $"api/compartments/{Uri.EscapeDataString(lockerCode)}/{Uri.EscapeDataString(compartmentNumber)}/open",
                 content: null,
                 cancellationToken);
 
             if (response.IsSuccessStatusCode)
-                return LockerOpenResult.Opened;
+            {
+                return Result.Success();
+            }
 
-            return response.StatusCode == HttpStatusCode.Conflict
-                ? LockerOpenResult.Jammed
-                : LockerOpenResult.Unavailable;
+            if (response.StatusCode == HttpStatusCode.Conflict)
+            {
+                return Result.Failure(LockerControllerErrors.Jammed);
+            }
+
+            return Result.Failure(LockerControllerErrors.Unavailable);
+        }
+        catch (OperationCanceledException) when (!cancellationToken.IsCancellationRequested)
+        {
+            return Result.Failure(LockerControllerErrors.Unavailable);
         }
         catch (HttpRequestException)
         {
-            return LockerOpenResult.Unavailable;
-        }
-        catch (TaskCanceledException) when (!cancellationToken.IsCancellationRequested)
-        {
-            return LockerOpenResult.Unavailable;
+            return Result.Failure(LockerControllerErrors.Unavailable);
         }
     }
 }

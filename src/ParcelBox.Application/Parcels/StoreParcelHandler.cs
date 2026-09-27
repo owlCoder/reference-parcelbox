@@ -1,69 +1,138 @@
-using ParcelBox.Application.Abstractions;
-using ParcelBox.Application.Common;
+using ParcelBox.Application.Abstractions.External;
+using ParcelBox.Application.Abstractions.Persistence;
+using ParcelBox.Application.Abstractions.Security;
 using ParcelBox.Application.Lockers;
+using ParcelBox.Domain.Common.Results;
 using ParcelBox.Domain.Parcels;
 using ParcelBox.Domain.Pickup;
 
 namespace ParcelBox.Application.Parcels;
 
-public sealed class StoreParcelHandler(
-    IParcelRepository parcels,
-    ICompartmentRepository compartments,
-    IPickupAccessRepository pickupAccesses,
-    ILockerController lockerController,
-    IMessageGateway messageGateway,
-    IPickupCodeService pickupCodes,
-    IAppDbSession db,
-    TimeProvider timeProvider)
+public sealed class StoreParcelHandler
 {
-    public async Task<OperationResult<StoreParcelResult>> HandleAsync(
+    private readonly IParcelRepository _parcels;
+    private readonly ICompartmentRepository _compartments;
+    private readonly IPickupAccessRepository _pickupAccesses;
+    private readonly ILockerController _lockerController;
+    private readonly IMessageGateway _messageGateway;
+    private readonly IPickupCodeService _pickupCodes;
+    private readonly IAppDbSession _db;
+    private readonly TimeProvider _timeProvider;
+
+    public StoreParcelHandler(
+        IParcelRepository parcels,
+        ICompartmentRepository compartments,
+        IPickupAccessRepository pickupAccesses,
+        ILockerController lockerController,
+        IMessageGateway messageGateway,
+        IPickupCodeService pickupCodes,
+        IAppDbSession db,
+        TimeProvider timeProvider)
+    {
+        _parcels = parcels;
+        _compartments = compartments;
+        _pickupAccesses = pickupAccesses;
+        _lockerController = lockerController;
+        _messageGateway = messageGateway;
+        _pickupCodes = pickupCodes;
+        _db = db;
+        _timeProvider = timeProvider;
+    }
+
+    public async Task<Result<StoreParcelResult>> HandleAsync(
         Guid parcelId,
         CancellationToken cancellationToken)
     {
-        var parcel = await parcels.GetByIdAsync(parcelId, cancellationToken);
+        var parcel = await _parcels.GetByIdAsync(parcelId, cancellationToken);
+
         if (parcel is null)
-            return OperationResult<StoreParcelResult>.Failure("Parcel not found.");
+        {
+            return Result<StoreParcelResult>.Failure(ParcelApplicationErrors.NotFound);
+        }
 
-        if (parcel.Status != ParcelStatus.Registered)
-            return OperationResult<StoreParcelResult>.Failure("Only a registered parcel can be stored.");
+        if (!parcel.CanBeStored)
+        {
+            return Result<StoreParcelResult>.Failure(ParcelErrors.NotRegisteredForStorage);
+        }
 
-        var compartment = await compartments.FindAvailableAsync(parcel.Size.ToCompartmentSize(), cancellationToken);
+        var sizeResult = CompartmentSizeMapping.ToCompartmentSize(parcel.Size);
+
+        if (sizeResult.IsFailure)
+        {
+            return Result<StoreParcelResult>.Failure(sizeResult.Error);
+        }
+
+        var compartment = await _compartments.FindAvailableAsync(
+            sizeResult.Value,
+            cancellationToken);
+
         if (compartment is null)
-            return OperationResult<StoreParcelResult>.Failure("No compatible compartment is available.");
+        {
+            return Result<StoreParcelResult>.Failure(ParcelApplicationErrors.NoCompatibleCompartment);
+        }
 
-        var openResult = await lockerController.OpenAsync(
+        var openResult = await _lockerController.OpenAsync(
             compartment.LockerCode,
             compartment.Number,
             cancellationToken);
 
-        if (openResult != LockerOpenResult.Opened)
-            return OperationResult<StoreParcelResult>.Failure($"Locker could not be opened: {openResult}.");
+        if (openResult.IsFailure)
+        {
+            return Result<StoreParcelResult>.Failure(openResult.Error);
+        }
 
-        var now = timeProvider.GetUtcNow();
-        parcel.Store(compartment.LockerCode, compartment.Number, now);
-        compartment.Occupy(parcel.Id);
+        var now = _timeProvider.GetUtcNow();
+        var storeResult = parcel.Store(compartment.LockerCode, compartment.Number, now);
 
-        var code = pickupCodes.Generate();
-        var access = PickupAccess.Create(parcel.Id, pickupCodes.Hash(code), now.AddHours(24));
-        await pickupAccesses.AddAsync(access, cancellationToken);
-        await db.SaveChangesAsync(cancellationToken);
+        if (storeResult.IsFailure)
+        {
+            return Result<StoreParcelResult>.Failure(storeResult.Error);
+        }
 
-        var delivered = await messageGateway.SendPickupCodeAsync(
+        var occupyResult = compartment.Occupy(parcel.Id);
+
+        if (occupyResult.IsFailure)
+        {
+            return Result<StoreParcelResult>.Failure(occupyResult.Error);
+        }
+
+        var code = _pickupCodes.Generate();
+        var accessResult = PickupAccess.Create(
+            parcel.Id,
+            _pickupCodes.Hash(code),
+            now.AddHours(24));
+
+        if (accessResult.IsFailure)
+        {
+            return Result<StoreParcelResult>.Failure(accessResult.Error);
+        }
+
+        var access = accessResult.Value;
+        await _pickupAccesses.AddAsync(access, cancellationToken);
+        await _db.SaveChangesAsync(cancellationToken);
+
+        var deliveryResult = await _messageGateway.SendPickupCodeAsync(
             parcel.RecipientPhone,
             parcel.TrackingCode,
             code,
             cancellationToken);
 
-        if (delivered)
+        if (deliveryResult.IsSuccess)
+        {
             access.MarkMessageDelivered();
+        }
         else
+        {
             access.MarkMessageFailed();
+        }
 
-        await db.SaveChangesAsync(cancellationToken);
+        await _db.SaveChangesAsync(cancellationToken);
 
-        return OperationResult<StoreParcelResult>.Success(new StoreParcelResult(
+        var result = new StoreParcelResult(
             compartment.LockerCode,
             compartment.Number,
-            access.MessageDelivery));
+            access.MessageDelivery);
+
+        return Result<StoreParcelResult>.Success(result);
     }
 }

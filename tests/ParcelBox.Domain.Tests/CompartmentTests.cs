@@ -1,4 +1,3 @@
-using ParcelBox.Domain.Common;
 using ParcelBox.Domain.Lockers;
 
 namespace ParcelBox.Domain.Tests;
@@ -15,14 +14,18 @@ public sealed class CompartmentTests
         CompartmentSize requiredSize,
         bool expected)
     {
-        var compartment = Compartment.Create("PB-01", "A1", compartmentSize);
+        var createResult = Compartment.Create("PB-01", "A1", compartmentSize);
 
-        Assert.Equal(expected, compartment.CanFit(requiredSize));
+        Assert.True(createResult.IsSuccess);
+        Assert.Equal(expected, createResult.Value.CanFit(requiredSize));
     }
 
     [Fact]
     public void Compartment_requires_a_valid_location()
     {
-        Assert.Throws<DomainException>(() => Compartment.Create("", "A1", CompartmentSize.Small));
+        var result = Compartment.Create("", "A1", CompartmentSize.Small);
+
+        Assert.True(result.IsFailure);
+        Assert.Equal(CompartmentErrors.LockerCodeRequired, result.Error);
     }
 }

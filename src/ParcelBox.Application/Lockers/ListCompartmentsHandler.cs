@@ -1,12 +1,20 @@
-using ParcelBox.Application.Abstractions;
+using ParcelBox.Application.Abstractions.Persistence;
 
 namespace ParcelBox.Application.Lockers;
 
-public sealed class ListCompartmentsHandler(ICompartmentRepository compartments)
+public sealed class ListCompartmentsHandler
 {
-    public async Task<IReadOnlyList<CompartmentDetails>> HandleAsync(CancellationToken cancellationToken)
+    private readonly ICompartmentRepository _compartments;
+
+    public ListCompartmentsHandler(ICompartmentRepository compartments)
     {
-        var items = await compartments.ListAsync(cancellationToken);
+        _compartments = compartments;
+    }
+
+    public async Task<IReadOnlyList<CompartmentDetails>> HandleAsync(
+        CancellationToken cancellationToken)
+    {
+        var items = await _compartments.ListAsync(cancellationToken);
 
         return items
             .Select(x => new CompartmentDetails(

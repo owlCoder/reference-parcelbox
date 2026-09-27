@@ -21,7 +21,9 @@ var app = builder.Build();
 app.UseExceptionHandler();
 
 if (app.Environment.IsDevelopment())
+{
     app.MapOpenApi();
+}
 
 app.MapGet("/health", () => Results.Ok(new { status = "ok" }));
 app.MapParcelEndpoints();
@@ -31,7 +33,17 @@ app.MapPickupEndpoints();
 await using (var scope = app.Services.CreateAsyncScope())
 {
     var db = scope.ServiceProvider.GetRequiredService<ParcelBoxDbContext>();
-    await DatabaseInitializer.InitializeAsync(db);
+    var initializationResult = await DatabaseInitializer.InitializeAsync(db);
+
+    if (initializationResult.IsFailure)
+    {
+        app.Logger.LogCritical(
+            "Database initialization failed: {ErrorCode} - {ErrorMessage}",
+            initializationResult.Error.Code,
+            initializationResult.Error.Message);
+
+        return;
+    }
 }
 
 await app.RunAsync();

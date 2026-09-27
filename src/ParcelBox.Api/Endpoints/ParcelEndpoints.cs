@@ -1,4 +1,5 @@
 using ParcelBox.Api.Contracts;
+using ParcelBox.Api.Extensions;
 using ParcelBox.Application.Parcels;
 
 namespace ParcelBox.Api.Endpoints;
@@ -21,19 +22,19 @@ public static class ParcelEndpoints
         RegisterParcelHandler handler,
         CancellationToken cancellationToken)
     {
-        if (string.IsNullOrWhiteSpace(request.TrackingCode) || string.IsNullOrWhiteSpace(request.RecipientPhone))
-            return Results.BadRequest(new { error = "Tracking code and recipient phone are required." });
+        var command = new RegisterParcelCommand(
+            request.TrackingCode,
+            request.RecipientPhone,
+            request.Size);
 
-        if (!Enum.IsDefined(request.Size))
-            return Results.BadRequest(new { error = "Invalid parcel size." });
+        var result = await handler.HandleAsync(command, cancellationToken);
 
-        var result = await handler.HandleAsync(
-            new RegisterParcelCommand(request.TrackingCode, request.RecipientPhone, request.Size),
-            cancellationToken);
+        if (result.IsFailure)
+        {
+            return result.Error.ToProblemResult();
+        }
 
-        return result.IsSuccess
-            ? Results.Created($"/api/parcels/{result.Value!.Id}", result.Value)
-            : Results.BadRequest(new { error = result.Error });
+        return Results.Created($"/api/parcels/{result.Value.Id}", result.Value);
     }
 
     private static async Task<IResult> GetAsync(
@@ -42,9 +43,13 @@ public static class ParcelEndpoints
         CancellationToken cancellationToken)
     {
         var result = await handler.HandleAsync(id, cancellationToken);
-        return result.IsSuccess
-            ? Results.Ok(result.Value)
-            : Results.NotFound(new { error = result.Error });
+
+        if (result.IsFailure)
+        {
+            return result.Error.ToProblemResult();
+        }
+
+        return Results.Ok(result.Value);
     }
 
     private static async Task<IResult> StoreAsync(
@@ -53,8 +58,12 @@ public static class ParcelEndpoints
         CancellationToken cancellationToken)
     {
         var result = await handler.HandleAsync(id, cancellationToken);
-        return result.IsSuccess
-            ? Results.Ok(result.Value)
-            : Results.BadRequest(new { error = result.Error });
+
+        if (result.IsFailure)
+        {
+            return result.Error.ToProblemResult();
+        }
+
+        return Results.Ok(result.Value);
     }
 }

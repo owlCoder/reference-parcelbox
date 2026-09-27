@@ -1,4 +1,3 @@
-using ParcelBox.Domain.Common;
 using ParcelBox.Domain.Parcels;
 
 namespace ParcelBox.Domain.Tests;
@@ -9,26 +8,50 @@ public sealed class ParcelTests
     public void Registered_parcel_can_be_stored_and_picked_up()
     {
         var now = DateTimeOffset.Parse("2026-01-01T10:00:00+00:00");
-        var parcel = Parcel.Register("PKG-1", "+38160000000", ParcelSize.Medium, now);
+        var registerResult = Parcel.Register(
+            "PKG-1",
+            "+38160000000",
+            ParcelSize.Medium,
+            now);
 
-        parcel.Store("PB-01", "B1", now.AddMinutes(1));
-        parcel.MarkPickedUp(now.AddMinutes(2));
+        Assert.True(registerResult.IsSuccess);
 
+        var parcel = registerResult.Value;
+        var storeResult = parcel.Store("PB-01", "B1", now.AddMinutes(1));
+        var pickupResult = parcel.MarkPickedUp(now.AddMinutes(2));
+
+        Assert.True(storeResult.IsSuccess);
+        Assert.True(pickupResult.IsSuccess);
         Assert.Equal(ParcelStatus.PickedUp, parcel.Status);
     }
 
     [Fact]
     public void Registered_parcel_cannot_be_picked_up()
     {
-        var parcel = Parcel.Register("PKG-1", "+38160000000", ParcelSize.Small, DateTimeOffset.UtcNow);
+        var registerResult = Parcel.Register(
+            "PKG-1",
+            "+38160000000",
+            ParcelSize.Small,
+            DateTimeOffset.UtcNow);
 
-        Assert.Throws<DomainException>(() => parcel.MarkPickedUp(DateTimeOffset.UtcNow));
+        Assert.True(registerResult.IsSuccess);
+
+        var result = registerResult.Value.MarkPickedUp(DateTimeOffset.UtcNow);
+
+        Assert.True(result.IsFailure);
+        Assert.Equal(ParcelErrors.NotStoredForPickup, result.Error);
     }
 
     [Fact]
     public void Parcel_rejects_undefined_size()
     {
-        Assert.Throws<DomainException>(() =>
-            Parcel.Register("PKG-1", "+38160000000", (ParcelSize)999, DateTimeOffset.UtcNow));
+        var result = Parcel.Register(
+            "PKG-1",
+            "+38160000000",
+            (ParcelSize)999,
+            DateTimeOffset.UtcNow);
+
+        Assert.True(result.IsFailure);
+        Assert.Equal(ParcelErrors.InvalidSize, result.Error);
     }
 }
