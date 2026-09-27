@@ -5,7 +5,10 @@ namespace ParcelBox.Infrastructure.External;
 
 internal sealed class LockerControllerClient(HttpClient httpClient) : ILockerController
 {
-    public async Task<LockerOpenResult> OpenAsync(string lockerCode, string compartmentNumber, CancellationToken cancellationToken)
+    public async Task<LockerOpenResult> OpenAsync(
+        string lockerCode,
+        string compartmentNumber,
+        CancellationToken cancellationToken)
     {
         try
         {
@@ -22,6 +25,10 @@ internal sealed class LockerControllerClient(HttpClient httpClient) : ILockerCon
                 : LockerOpenResult.Unavailable;
         }
         catch (HttpRequestException)
+        {
+            return LockerOpenResult.Unavailable;
+        }
+        catch (TaskCanceledException) when (!cancellationToken.IsCancellationRequested)
         {
             return LockerOpenResult.Unavailable;
         }

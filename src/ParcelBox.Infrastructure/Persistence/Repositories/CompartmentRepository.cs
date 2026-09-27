@@ -1,15 +1,14 @@
 using Microsoft.EntityFrameworkCore;
 using ParcelBox.Application.Abstractions;
 using ParcelBox.Domain.Lockers;
-using ParcelBox.Domain.Parcels;
 
 namespace ParcelBox.Infrastructure.Persistence;
 
 internal sealed class CompartmentRepository(ParcelBoxDbContext db) : ICompartmentRepository
 {
-    public Task<Compartment?> FindAvailableAsync(ParcelSize parcelSize, CancellationToken cancellationToken) =>
+    public Task<Compartment?> FindAvailableAsync(CompartmentSize requiredSize, CancellationToken cancellationToken) =>
         db.Compartments
-            .Where(x => x.Status == CompartmentStatus.Available && (int)x.Size >= (int)parcelSize)
+            .Where(x => x.Status == CompartmentStatus.Available && (int)x.Size >= (int)requiredSize)
             .OrderBy(x => x.Size)
             .ThenBy(x => x.Number)
             .FirstOrDefaultAsync(cancellationToken);

@@ -1,5 +1,4 @@
 using ParcelBox.Domain.Common;
-using ParcelBox.Domain.Parcels;
 
 namespace ParcelBox.Domain.Lockers;
 
@@ -7,7 +6,7 @@ public sealed class Compartment
 {
     private Compartment() { }
 
-    public Compartment(Guid id, string lockerCode, string number, ParcelSize size)
+    private Compartment(Guid id, string lockerCode, string number, CompartmentSize size)
     {
         Id = id;
         LockerCode = lockerCode;
@@ -19,15 +18,32 @@ public sealed class Compartment
     public Guid Id { get; private set; }
     public string LockerCode { get; private set; } = string.Empty;
     public string Number { get; private set; } = string.Empty;
-    public ParcelSize Size { get; private set; }
+    public CompartmentSize Size { get; private set; }
     public CompartmentStatus Status { get; private set; }
     public Guid? ParcelId { get; private set; }
 
-    public bool CanFit(ParcelSize parcelSize) =>
-        Status == CompartmentStatus.Available && (int)Size >= (int)parcelSize;
+    public static Compartment Create(string lockerCode, string number, CompartmentSize size)
+    {
+        if (string.IsNullOrWhiteSpace(lockerCode))
+            throw new DomainException("Locker code is required.");
+
+        if (string.IsNullOrWhiteSpace(number))
+            throw new DomainException("Compartment number is required.");
+
+        if (!Enum.IsDefined(size))
+            throw new DomainException("Compartment size is invalid.");
+
+        return new Compartment(Guid.NewGuid(), lockerCode.Trim(), number.Trim(), size);
+    }
+
+    public bool CanFit(CompartmentSize requiredSize) =>
+        Status == CompartmentStatus.Available && (int)Size >= (int)requiredSize;
 
     public void Occupy(Guid parcelId)
     {
+        if (parcelId == Guid.Empty)
+            throw new DomainException("Parcel id is required.");
+
         if (Status != CompartmentStatus.Available)
             throw new DomainException("Compartment is not available.");
 

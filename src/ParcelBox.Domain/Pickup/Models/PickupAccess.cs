@@ -29,8 +29,14 @@ public sealed class PickupAccess
 
     public static PickupAccess Create(Guid parcelId, string codeHash, DateTimeOffset expiresAt)
     {
+        if (parcelId == Guid.Empty)
+            throw new DomainException("Parcel id is required.");
+
         if (string.IsNullOrWhiteSpace(codeHash))
             throw new DomainException("Pickup code hash is required.");
+
+        if (expiresAt == default)
+            throw new DomainException("Pickup expiration is required.");
 
         return new PickupAccess(Guid.NewGuid(), parcelId, codeHash, expiresAt);
     }

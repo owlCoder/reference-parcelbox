@@ -20,6 +20,7 @@ public static class DependencyInjection
         services.AddScoped<ICompartmentRepository, CompartmentRepository>();
         services.AddScoped<IPickupAccessRepository, PickupAccessRepository>();
         services.AddSingleton<IPickupCodeService, PickupCodeService>();
+        services.AddSingleton(TimeProvider.System);
 
         var lockerUrl = configuration["ExternalServices:LockerController"] ?? "http://localhost:5101";
         services.AddHttpClient<ILockerController, LockerControllerClient>(client => client.BaseAddress = new Uri(lockerUrl));

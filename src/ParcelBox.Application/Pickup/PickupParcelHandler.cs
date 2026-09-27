@@ -11,9 +11,13 @@ public sealed class PickupParcelHandler(
     IPickupAccessRepository pickupAccesses,
     ILockerController lockerController,
     IPickupCodeService pickupCodes,
-    IAppDbSession db)
+    IAppDbSession db,
+    TimeProvider timeProvider)
 {
-    public async Task<OperationResult> HandleAsync(string trackingCode, string pickupCode, CancellationToken cancellationToken)
+    public async Task<OperationResult> HandleAsync(
+        string trackingCode,
+        string pickupCode,
+        CancellationToken cancellationToken)
     {
         var parcel = await parcels.GetByTrackingCodeAsync(trackingCode, cancellationToken);
         if (parcel is null)
@@ -26,7 +30,7 @@ public sealed class PickupParcelHandler(
         if (access is null)
             return OperationResult.Failure("Pickup access not found.");
 
-        var now = DateTimeOffset.UtcNow;
+        var now = timeProvider.GetUtcNow();
         var validation = access.ValidateAttempt(pickupCodes.Hash(pickupCode), now);
         await db.SaveChangesAsync(cancellationToken);
 
@@ -37,7 +41,11 @@ public sealed class PickupParcelHandler(
         if (compartment is null)
             return OperationResult.Failure("Compartment not found.");
 
-        var openResult = await lockerController.OpenAsync(compartment.LockerCode, compartment.Number, cancellationToken);
+        var openResult = await lockerController.OpenAsync(
+            compartment.LockerCode,
+            compartment.Number,
+            cancellationToken);
+
         if (openResult != LockerOpenResult.Opened)
             return OperationResult.Failure($"Locker could not be opened: {openResult}.");
 

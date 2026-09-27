@@ -1,19 +1,28 @@
+using ParcelBox.Domain.Common;
 using ParcelBox.Domain.Lockers;
-using ParcelBox.Domain.Parcels;
 
 namespace ParcelBox.Domain.Tests;
 
 public sealed class CompartmentTests
 {
     [Theory]
-    [InlineData(ParcelSize.Small, ParcelSize.Small, true)]
-    [InlineData(ParcelSize.Medium, ParcelSize.Small, true)]
-    [InlineData(ParcelSize.Large, ParcelSize.Medium, true)]
-    [InlineData(ParcelSize.Small, ParcelSize.Medium, false)]
-    public void Compatibility_depends_on_compartment_size(ParcelSize compartmentSize, ParcelSize parcelSize, bool expected)
+    [InlineData(CompartmentSize.Small, CompartmentSize.Small, true)]
+    [InlineData(CompartmentSize.Medium, CompartmentSize.Small, true)]
+    [InlineData(CompartmentSize.Large, CompartmentSize.Medium, true)]
+    [InlineData(CompartmentSize.Small, CompartmentSize.Medium, false)]
+    public void Compatibility_depends_on_compartment_size(
+        CompartmentSize compartmentSize,
+        CompartmentSize requiredSize,
+        bool expected)
     {
-        var compartment = new Compartment(Guid.NewGuid(), "PB-01", "A1", compartmentSize);
+        var compartment = Compartment.Create("PB-01", "A1", compartmentSize);
 
-        Assert.Equal(expected, compartment.CanFit(parcelSize));
+        Assert.Equal(expected, compartment.CanFit(requiredSize));
+    }
+
+    [Fact]
+    public void Compartment_requires_a_valid_location()
+    {
+        Assert.Throws<DomainException>(() => Compartment.Create("", "A1", CompartmentSize.Small));
     }
 }

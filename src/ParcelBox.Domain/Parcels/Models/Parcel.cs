@@ -35,6 +35,9 @@ public sealed class Parcel
         if (string.IsNullOrWhiteSpace(recipientPhone))
             throw new DomainException("Recipient phone is required.");
 
+        if (!Enum.IsDefined(size))
+            throw new DomainException("Parcel size is invalid.");
+
         return new Parcel(Guid.NewGuid(), trackingCode.Trim(), recipientPhone.Trim(), size, now);
     }
 
@@ -42,6 +45,9 @@ public sealed class Parcel
     {
         if (Status != ParcelStatus.Registered)
             throw new DomainException("Only a registered parcel can be stored.");
+
+        if (string.IsNullOrWhiteSpace(lockerCode) || string.IsNullOrWhiteSpace(compartmentNumber))
+            throw new DomainException("Locker and compartment are required.");
 
         LockerCode = lockerCode;
         CompartmentNumber = compartmentNumber;

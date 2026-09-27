@@ -42,6 +42,8 @@ src/
 │   └── Pickup/
 ├── ParcelBox.Infrastructure/
 │   ├── Persistence/
+│   │   ├── Configurations/
+│   │   └── Repositories/
 │   ├── External/
 │   └── Security/
 └── ParcelBox.Api/
@@ -65,8 +67,10 @@ Api -> Infrastructure -> Application -> Domain
 ```
 
 - `Domain` sadrži domenske modele, enum-e, poslovna pravila i domenske greške.
+- Domenske oblasti ne koriste međusobno svoje modele; npr. `Parcels.ParcelSize` se u Application sloju mapira na `Lockers.CompartmentSize`.
 - `Application` sadrži use-case handlere, DTO modele i interfejse prema spoljnim zavisnostima.
-- `Infrastructure` implementira persistence i spoljne adaptere.
+- Vreme se dobija preko .NET `TimeProvider` apstrakcije, a ne direktnim pozivima `DateTimeOffset.UtcNow` u use-case-ovima.
+- `Infrastructure` implementira persistence i spoljne adaptere; EF konfiguracije i repository implementacije imaju zasebne fajlove.
 - `Api` mapira HTTP zahteve na application use-case-ove i predstavlja composition root.
 - jedan javni tip se drži u jednom fajlu; povezani tipovi se grupišu folderima, ne istim source fajlom.
 
@@ -106,7 +110,7 @@ docker compose up --build
 dotnet test
 ```
 
-Domain testovi proveravaju poslovna pravila bez infrastrukture. Application testovi proveravaju orkestraciju use-case-a preko test doubles-a za portove.
+Domain testovi proveravaju poslovna pravila bez infrastrukture. Application testovi proveravaju orkestraciju use-case-a preko test doubles-a za portove i determinističkog `TimeProvider`-a.
 
 ## Pravila za referentni primer
 

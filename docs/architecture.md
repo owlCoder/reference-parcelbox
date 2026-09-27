@@ -31,17 +31,19 @@ Domain/
 └── Common/
 ```
 
-Domain ne zna za ASP.NET Core, EF Core, HTTP klijente, konfiguraciju ili simulatore.
+Domain ne zna za ASP.NET Core, EF Core, HTTP klijente, konfiguraciju ili simulatore. Domenske oblasti ne koriste međusobno svoje tipove: `Parcel` koristi `ParcelSize`, dok `Compartment` koristi `CompartmentSize`. Prevođenje između tih modela pripada Application sloju.
 
 ### Application
 
 Sadrži use-case handlere i portove prema persistence-u i spoljnim sistemima. Handler koordinira tok, ali poslovne odluke poput dozvoljenih statusnih tranzicija ostaju u domenskim objektima.
 
+Vreme je spoljašnja zavisnost use-case-a, pa se koristi ugrađeni .NET `TimeProvider`. Time su testovi deterministički bez uvođenja sopstvenog clock framework-a.
+
 Interfejs i prateći enum/model nisu spojeni u isti source fajl. Jedan javni tip ima jedan fajl kako bi struktura bila jasna studentima.
 
 ### Infrastructure
 
-Implementira repository interfejse preko EF Core-a, `ILockerController` preko `HttpClient` adaptera i `IMessageGateway` preko drugog `HttpClient` adaptera. Svaki repository ima svoj fajl.
+Implementira repository interfejse preko EF Core-a, `ILockerController` preko `HttpClient` adaptera i `IMessageGateway` preko drugog `HttpClient` adaptera. Svaki repository ima svoj fajl, a EF mapiranja su izdvojena u `Persistence/Configurations` i automatski se registruju iz assembly-ja.
 
 ### Api
 
@@ -58,7 +60,15 @@ flowchart LR
     Pickup --> MessagePort[IMessageGateway]
 ```
 
-`Parcels`, `Lockers` i `Pickup` dele isti proces i bazu u ovom malom primeru, ali ne dele poslovna pravila. Repository interfejsi su definisani u Application sloju i fokusirani su na potrebe konkretnog use-case-a.
+`Parcels`, `Lockers` i `Pickup` dele isti proces i bazu u ovom malom primeru, ali ne dele poslovna pravila niti direktno koriste međusobne domenske modele. Application sloj je mesto na kome se te oblasti koordiniraju. Repository interfejsi su fokusirani na potrebe konkretnog use-case-a.
+
+## SOLID u ovom primeru
+
+- **SRP**: domen, orkestracija, persistence, HTTP adapteri i API transport imaju odvojene odgovornosti.
+- **OCP**: novi EF mapping se dodaje kroz novu `IEntityTypeConfiguration<T>` klasu bez širenja `DbContext.OnModelCreating` metode.
+- **LSP**: application kod zavisi od malih ugovora (`ILockerController`, `IMessageGateway`, repository interfejsi), pa test doubles mogu da zamene infrastrukturu bez promene ponašanja use-case-a.
+- **ISP**: nema velikog servisnog interfejsa; portovi su mali i namenski.
+- **DIP**: Application ne zavisi od EF Core-a ni `HttpClient` implementacija. Vreme koristi `TimeProvider`, a spoljne sisteme i persistence vidi kroz apstrakcije.
 
 ## Namerna pojednostavljenja
 

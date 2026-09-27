@@ -1,6 +1,5 @@
 using Microsoft.EntityFrameworkCore;
 using ParcelBox.Domain.Lockers;
-using ParcelBox.Domain.Parcels;
 
 namespace ParcelBox.Infrastructure.Persistence;
 
@@ -15,11 +14,11 @@ public static class DatabaseInitializer
 
         var compartments = new[]
         {
-            new Compartment(Guid.NewGuid(), "PB-01", "A1", ParcelSize.Small),
-            new Compartment(Guid.NewGuid(), "PB-01", "A2", ParcelSize.Small),
-            new Compartment(Guid.NewGuid(), "PB-01", "B1", ParcelSize.Medium),
-            new Compartment(Guid.NewGuid(), "PB-01", "B2", ParcelSize.Medium),
-            new Compartment(Guid.NewGuid(), "PB-01", "C1", ParcelSize.Large)
+            Compartment.Create("PB-01", "A1", CompartmentSize.Small),
+            Compartment.Create("PB-01", "A2", CompartmentSize.Small),
+            Compartment.Create("PB-01", "B1", CompartmentSize.Medium),
+            Compartment.Create("PB-01", "B2", CompartmentSize.Medium),
+            Compartment.Create("PB-01", "C1", CompartmentSize.Large)
         };
 
         await db.Compartments.AddRangeAsync(compartments, cancellationToken);

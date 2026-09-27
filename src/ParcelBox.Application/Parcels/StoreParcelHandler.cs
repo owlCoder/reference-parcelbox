@@ -1,5 +1,6 @@
 using ParcelBox.Application.Abstractions;
 using ParcelBox.Application.Common;
+using ParcelBox.Application.Lockers;
 using ParcelBox.Domain.Parcels;
 using ParcelBox.Domain.Pickup;
 
@@ -12,7 +13,8 @@ public sealed class StoreParcelHandler(
     ILockerController lockerController,
     IMessageGateway messageGateway,
     IPickupCodeService pickupCodes,
-    IAppDbSession db)
+    IAppDbSession db,
+    TimeProvider timeProvider)
 {
     public async Task<OperationResult<StoreParcelResult>> HandleAsync(
         Guid parcelId,
@@ -25,7 +27,7 @@ public sealed class StoreParcelHandler(
         if (parcel.Status != ParcelStatus.Registered)
             return OperationResult<StoreParcelResult>.Failure("Only a registered parcel can be stored.");
 
-        var compartment = await compartments.FindAvailableAsync(parcel.Size, cancellationToken);
+        var compartment = await compartments.FindAvailableAsync(parcel.Size.ToCompartmentSize(), cancellationToken);
         if (compartment is null)
             return OperationResult<StoreParcelResult>.Failure("No compatible compartment is available.");
 
@@ -37,7 +39,7 @@ public sealed class StoreParcelHandler(
         if (openResult != LockerOpenResult.Opened)
             return OperationResult<StoreParcelResult>.Failure($"Locker could not be opened: {openResult}.");
 
-        var now = DateTimeOffset.UtcNow;
+        var now = timeProvider.GetUtcNow();
         parcel.Store(compartment.LockerCode, compartment.Number, now);
         compartment.Occupy(parcel.Id);
 

@@ -28,5 +28,9 @@ internal sealed class MessageGatewayClient(HttpClient httpClient) : IMessageGate
         {
             return false;
         }
+        catch (TaskCanceledException) when (!cancellationToken.IsCancellationRequested)
+        {
+            return false;
+        }
     }
 }

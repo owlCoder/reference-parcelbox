@@ -4,7 +4,10 @@ using ParcelBox.Domain.Parcels;
 
 namespace ParcelBox.Application.Parcels;
 
-public sealed class RegisterParcelHandler(IParcelRepository parcels, IAppDbSession db)
+public sealed class RegisterParcelHandler(
+    IParcelRepository parcels,
+    IAppDbSession db,
+    TimeProvider timeProvider)
 {
     public async Task<OperationResult<ParcelDetails>> HandleAsync(
         RegisterParcelCommand command,
@@ -17,7 +20,7 @@ public sealed class RegisterParcelHandler(IParcelRepository parcels, IAppDbSessi
             command.TrackingCode,
             command.RecipientPhone,
             command.Size,
-            DateTimeOffset.UtcNow);
+            timeProvider.GetUtcNow());
 
         await parcels.AddAsync(parcel, cancellationToken);
         await db.SaveChangesAsync(cancellationToken);

@@ -8,11 +8,13 @@ namespace ParcelBox.Application.Tests;
 
 public sealed class StoreParcelHandlerTests
 {
+    private static readonly DateTimeOffset Now = DateTimeOffset.Parse("2026-01-01T10:00:00+00:00");
+
     [Fact]
     public async Task Message_failure_does_not_rollback_successful_storage()
     {
-        var parcel = Parcel.Register("PKG-1", "+38160000000", ParcelSize.Medium, DateTimeOffset.UtcNow);
-        var compartment = new Compartment(Guid.NewGuid(), "PB-01", "B1", ParcelSize.Medium);
+        var parcel = Parcel.Register("PKG-1", "+38160000000", ParcelSize.Medium, Now);
+        var compartment = Compartment.Create("PB-01", "B1", CompartmentSize.Medium);
         var parcels = new ParcelRepositoryFake(parcel);
         var compartments = new CompartmentRepositoryFake(compartment);
         var pickups = new PickupRepositoryFake();
@@ -23,7 +25,8 @@ public sealed class StoreParcelHandlerTests
             new LockerControllerFake(LockerOpenResult.Opened),
             new MessageGatewayFake(false),
             new PickupCodeServiceFake(),
-            new DbSessionFake());
+            new DbSessionFake(),
+            new FixedTimeProvider(Now));
 
         var result = await handler.HandleAsync(parcel.Id, CancellationToken.None);
 
@@ -36,8 +39,8 @@ public sealed class StoreParcelHandlerTests
     [Fact]
     public async Task Jammed_locker_does_not_change_domain_state()
     {
-        var parcel = Parcel.Register("PKG-1", "+38160000000", ParcelSize.Small, DateTimeOffset.UtcNow);
-        var compartment = new Compartment(Guid.NewGuid(), "PB-01", "A1", ParcelSize.Small);
+        var parcel = Parcel.Register("PKG-1", "+38160000000", ParcelSize.Small, Now);
+        var compartment = Compartment.Create("PB-01", "A1", CompartmentSize.Small);
         var handler = new StoreParcelHandler(
             new ParcelRepositoryFake(parcel),
             new CompartmentRepositoryFake(compartment),
@@ -45,7 +48,8 @@ public sealed class StoreParcelHandlerTests
             new LockerControllerFake(LockerOpenResult.Jammed),
             new MessageGatewayFake(true),
             new PickupCodeServiceFake(),
-            new DbSessionFake());
+            new DbSessionFake(),
+            new FixedTimeProvider(Now));
 
         var result = await handler.HandleAsync(parcel.Id, CancellationToken.None);
 
@@ -64,15 +68,23 @@ public sealed class StoreParcelHandlerTests
 
     private sealed class CompartmentRepositoryFake(Compartment compartment) : ICompartmentRepository
     {
-        public Task<Compartment?> FindAvailableAsync(ParcelSize parcelSize, CancellationToken cancellationToken) => Task.FromResult<Compartment?>(compartment.CanFit(parcelSize) ? compartment : null);
-        public Task<Compartment?> GetByParcelIdAsync(Guid parcelId, CancellationToken cancellationToken) => Task.FromResult<Compartment?>(compartment.ParcelId == parcelId ? compartment : null);
-        public Task<IReadOnlyList<Compartment>> ListAsync(CancellationToken cancellationToken) => Task.FromResult<IReadOnlyList<Compartment>>([compartment]);
+        public Task<Compartment?> FindAvailableAsync(CompartmentSize requiredSize, CancellationToken cancellationToken) =>
+            Task.FromResult<Compartment?>(compartment.CanFit(requiredSize) ? compartment : null);
+
+        public Task<Compartment?> GetByParcelIdAsync(Guid parcelId, CancellationToken cancellationToken) =>
+            Task.FromResult<Compartment?>(compartment.ParcelId == parcelId ? compartment : null);
+
+        public Task<IReadOnlyList<Compartment>> ListAsync(CancellationToken cancellationToken) =>
+            Task.FromResult<IReadOnlyList<Compartment>>([compartment]);
     }
 
     private sealed class PickupRepositoryFake : IPickupAccessRepository
     {
         public PickupAccess? Item { get; private set; }
-        public Task<PickupAccess?> GetByParcelIdAsync(Guid parcelId, CancellationToken cancellationToken) => Task.FromResult(Item);
+
+        public Task<PickupAccess?> GetByParcelIdAsync(Guid parcelId, CancellationToken cancellationToken) =>
+            Task.FromResult(Item);
+
         public Task AddAsync(PickupAccess pickupAccess, CancellationToken cancellationToken)
         {
             Item = pickupAccess;
@@ -82,12 +94,19 @@ public sealed class StoreParcelHandlerTests
 
     private sealed class LockerControllerFake(LockerOpenResult result) : ILockerController
     {
-        public Task<LockerOpenResult> OpenAsync(string lockerCode, string compartmentNumber, CancellationToken cancellationToken) => Task.FromResult(result);
+        public Task<LockerOpenResult> OpenAsync(
+            string lockerCode,
+            string compartmentNumber,
+            CancellationToken cancellationToken) => Task.FromResult(result);
     }
 
     private sealed class MessageGatewayFake(bool result) : IMessageGateway
     {
-        public Task<bool> SendPickupCodeAsync(string destination, string trackingCode, string pickupCode, CancellationToken cancellationToken) => Task.FromResult(result);
+        public Task<bool> SendPickupCodeAsync(
+            string destination,
+            string trackingCode,
+            string pickupCode,
+            CancellationToken cancellationToken) => Task.FromResult(result);
     }
 
     private sealed class PickupCodeServiceFake : IPickupCodeService
@@ -99,5 +118,10 @@ public sealed class StoreParcelHandlerTests
     private sealed class DbSessionFake : IAppDbSession
     {
         public Task<int> SaveChangesAsync(CancellationToken cancellationToken) => Task.FromResult(1);
+    }
+
+    private sealed class FixedTimeProvider(DateTimeOffset now) : TimeProvider
+    {
+        public override DateTimeOffset GetUtcNow() => now;
     }
 }
