@@ -1,0 +1,49 @@
+@api = http://localhost:5100
+@locker = http://localhost:5101
+@messages = http://localhost:5102
+
+### Health
+GET {{api}}/health
+
+### Register parcel
+POST {{api}}/api/parcels
+Content-Type: application/json
+
+{
+  "trackingCode": "PKG-001",
+  "recipientPhone": "+38160111222",
+  "size": 2
+}
+
+### List compartments
+GET {{api}}/api/compartments
+
+### Store parcel - replace id
+POST {{api}}/api/parcels/00000000-0000-0000-0000-000000000000/store
+
+### Inspect sent messages and copy pickup code
+GET {{messages}}/api/messages
+
+### Pickup - replace tracking code and code
+POST {{api}}/api/pickup/PKG-001
+Content-Type: application/json
+
+{
+  "code": "123456"
+}
+
+### Make locker jammed
+PUT {{locker}}/api/simulator/mode
+Content-Type: application/json
+
+{
+  "mode": "Jammed"
+}
+
+### Make message gateway unavailable
+PUT {{messages}}/api/simulator/mode
+Content-Type: application/json
+
+{
+  "mode": "Unavailable"
+}
