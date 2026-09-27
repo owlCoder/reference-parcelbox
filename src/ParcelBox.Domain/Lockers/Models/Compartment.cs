@@ -56,7 +56,18 @@ public sealed class Compartment
 
     public bool CanFit(SizeCategory requiredSize)
     {
-        return Status == CompartmentStatus.Available && Size >= requiredSize;
+        if (Status != CompartmentStatus.Available || !Enum.IsDefined(requiredSize))
+        {
+            return false;
+        }
+
+        return Size switch
+        {
+            SizeCategory.Small => requiredSize == SizeCategory.Small,
+            SizeCategory.Medium => requiredSize is SizeCategory.Small or SizeCategory.Medium,
+            SizeCategory.Large => true,
+            _ => false
+        };
     }
 
     public Result<CompartmentError> Occupy(Guid parcelId)

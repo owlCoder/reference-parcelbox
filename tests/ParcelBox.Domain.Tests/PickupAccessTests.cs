@@ -9,7 +9,7 @@ public sealed class PickupAccessTests
     {
         var createResult = PickupAccess.Create(
             Guid.NewGuid(),
-            "correct",
+            "hash",
             DateTimeOffset.UtcNow.AddHours(1));
 
         Assert.True(createResult.IsSuccess);
@@ -18,13 +18,13 @@ public sealed class PickupAccessTests
 
         Assert.Equal(
             PickupCodeValidation.Invalid,
-            access.ValidateAttempt("wrong-1", DateTimeOffset.UtcNow));
+            access.ValidateAttempt(false, DateTimeOffset.UtcNow));
         Assert.Equal(
             PickupCodeValidation.Invalid,
-            access.ValidateAttempt("wrong-2", DateTimeOffset.UtcNow));
+            access.ValidateAttempt(false, DateTimeOffset.UtcNow));
         Assert.Equal(
             PickupCodeValidation.Locked,
-            access.ValidateAttempt("wrong-3", DateTimeOffset.UtcNow));
+            access.ValidateAttempt(false, DateTimeOffset.UtcNow));
         Assert.Equal(PickupStatus.Locked, access.Status);
     }
 
@@ -33,13 +33,13 @@ public sealed class PickupAccessTests
     {
         var createResult = PickupAccess.Create(
             Guid.NewGuid(),
-            "correct",
+            "hash",
             DateTimeOffset.UtcNow.AddHours(1));
 
         Assert.True(createResult.IsSuccess);
 
         var access = createResult.Value;
-        var validation = access.ValidateAttempt("correct", DateTimeOffset.UtcNow);
+        var validation = access.ValidateAttempt(true, DateTimeOffset.UtcNow);
 
         Assert.Equal(PickupCodeValidation.Valid, validation);
         Assert.Equal(PickupStatus.Active, access.Status);
@@ -51,7 +51,7 @@ public sealed class PickupAccessTests
         var now = DateTimeOffset.UtcNow;
         var createResult = PickupAccess.Create(
             Guid.NewGuid(),
-            "correct",
+            "hash",
             now.AddMinutes(-1));
 
         Assert.True(createResult.IsSuccess);

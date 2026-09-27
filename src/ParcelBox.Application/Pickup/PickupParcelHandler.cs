@@ -71,7 +71,8 @@ public sealed class PickupParcelHandler
         }
 
         var now = _timeProvider.GetUtcNow();
-        var validation = access.ValidateAttempt(_pickupCodes.Hash(pickupCode), now);
+        var codeMatches = _pickupCodes.Verify(pickupCode, access.CodeHash);
+        var validation = access.ValidateAttempt(codeMatches, now);
         await _db.SaveChangesAsync(cancellationToken);
 
         if (validation != PickupCodeValidation.Valid)

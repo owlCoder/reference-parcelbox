@@ -104,15 +104,4 @@ public sealed class Parcel
 
         return Result<ParcelError>.Success();
     }
-
-    public Result<ParcelError> Cancel()
-    {
-        if (Status != ParcelStatus.Registered)
-        {
-            return Result<ParcelError>.Failure(ParcelError.NotRegisteredForCancellation);
-        }
-
-        Status = ParcelStatus.Cancelled;
-        return Result<ParcelError>.Success();
-    }
 }

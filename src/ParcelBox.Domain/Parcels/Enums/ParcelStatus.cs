@@ -4,6 +4,5 @@ public enum ParcelStatus
 {
     Registered = 1,
     Stored = 2,
-    PickedUp = 3,
-    Cancelled = 4
+    PickedUp = 3
 }

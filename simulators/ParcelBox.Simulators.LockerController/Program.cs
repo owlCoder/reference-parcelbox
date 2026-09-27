@@ -1,31 +1,42 @@
+using System.Text.Json.Serialization;
 using ParcelBox.Simulators.LockerController;
 
 var builder = WebApplication.CreateBuilder(args);
+
+builder.Services.ConfigureHttpJsonOptions(options =>
+{
+    options.SerializerOptions.Converters.Add(
+        new JsonStringEnumConverter(allowIntegerValues: false));
+});
 builder.Services.AddSingleton<SimulatorState>();
 
 var app = builder.Build();
 
 app.MapGet("/health", () => Results.Ok(new { status = "ok" }));
 
-app.MapGet("/api/simulator/mode", (SimulatorState state) => Results.Ok(new { mode = state.Mode }));
+app.MapGet(
+    "/api/simulator/mode",
+    (SimulatorState state) => Results.Ok(new SimulatorModeResponse(state.Mode)));
 
 app.MapPut("/api/simulator/mode", (SetModeRequest request, SimulatorState state) =>
 {
-    if (!Enum.TryParse<LockerMode>(request.Mode, true, out var mode))
-        return Results.BadRequest(new { error = "Allowed modes: Normal, Jammed, Unavailable." });
-
-    state.Mode = mode;
-    return Results.Ok(new { mode = state.Mode });
+    state.Mode = request.Mode;
+    return Results.Ok(new SimulatorModeResponse(state.Mode));
 });
 
 app.MapPost("/api/compartments/{lockerCode}/{number}/open", (
     string lockerCode,
     string number,
-    SimulatorState state) => state.Mode switch
+    SimulatorState state) =>
 {
-    LockerMode.Normal => Results.Ok(new { lockerCode, number, status = "Opened" }),
-    LockerMode.Jammed => Results.Conflict(new { lockerCode, number, status = "Jammed" }),
-    _ => Results.StatusCode(StatusCodes.Status503ServiceUnavailable)
+    return state.Mode switch
+    {
+        LockerMode.Normal => Results.Ok(
+            new OpenCompartmentResponse(lockerCode, number, LockerOpenStatus.Opened)),
+        LockerMode.Jammed => Results.Conflict(
+            new OpenCompartmentResponse(lockerCode, number, LockerOpenStatus.Jammed)),
+        _ => Results.StatusCode(StatusCodes.Status503ServiceUnavailable)
+    };
 });
 
 app.Run();

@@ -51,7 +51,7 @@ public sealed class PickupAccess
         return Result<PickupAccess, PickupAccessError>.Success(access);
     }
 
-    public PickupCodeValidation ValidateAttempt(string submittedHash, DateTimeOffset now)
+    public PickupCodeValidation ValidateAttempt(bool codeMatches, DateTimeOffset now)
     {
         if (Status == PickupStatus.Used)
         {
@@ -68,7 +68,7 @@ public sealed class PickupAccess
             return PickupCodeValidation.Expired;
         }
 
-        if (CodeHash == submittedHash)
+        if (codeMatches)
         {
             return PickupCodeValidation.Valid;
         }

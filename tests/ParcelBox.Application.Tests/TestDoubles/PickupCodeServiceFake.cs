@@ -13,4 +13,9 @@ internal sealed class PickupCodeServiceFake : IPickupCodeService
     {
         return $"hash:{code}";
     }
+
+    public bool Verify(string code, string hash)
+    {
+        return Hash(code) == hash;
+    }
 }

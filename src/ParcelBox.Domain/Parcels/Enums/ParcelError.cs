@@ -8,6 +8,5 @@ public enum ParcelError
     InvalidSize = 3,
     NotRegisteredForStorage = 4,
     StorageLocationRequired = 5,
-    NotStoredForPickup = 6,
-    NotRegisteredForCancellation = 7
+    NotStoredForPickup = 6
 }

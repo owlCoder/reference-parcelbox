@@ -1,3 +1,3 @@
 namespace ParcelBox.Simulators.LockerController;
 
-public sealed record SetModeRequest(string Mode);
+public sealed record SetModeRequest(LockerMode Mode);
