@@ -4,8 +4,11 @@ $repoRoot = Split-Path -Parent $PSScriptRoot
 Push-Location $repoRoot
 
 $processes = @()
+$previousEnvironment = $env:ASPNETCORE_ENVIRONMENT
 
 try {
+    $env:ASPNETCORE_ENVIRONMENT = 'Development'
+
     dotnet build ParcelBox.sln
 
     if ($LASTEXITCODE -ne 0) {
@@ -51,6 +54,7 @@ try {
     Write-Host 'ParcelBox API:             http://localhost:5100'
     Write-Host 'Locker Controller:         http://localhost:5101'
     Write-Host 'Message Gateway:           http://localhost:5102'
+    Write-Host 'Environment:               Development'
     Write-Host 'Press Ctrl+C to stop all processes.'
 
     $processes | Wait-Process
@@ -62,5 +66,6 @@ finally {
         }
     }
 
+    $env:ASPNETCORE_ENVIRONMENT = $previousEnvironment
     Pop-Location
 }
