@@ -1,28 +1,23 @@
 # Arhitektura
 
-ParcelBox je namerno mali modularni monolit. Clean Architecture ovde služi da granice budu vidljive, a ne da broj projekata i apstrakcija bude što veći.
+ParcelBox je mali modularni sistem organizovan po Clean Architecture principima. Cilj je da smer zavisnosti i odgovornosti budu vidljivi bez dodatnih framework slojeva.
 
 ## Pravac zavisnosti
 
 ```text
-Api -> Application -> Domain
-Api -> Infrastructure -> Application -> Domain
+Web -> HTTP -> Api -> Application -> Domain
+                   -> Infrastructure -> Application -> Domain
 ```
 
-`Domain` ne zavisi od ASP.NET Core-a, EF Core-a, `HttpClient`-a niti simulatora. `Application` ne zna kako su portovi implementirani. `Infrastructure` implementira portove, dok je `Api` composition root i HTTP granica.
+`Domain` nema zavisnosti prema ASP.NET Core-u, EF Core-u, `HttpClient`-u ili simulatorima. `Application` definiše portove. `Infrastructure` ih implementira. `Api` sastavlja backend, a `Web` je zaseban HTTP klijent.
 
 ## Domain
-
-Domain sadrži poslovno stanje i pravila:
 
 ```text
 Domain/
 ├── Common/
 │   ├── Enums/
-│   │   └── SizeCategory.cs
 │   └── Results/
-│       ├── Result.cs
-│       └── ResultOfT.cs
 ├── Parcels/
 │   ├── Models/
 │   └── Enums/
@@ -34,37 +29,20 @@ Domain/
     └── Enums/
 ```
 
-`Parcel`, `Compartment` i `PickupAccess` čuvaju svoje invarijante. Očekivani neuspeh nije exception i nije string kod. Svaka oblast ima typed error enum:
-
-- `ParcelError`;
-- `CompartmentError`;
-- `PickupAccessError`.
-
-Generički Result je samo mehanizam prenosa ishoda:
-
-```text
-Result<TError>
-Result<TValue, TError>
-```
-
-Na primer:
+`Parcel`, `Compartment` i `PickupAccess` čuvaju svoje invarijante. Očekivani poslovni neuspeh vraća typed `Result`, a poznate greške su enum vrednosti (`ParcelError`, `CompartmentError`, `PickupAccessError`).
 
 ```csharp
 Result<Parcel, ParcelError> registerResult = Parcel.Register(...);
 Result<CompartmentError> occupyResult = compartment.Occupy(...);
 ```
 
-Nema `Error.Code`, `Error.Message`, `ErrorType` ni statičkih `*Errors` kataloga u domenu. Time je neuspeh compile-time vidljiv i ne zavisi od tekstualnog identifikatora.
+`SizeCategory` je zajednički domenski koncept za veličinu paketa i kapacitet pretinca. Kompatibilnost veličina je eksplicitno poslovno pravilo.
 
-`SizeCategory` je mali shared domain koncept (`Small`, `Medium`, `Large`). Koriste ga i veličina paketa i kapacitet pretinca. Kompatibilnost pretinca je eksplicitno domensko pravilo; ne zavisi od slučajnog numeričkog redosleda enum vrednosti.
-
-`PickupAccess` vodi pickup pristup: hash koda, rok važenja, broj neuspešnih pokušaja i status pristupa. Entitet ne poznaje algoritam za hash niti kriptografsko poređenje. Dobija samo rezultat provere koda (`codeMatches`) i na osnovu njega sprovodi poslovno pravilo o pokušajima i zaključavanju. Rok mora biti u budućnosti u trenutku kreiranja pristupa.
-
-Isporuka poruke je integraciona odgovornost i nije stanje `PickupAccess` entiteta.
+`PickupAccess` vodi stanje pristupa, rok važenja i broj neuspešnih pokušaja. Kriptografski detalji ostaju van domena.
 
 ## Application
 
-Application orkestrira use-case-ove i definiše portove:
+Application orkestrira use-case-ove i definiše male portove:
 
 ```text
 Abstractions/
@@ -73,52 +51,75 @@ Abstractions/
 └── Security/
 ```
 
-Use-case greške su takođe enum-i, ali pripadaju Application sloju jer opisuju ceo use-case, a ne jednu domensku klasu:
+Application greške (`ParcelOperationError`, `PickupOperationError`) predstavljaju ishod kompletnog use-case-a. Handler mapira precizan domenski ili integracioni ishod u odgovarajuću application grešku.
 
-- `ParcelOperationError`;
-- `PickupOperationError`.
-
-Handler mapira precizan domenski ishod u use-case ishod. Na primer `ParcelError.NotRegisteredForStorage` postaje `ParcelOperationError.NotRegisteredForStorage`, dok kvar spoljnog kontrolera postaje `LockerJammed` ili `LockerUnavailable`.
-
-`ILockerController` i `IMessageGateway` vraćaju typed `Result` sa `LockerControllerError` odnosno `MessageGatewayError`. Infrastructure adapter zato pretvara očekivani HTTP kvar u eksplicitan rezultat umesto da transportni exception koristi kao poslovni tok.
-
-`IMessageGateway` je generički izlazni port. Ne poznaje paket, tracking code niti pickup kod; prima samo `OutboundMessage`. Tek konkretan use-case odlučuje koji tekst treba poslati. Time adapter za slanje poruka ne sadrži poslovnu logiku ParcelBox-a.
-
-`IPickupCodeService` je security port. Application traži generisanje, hash i proveru koda, dok konkretna kriptografska implementacija ostaje u Infrastructure sloju.
-
-Vreme se dobija preko ugrađenog .NET `TimeProvider` tipa. Testovi zato mogu da koriste determinističko vreme bez sopstvenog clock framework-a.
+- `ILockerController` predstavlja spoljašnji kontroler pretinca.
+- `IMessageGateway` predstavlja generički izlazni kanal za poruke.
+- `IPickupCodeService` predstavlja generisanje i proveru pickup koda.
+- `TimeProvider` omogućava determinističke testove vremena.
 
 ## Infrastructure
 
-Infrastructure sadrži konkretne implementacije:
+Infrastructure sadrži:
 
-- EF Core repository-je;
-- EF konfiguracije;
+- EF Core repository implementacije;
+- konfiguracije entiteta;
 - SQLite `DbContext`;
 - `HttpClient` adaptere prema simulatorima;
-- generisanje, hash i fixed-time proveru pickup koda.
+- implementaciju pickup code security servisa.
 
-`DatabaseInitializer` je normalan DI servis, a ne globalni static helper. EF konfiguracije su odvojene po entitetu, a svaki repository ima svoj fajl.
-
-Transportne greške koje očekujemo (`HttpRequestException`, timeout spoljnog servisa) adapter prevodi u typed rezultat. Ne očekujemo da ostatak aplikacije poznaje `HttpClient` izuzetke.
+Transportni kvar koji je očekivan deo integracionog toka prevodi se u typed rezultat pre povratka u Application sloj.
 
 ## Api
 
-API ne donosi poslovne odluke. Endpoint:
+API sloj:
 
-1. primi transportni model;
-2. pozove handler;
-3. vrati uspešan HTTP odgovor ili prevede application error enum u Problem Details.
+1. prima HTTP contract;
+2. poziva application handler;
+3. prevodi rezultat u HTTP response ili Problem Details.
 
-Tek na API granici postoje tekstualne poruke za klijenta. `ErrorHttpExtensions` mapira enum na HTTP status i `detail`; ti stringovi nisu domenski identifikatori niti poslovno stanje.
+Tek na HTTP granici nastaju tekstualne poruke namenjene klijentu. Enum-i se serijalizuju kao nazivi, ne kao numeričke vrednosti.
 
-Enum-i se na HTTP granici serijalizuju kao nazivi (`"Medium"`, `"Stored"`) umesto kao nečitljivi numerički kodovi. Numeričke enum vrednosti nisu deo javnog JSON ugovora.
+## Web
 
-Statičke klase u ovom sloju koriste se samo za idiomatske ASP.NET extension metode. To nije isto što i držanje poslovnih podataka u statičkim klasama.
+`ParcelBox.Web` nema project reference ka backend slojevima. Koristi tri HTTP klijenta:
+
+- `ParcelBoxApiClient`;
+- `LockerControllerClient`;
+- `MessageGatewayClient`.
+
+UI nije jedna velika Razor komponenta. `Home` orkestrira stanje, dok su vizuelne celine izdvojene u `Components/Dashboard`:
+
+```text
+DashboardHeader
+FlowOverview
+ParcelRegistrationCard
+PickupCard
+LockerWall
+ActivityPanel
+SimulatorControls
+```
+
+Form state i activity state su mali Web view-model-i. Time prezentaciona odgovornost ostaje u Web projektu, a `Home.razor` ostaje pregledan.
+
+## Simulatori
+
+Simulatori su zasebni procesi i ne sadrže ParcelBox poslovna pravila.
+
+Locker Controller podržava:
+
+- `Normal`;
+- `Jammed`;
+- `Unavailable`.
+
+Message Gateway podržava:
+
+- `Normal`;
+- `Unavailable`.
+
+`Unavailable` utiče i na `/health`, pa se failure mode vidi i kroz UI status servisa.
 
 ## Result pattern
-
-Tok je tipiziran:
 
 ```text
 Domain
@@ -133,39 +134,23 @@ Api
   HTTP Problem Details
 ```
 
-Pozivalac mora eksplicitno da obradi neuspeh. Ne postoje `try/catch` blokovi za statusne tranzicije, validaciju koda ili nedostupan simulator.
+Exception se ne koristi kao kontrolni tok za očekivanu validaciju, statusnu tranziciju ili nedostupan spoljni servis.
 
 ## SOLID
 
-- **SRP**: entitet čuva svoje pravilo; handler orkestrira use-case; repository radi persistence; adapter komunicira sa spoljnim sistemom; API prevodi transport.
-- **OCP**: EF mapping je izdvojen u `IEntityTypeConfiguration<T>` klase, a novi adapter može da implementira postojeći mali port bez promene Application sloja.
-- **LSP**: test double može da zameni repository, locker controller ili message gateway kroz isti ugovor i isti typed rezultat.
-- **ISP**: persistence, external i security portovi su mali i namenski; nema jednog velikog servisnog interfejsa.
-- **DIP**: Application zavisi od interfejsa, dok konkretni EF Core, `HttpClient` i kriptografski detalji ostaju u Infrastructure sloju.
-
-## Granice odgovornosti
-
-```mermaid
-flowchart LR
-    Parcel[Parcel] --> Store[StoreParcelHandler]
-    Compartment[Compartment] --> Store
-    Store --> LockerPort[ILockerController]
-    Store --> PickupAccess[PickupAccess]
-    Store --> MessagePort[IMessageGateway]
-    Pickup[PickupParcelHandler] --> LockerPort
-    Pickup --> SecurityPort[IPickupCodeService]
-```
-
-Važan detalj: neuspešno slanje poruke ne vraća skladištenje paketa unazad. Rezultat skladištenja samo izveštava `PickupMessageStatus.Failed`. Notification stanje zato nije ugurano u `PickupAccess` domen.
+- **SRP** — domain model čuva pravila; handler orkestrira; repository radi persistence; adapter komunicira sa spoljnim sistemom; UI komponenta ima jednu prezentacionu odgovornost.
+- **OCP** — konkretan adapter može da se zameni implementacijom istog malog porta.
+- **LSP** — test doubles zamenjuju repository-je i spoljne portove kroz isti ugovor.
+- **ISP** — persistence, external i security ugovori su mali i namenski.
+- **DIP** — Application zavisi od portova, a Infrastructure od njihovih konkretnih implementacija.
 
 ## Namerna pojednostavljenja
 
-- SQLite umesto posebnog DB servera;
-- jedan `DbContext` za mali referentni sistem;
+- SQLite;
+- jedan `DbContext`;
 - sinhrona HTTP integracija sa simulatorima;
-- nema message bus-a, MediatR-a, generic repository-ja ni posebnog Unit of Work wrappera;
-- nema outbox-a ni automatskog retry procesa za poruke;
-- nema konkurentne rezervacije pretinca; demo je fokusiran na arhitektonske granice, ne na produkcionu koordinaciju više paralelnih kurira;
-- Result implementacija je mala i lokalna, bez dodatne biblioteke.
+- nema MediatR-a, message bus-a, generic repository-ja ni outbox-a;
+- nema automatskog retry procesa za neuspele poruke;
+- nema produkcione konkurentne rezervacije pretinaca.
 
-Primer ostaje mali, ali granice, tipizirani ishodi i odgovornosti treba da budu očigledni studentu koji prvi put otvori repo.
+Ova ograničenja su namerna: repo treba da ostane mali, čitljiv i pogodan za vežbe.

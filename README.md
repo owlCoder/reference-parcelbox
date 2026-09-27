@@ -1,67 +1,45 @@
 # ParcelBox Reference
 
-`ParcelBox` je mali referentni sistem za računarske vežbe iz predmeta Elementi razvoja softvera.
-Domen je namerno nepovezan sa glavnim studentskim projektom. Cilj je da repo pokaže uredan .NET 10 kod, jasne Clean Architecture granice, SOLID, typed Result pattern, testove i integraciju sa simulatorima bez nepotrebnog framework sloja.
+`ParcelBox` je mali referentni .NET 10 sistem za računarske vežbe iz predmeta Elementi razvoja softvera.
+Domen je namerno odvojen od glavnog studentskog projekta. Repo služi kao primer uredne strukture, Clean Architecture granica, SOLID principa, Result pattern-a, testova i integracije sa simulatorima.
 
-## Šta sistem radi
+## Demo scenario
 
-Kurir registruje paket, sistem pronalazi odgovarajući pretinac i otvara ga preko Locker Controller simulatora. Nakon smeštanja generiše se pickup kod i pokušava slanje preko Message Gateway simulatora. Primalac kasnije unosi kod i sistem, ako su sva poslovna pravila zadovoljena, otvara isti pretinac i završava preuzimanje.
+Kurir registruje paket. Sistem bira odgovarajući pretinac i otvara ga preko Locker Controller simulatora. Nakon smeštanja generiše se pickup kod i pokušava slanje preko Message Gateway simulatora. Primalac kasnije unosi kod, sistem proverava pravila i otvara isti pretinac.
 
-```mermaid
-flowchart LR
-    Web[ParcelBox Web] -->|HTTP| API[ParcelBox API]
-    API --> Application
-    Application --> Parcels
-    Application --> Lockers
-    Application --> Pickup
-    Application --> Locker[Locker Controller Simulator]
-    Application --> Message[Message Gateway Simulator]
+Dva simulatora mogu namerno da se prebace u failure mode kako bi se na času pokazalo ponašanje sistema kada spoljna integracija nije dostupna.
+
+## Arhitektura
+
+```text
+Web -> HTTP -> Api -> Application -> Domain
+                   -> Infrastructure -> Application -> Domain
 ```
 
-## Struktura
+- `Domain` sadrži modele, enum-e, poslovna pravila i typed `Result`.
+- `Application` orkestrira use-case-ove i definiše portove.
+- `Infrastructure` implementira persistence, HTTP adaptere i security servis.
+- `Api` je HTTP granica i composition root backend-a.
+- `Web` je zaseban Blazor Web App bez project reference-a ka Domain/Application/Infrastructure slojevima.
+- `simulators` sadrži dva nezavisna spoljna procesa.
+
+Detalji: [`docs/architecture.md`](docs/architecture.md).
+
+## Struktura repozitorijuma
 
 ```text
 src/
 ├── ParcelBox.Domain/
-│   ├── Common/
-│   │   ├── Enums/
-│   │   │   └── SizeCategory.cs
-│   │   └── Results/
-│   │       ├── Result.cs
-│   │       └── ResultOfT.cs
-│   ├── Parcels/
-│   │   ├── Models/
-│   │   └── Enums/
-│   ├── Lockers/
-│   │   ├── Models/
-│   │   └── Enums/
-│   └── Pickup/
-│       ├── Models/
-│       └── Enums/
 ├── ParcelBox.Application/
-│   ├── Abstractions/
-│   │   ├── Persistence/
-│   │   ├── External/
-│   │   └── Security/
-│   ├── Parcels/
-│   │   └── Enums/
-│   ├── Lockers/
-│   └── Pickup/
-│       └── Enums/
 ├── ParcelBox.Infrastructure/
-│   ├── Persistence/
-│   │   ├── Configurations/
-│   │   └── Repositories/
-│   ├── External/
-│   └── Security/
 ├── ParcelBox.Api/
-│   ├── Contracts/
-│   ├── Endpoints/
-│   └── Extensions/
 └── ParcelBox.Web/
     ├── Clients/
     ├── Components/
+    │   ├── Dashboard/
+    │   └── Pages/
     ├── Contracts/
+    ├── ViewModels/
     └── wwwroot/
 
 simulators/
@@ -71,59 +49,18 @@ simulators/
 tests/
 ├── ParcelBox.Domain.Tests/
 └── ParcelBox.Application.Tests/
-    └── TestDoubles/
+
+docs/
+├── adr/
+├── architecture.md
+└── demo-ui.md
 ```
-
-Zavisnosti idu ka unutra:
-
-```text
-Api -> Application -> Domain
-Api -> Infrastructure -> Application -> Domain
-Web -> HTTP -> Api
-```
-
-- `Domain` sadrži modele, domenske enum-e, poslovna pravila i generički typed `Result`.
-- Domenske greške su enum vrednosti (`ParcelError`, `CompartmentError`, `PickupAccessError`), a ne statički katalozi stringova.
-- `Application` orkestrira use-case-ove, mapira domenske ishode u application error enum-e i definiše male portove prema persistence-u, simulatorima i security servisima.
-- `Infrastructure` implementira portove preko EF Core-a, `HttpClient`-a i standardnih kriptografskih API-ja.
-- `Api` je transportni sloj: tek tu se typed error prevodi u HTTP status i tekst Problem Details odgovora.
-- `Web` je zaseban Blazor Web App i komunicira sa API-jem i nastavničkim simulatorima isključivo preko HTTP-a; nema project reference na Domain, Application ili Infrastructure.
-- `SizeCategory` je zajednički domenski koncept koji koriste i paket i kapacitet pretinca; nema duplih `ParcelSize` / `CompartmentSize` enum-a ni mapping helper-a.
-- `PickupAccess` odlučuje o statusu pristupa i broju pokušaja, dok Infrastructure security servis generiše, hash-uje i proverava pickup kod.
-
-Detaljnije obrazloženje je u [`docs/architecture.md`](docs/architecture.md).
-UI koncept i način demonstracije su u [`docs/ui-proposal.md`](docs/ui-proposal.md).
-
-## Result pattern
-
-Domen ne koristi exception kao očekivani poslovni tok:
-
-```csharp
-Result<Parcel, ParcelError> registerResult = Parcel.Register(...);
-Result<ParcelError> storeResult = parcel.Store(...);
-```
-
-Application ima svoj error ugovor, npr. `ParcelOperationError` i `PickupOperationError`. Time Domain ne zna za HTTP, spoljne servise ili presentation poruke.
-
-## Demo UI
-
-Blazor UI je namenjen demonstraciji toka na računarskim vežbama. Na jednom ekranu se vide:
-
-- registracija i trenutno stanje paketa;
-- vizuelni prikaz pretinaca;
-- pickup tok;
-- status API-ja i oba simulatora;
-- activity timeline;
-- odvojeni **Demo controls** za `Normal`, `Jammed` i `Unavailable` scenarije;
-- inbox Message Gateway simulatora sa prečicom za korišćenje generisanog pickup koda.
-
-Demo controls su namerno vizuelno odvojeni od poslovnog UI-ja kako bi bilo jasno da pripadaju test harness-u, a ne ParcelBox domenu.
 
 ## Pokretanje
 
 Potreban je .NET SDK 10. Docker je opcion.
 
-### Sve odjednom lokalno
+### Lokalno
 
 Windows PowerShell:
 
@@ -137,22 +74,18 @@ Linux/macOS:
 ./scripts/run-all.sh
 ```
 
-Skripta prvo build-uje solution, zatim pokreće Web, API i oba simulatora i proverava da su endpoint-i dostupni. Windows skripta dodatno prekida pokretanje sa jasnom porukom ako je neki od potrebnih portova već zauzet. `Ctrl+C` zaustavlja procese.
+Skripte build-uju solution, proveravaju portove i zatim pokreću sva četiri procesa.
 
-Podrazumevani portovi:
+| Servis | URL |
+| --- | --- |
+| ParcelBox Web | `http://localhost:5200` |
+| ParcelBox API | `http://localhost:5100` |
+| Locker Controller Simulator | `http://localhost:5101` |
+| Message Gateway Simulator | `http://localhost:5102` |
 
-- ParcelBox Web: `http://localhost:5200`
-- ParcelBox API: `http://localhost:5100`
-- Locker Controller Simulator: `http://localhost:5101`
-- Message Gateway Simulator: `http://localhost:5102`
-
-Web je namerno na portu `5200`, a ne na često korišćenom portu `5000`, kako bi se izbegli konflikti sa drugim lokalnim servisima.
-
-Otvori `http://localhost:5200` za kompletan demo.
+Otvori `http://localhost:5200`.
 
 ### Docker Compose
-
-Isti sistem se može pokrenuti jednom komandom:
 
 ```bash
 docker compose up --build
@@ -164,7 +97,28 @@ Za gašenje:
 docker compose down
 ```
 
-Primeri sirovih HTTP zahteva nalaze se u `src/ParcelBox.Api/ParcelBox.Api.http`.
+## Šta pokazati na vežbama
+
+1. `Domain` — entiteti, enum-i, invarijante i Result pattern.
+2. `Application` — handler kao orkestracija use-case-a i dependency inversion preko portova.
+3. `Infrastructure` — EF Core repository i `HttpClient` adapteri.
+4. `Api` — HTTP contract i mapiranje typed grešaka u Problem Details.
+5. `Web` — klijent koji komunicira isključivo preko HTTP-a.
+6. `Simulator controls` — `Normal`, `Jammed` i `Unavailable` scenariji.
+7. Testovi — domain pravila i application tokovi bez stvarnih spoljnih servisa.
+
+UI je opisan u [`docs/demo-ui.md`](docs/demo-ui.md).
+
+## Result pattern
+
+Očekivani poslovni neuspeh nije exception i nije string identifikator:
+
+```csharp
+Result<Parcel, ParcelError> registerResult = Parcel.Register(...);
+Result<ParcelError> storeResult = parcel.Store(...);
+```
+
+Domain i Application koriste enum-e za poznate ishode. Tek API sloj prevodi application grešku u HTTP status i tekstualni Problem Details odgovor.
 
 ## Provera koda
 
@@ -175,8 +129,10 @@ dotnet build --configuration Release --no-restore
 dotnet test --configuration Release --no-build
 ```
 
-CI izvršava isti redosled. Formatiranje prati `.editorconfig` i standardni Visual Studio / `dotnet format` stil.
+CI dodatno pokreće smoke testove za simulatore i Blazor static assets.
 
-## Pravila za referentni primer
+## Granice primera
 
-Primer je namerno mali. Nema MediatR-a, message bus-a, generic repository-ja, outbox-a ili dodatnih slojeva bez konkretne potrebe. Statičke klase ostaju samo tamo gde su prirodan .NET obrazac, npr. endpoint/DI extension metode i HTTP mapping na spoljašnjoj granici. Poslovno stanje i poslovne greške nisu sakriveni u statičkim string katalozima.
+Primer je namerno mali. Nema MediatR-a, message bus-a, generic repository-ja, outbox-a, posebnog Unit of Work framework-a ni dodatnih slojeva bez konkretne potrebe.
+
+Cilj nije produkcioni paketomat, već čitljiv referentni kod u kome su odgovornosti i smer zavisnosti jasni.

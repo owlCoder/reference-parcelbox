@@ -1,0 +1,37 @@
+<article class="surface timeline-surface">
+    <div class="section-heading-row compact-heading">
+        <div>
+            <p class="section-kicker">ACTIVITY</p>
+            <h2>Recent actions</h2>
+        </div>
+        <button class="button quiet small" type="button" @onclick="ClearRequested">Clear</button>
+    </div>
+
+    @if (Items.Count == 0)
+    {
+        <div class="empty-state small-empty">
+            <strong>No activity yet</strong>
+            <p>Run a use-case and the outcome will appear here.</p>
+        </div>
+    }
+    else
+    {
+        <ol class="activity-list">
+            @foreach (var item in Items)
+            {
+                <li>
+                    <span class="activity-dot"></span>
+                    <span>@item.OccurredAt.ToString("HH:mm:ss") · @item.Message</span>
+                </li>
+            }
+        </ol>
+    }
+</article>
+
+@code {
+    [Parameter, EditorRequired]
+    public IReadOnlyList<ActivityEntry> Items { get; set; } = [];
+
+    [Parameter]
+    public EventCallback ClearRequested { get; set; }
+}

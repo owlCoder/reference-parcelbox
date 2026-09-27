@@ -1,0 +1,51 @@
+<article class="surface action-card">
+    <div class="card-title-row">
+        <div class="step-badge">03</div>
+        <div>
+            <p class="section-kicker">PICKUP</p>
+            <h2>Open &amp; pickup</h2>
+            <p>The parcel is completed only after the locker controller confirms the open command.</p>
+        </div>
+    </div>
+
+    <div class="form-grid">
+        <label>
+            <span>Tracking code</span>
+            <input @bind="Form.TrackingCode" placeholder="PKG-001" autocomplete="off" />
+        </label>
+
+        <label>
+            <span>Pickup code</span>
+            <input @bind="Form.Code" placeholder="6 digit code" inputmode="numeric" autocomplete="one-time-code" />
+        </label>
+    </div>
+
+    <button class="button primary full-button" type="button" @onclick="PickupRequested" disabled="@Busy">
+        Open locker &amp; complete pickup
+    </button>
+
+    @if (CurrentParcel?.Status == ParcelStatus.PickedUp)
+    {
+        <div class="notice success-notice">
+            <span class="notice-icon">✓</span>
+            <div>
+                <strong>Pickup completed</strong>
+                <p>@CurrentParcel.TrackingCode reached the final state.</p>
+            </div>
+        </div>
+    }
+</article>
+
+@code {
+    [Parameter, EditorRequired]
+    public PickupForm Form { get; set; } = default!;
+
+    [Parameter]
+    public ParcelDetails? CurrentParcel { get; set; }
+
+    [Parameter]
+    public bool Busy { get; set; }
+
+    [Parameter]
+    public EventCallback PickupRequested { get; set; }
+}

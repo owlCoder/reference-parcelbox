@@ -1,6 +1,4 @@
-using System.Text.Json;
-using System.Text.Json.Serialization;
-using ParcelBox.Web.Clients;
+using ParcelBox.Web;
 using ParcelBox.Web.Components;
 
 var currentDirectory = Directory.GetCurrentDirectory();
@@ -18,30 +16,11 @@ var builder = WebApplication.CreateBuilder(new WebApplicationOptions
     ContentRootPath = contentRoot
 });
 
-builder.Services.AddRazorComponents()
+builder.Services
+    .AddRazorComponents()
     .AddInteractiveServerComponents();
 
-var jsonOptions = new JsonSerializerOptions(JsonSerializerDefaults.Web);
-jsonOptions.Converters.Add(new JsonStringEnumConverter(allowIntegerValues: false));
-builder.Services.AddSingleton(jsonOptions);
-
-builder.Services.AddHttpClient<ParcelBoxApiClient>(client =>
-{
-    client.BaseAddress = new Uri(
-        builder.Configuration["Services:ApiBaseUrl"] ?? "http://localhost:5100");
-});
-
-builder.Services.AddHttpClient<LockerSimulatorClient>(client =>
-{
-    client.BaseAddress = new Uri(
-        builder.Configuration["Services:LockerSimulatorBaseUrl"] ?? "http://localhost:5101");
-});
-
-builder.Services.AddHttpClient<MessageGatewayClient>(client =>
-{
-    client.BaseAddress = new Uri(
-        builder.Configuration["Services:MessageGatewayBaseUrl"] ?? "http://localhost:5102");
-});
+builder.Services.AddWebClients(builder.Configuration);
 
 var app = builder.Build();
 

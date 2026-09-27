@@ -1,0 +1,57 @@
+<article class="surface locker-surface">
+    <div class="section-heading-row">
+        <div>
+            <p class="section-kicker">02 · LOCKERS</p>
+            <h2>Locker wall</h2>
+            <p>ParcelBox owns compartment state. The simulator only represents the external controller.</p>
+        </div>
+        <span class="count-chip">@Compartments.Count compartments</span>
+    </div>
+
+    <div class="locker-cabinet">
+        @if (Compartments.Count == 0)
+        {
+            <div class="empty-state">
+                <strong>No compartment data</strong>
+                <p>Check the API connection and refresh the dashboard.</p>
+            </div>
+        }
+        else
+        {
+            @foreach (var compartment in Compartments)
+            {
+                <div class="locker-cell @GetCompartmentClass(compartment)">
+                    <div class="locker-door-top">
+                        <span class="locker-number">@compartment.Number</span>
+                        <span class="size-chip">@compartment.Size</span>
+                    </div>
+
+                    <div class="locker-door-center">
+                        <span class="locker-state-dot"></span>
+                        <strong>@compartment.Status</strong>
+                    </div>
+
+                    <div class="locker-door-bottom">
+                        <span>@compartment.LockerCode</span>
+                        <span>@(compartment.ParcelId.HasValue ? "Parcel assigned" : "Ready")</span>
+                    </div>
+                </div>
+            }
+        }
+    </div>
+</article>
+
+@code {
+    [Parameter, EditorRequired]
+    public IReadOnlyList<CompartmentDetails> Compartments { get; set; } = [];
+
+    [Parameter]
+    public ParcelDetails? CurrentParcel { get; set; }
+
+    private string GetCompartmentClass(CompartmentDetails compartment)
+    {
+        var statusClass = compartment.Status == CompartmentStatus.Available ? "available" : "occupied";
+        var currentClass = CurrentParcel?.CompartmentNumber == compartment.Number ? " current" : string.Empty;
+        return statusClass + currentClass;
+    }
+}

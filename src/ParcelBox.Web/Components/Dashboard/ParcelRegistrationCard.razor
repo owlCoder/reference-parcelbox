@@ -1,0 +1,103 @@
+<article class="surface action-card">
+    <div class="card-title-row">
+        <div class="step-badge">01</div>
+        <div>
+            <p class="section-kicker">PARCELS</p>
+            <h2>Register parcel</h2>
+            <p>Create the parcel that starts the demo flow.</p>
+        </div>
+    </div>
+
+    <div class="form-grid">
+        <label>
+            <span>Tracking code</span>
+            <input @bind="Form.TrackingCode" placeholder="PKG-001" autocomplete="off" />
+        </label>
+
+        <label>
+            <span>Recipient phone</span>
+            <input @bind="Form.RecipientPhone" placeholder="+38160111222" autocomplete="off" />
+        </label>
+
+        <label class="full-width">
+            <span>Parcel size</span>
+            <select @bind="Form.Size">
+                @foreach (var size in Enum.GetValues<SizeCategory>())
+                {
+                    <option value="@size">@size</option>
+                }
+            </select>
+        </label>
+    </div>
+
+    <button class="button primary full-button" type="button" @onclick="RegisterRequested" disabled="@Busy">
+        Register parcel
+    </button>
+
+    @if (CurrentParcel is not null)
+    {
+        <div class="parcel-summary">
+            <div class="summary-heading">
+                <div>
+                    <span class="summary-label">CURRENT PARCEL</span>
+                    <strong>@CurrentParcel.TrackingCode</strong>
+                </div>
+                <span class="status-badge @GetStatusClass(CurrentParcel.Status)">@CurrentParcel.Status</span>
+            </div>
+
+            <div class="summary-grid">
+                <div>
+                    <span>Size</span>
+                    <strong>@CurrentParcel.Size</strong>
+                </div>
+                <div>
+                    <span>Recipient</span>
+                    <strong>@CurrentParcel.RecipientPhone</strong>
+                </div>
+                <div>
+                    <span>Locker</span>
+                    <strong>@(CurrentParcel.LockerCode ?? "—")</strong>
+                </div>
+                <div>
+                    <span>Compartment</span>
+                    <strong>@(CurrentParcel.CompartmentNumber ?? "—")</strong>
+                </div>
+            </div>
+
+            @if (CurrentParcel.Status == ParcelStatus.Registered)
+            {
+                <button class="button accent full-button" type="button" @onclick="StoreRequested" disabled="@Busy">
+                    Store in available compartment
+                </button>
+            }
+        </div>
+    }
+</article>
+
+@code {
+    [Parameter, EditorRequired]
+    public RegisterParcelForm Form { get; set; } = default!;
+
+    [Parameter]
+    public ParcelDetails? CurrentParcel { get; set; }
+
+    [Parameter]
+    public bool Busy { get; set; }
+
+    [Parameter]
+    public EventCallback RegisterRequested { get; set; }
+
+    [Parameter]
+    public EventCallback StoreRequested { get; set; }
+
+    private static string GetStatusClass(ParcelStatus status)
+    {
+        return status switch
+        {
+            ParcelStatus.Registered => "neutral",
+            ParcelStatus.Stored => "stored",
+            ParcelStatus.PickedUp => "completed",
+            _ => "neutral"
+        };
+    }
+}

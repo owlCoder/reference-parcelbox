@@ -3,12 +3,12 @@ using ParcelBox.Web.Contracts;
 
 namespace ParcelBox.Web.Clients;
 
-public sealed class LockerSimulatorClient
+public sealed class LockerControllerClient
 {
     private readonly HttpClient _httpClient;
     private readonly JsonSerializerOptions _jsonOptions;
 
-    public LockerSimulatorClient(HttpClient httpClient, JsonSerializerOptions jsonOptions)
+    public LockerControllerClient(HttpClient httpClient, JsonSerializerOptions jsonOptions)
     {
         _httpClient = httpClient;
         _jsonOptions = jsonOptions;
@@ -56,9 +56,7 @@ public sealed class LockerSimulatorClient
         }
     }
 
-    public async Task<bool> SetModeAsync(
-        LockerMode mode,
-        CancellationToken cancellationToken = default)
+    public async Task<bool> SetModeAsync(LockerMode mode, CancellationToken cancellationToken = default)
     {
         try
         {

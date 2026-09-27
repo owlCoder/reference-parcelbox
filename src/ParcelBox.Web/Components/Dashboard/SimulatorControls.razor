@@ -1,0 +1,174 @@
+<section class="simulator-zone">
+    <div class="simulator-zone-header">
+        <div>
+            <p class="section-kicker">TEACHING / TEST HARNESS</p>
+            <h2>External system controls</h2>
+            <p>Change simulator behaviour to demonstrate successful and failing integrations.</p>
+        </div>
+        <span class="boundary-chip">outside business domain</span>
+    </div>
+
+    <div class="simulator-grid">
+        <article class="simulator-card @GetLockerCardClass(CurrentLockerMode)">
+            <div class="simulator-title">
+                <div>
+                    <h3>Locker Controller</h3>
+                    <p>Physical compartment controller simulator</p>
+                </div>
+            </div>
+
+            <div class="current-mode">
+                <span>Current mode</span>
+                <strong>@(CurrentLockerMode?.ToString() ?? "Offline")</strong>
+            </div>
+
+            <div class="segmented-control">
+                @foreach (var mode in Enum.GetValues<LockerMode>())
+                {
+                    <button type="button"
+                            class="@GetModeClass(CurrentLockerMode == mode, mode.ToString())"
+                            @onclick="() => LockerModeChanged.InvokeAsync(mode)"
+                            disabled="@Busy">
+                        @mode
+                    </button>
+                }
+            </div>
+        </article>
+
+        <article class="simulator-card @GetMessageCardClass(CurrentMessageMode)">
+            <div class="simulator-title">
+                <div>
+                    <h3>Message Gateway</h3>
+                    <p>External delivery provider simulator</p>
+                </div>
+            </div>
+
+            <div class="current-mode">
+                <span>Current mode</span>
+                <strong>@(CurrentMessageMode?.ToString() ?? "Offline")</strong>
+            </div>
+
+            <div class="segmented-control">
+                @foreach (var mode in Enum.GetValues<MessageGatewayMode>())
+                {
+                    <button type="button"
+                            class="@GetModeClass(CurrentMessageMode == mode, mode.ToString())"
+                            @onclick="() => MessageModeChanged.InvokeAsync(mode)"
+                            disabled="@Busy">
+                        @mode
+                    </button>
+                }
+            </div>
+        </article>
+
+        <article class="simulator-card inbox-card">
+            <div class="section-heading-row compact-heading">
+                <div>
+                    <h3>Gateway inbox</h3>
+                    <p>Messages are exposed here only for the classroom demo.</p>
+                </div>
+                <button class="button quiet small" type="button" @onclick="ClearMessagesRequested" disabled="@Busy">Clear</button>
+            </div>
+
+            @if (Messages.Count == 0)
+            {
+                <div class="inbox-empty">No delivered messages.</div>
+            }
+            else
+            {
+                <div class="message-list">
+                    @foreach (var message in Messages.OrderByDescending(x => x.SentAt))
+                    {
+                        var pickupCode = ExtractPickupCode(message.Text);
+
+                        <div class="message-card">
+                            <div class="message-meta">
+                                <strong>@message.Destination</strong>
+                                <span>@message.SentAt.ToLocalTime().ToString("HH:mm:ss")</span>
+                            </div>
+                            <p>@message.Text</p>
+
+                            @if (pickupCode is not null)
+                            {
+                                <button class="code-button"
+                                        type="button"
+                                        @onclick="() => PickupCodeSelected.InvokeAsync(pickupCode)"
+                                        disabled="@Busy">
+                                    <span>@pickupCode</span>
+                                    Use code
+                                </button>
+                            }
+                        </div>
+                    }
+                </div>
+            }
+        </article>
+    </div>
+</section>
+
+@code {
+    [Parameter]
+    public LockerMode? CurrentLockerMode { get; set; }
+
+    [Parameter]
+    public MessageGatewayMode? CurrentMessageMode { get; set; }
+
+    [Parameter, EditorRequired]
+    public IReadOnlyList<SentMessage> Messages { get; set; } = [];
+
+    [Parameter]
+    public bool Busy { get; set; }
+
+    [Parameter]
+    public EventCallback<LockerMode> LockerModeChanged { get; set; }
+
+    [Parameter]
+    public EventCallback<MessageGatewayMode> MessageModeChanged { get; set; }
+
+    [Parameter]
+    public EventCallback ClearMessagesRequested { get; set; }
+
+    [Parameter]
+    public EventCallback<string> PickupCodeSelected { get; set; }
+
+    private static string GetModeClass(bool active, string mode)
+    {
+        var modeClass = $"mode-{mode.ToLowerInvariant()}";
+        return active ? $"segment active {modeClass}" : $"segment {modeClass}";
+    }
+
+    private static string GetLockerCardClass(LockerMode? mode)
+    {
+        return mode switch
+        {
+            LockerMode.Normal => "mode-normal",
+            LockerMode.Jammed => "mode-jammed",
+            LockerMode.Unavailable => "mode-unavailable",
+            _ => "mode-offline"
+        };
+    }
+
+    private static string GetMessageCardClass(MessageGatewayMode? mode)
+    {
+        return mode switch
+        {
+            MessageGatewayMode.Normal => "mode-normal",
+            MessageGatewayMode.Unavailable => "mode-unavailable",
+            _ => "mode-offline"
+        };
+    }
+
+    private static string? ExtractPickupCode(string text)
+    {
+        const string marker = "Pickup code: ";
+        var index = text.LastIndexOf(marker, StringComparison.OrdinalIgnoreCase);
+
+        if (index < 0)
+        {
+            return null;
+        }
+
+        var pickupCode = text[(index + marker.Length)..].Trim();
+        return pickupCode.Length == 6 && pickupCode.All(char.IsDigit) ? pickupCode : null;
+    }
+}

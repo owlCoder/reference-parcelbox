@@ -1,23 +1,37 @@
 # Doprinos projektu ParcelBox
 
-Ovaj repo služi kao mali referentni primer, pa promene treba da ostanu fokusirane i čitljive.
+Ovaj repo je referentni primer za vežbe. Promene treba da ostanu male, čitljive i u skladu sa postojećim granicama sistema.
 
-## Tok rada
+## Pre slanja promene
 
-1. Ažurirajte lokalni `main`.
-2. Napravite granu `feature/<kratak-opis>` ili `fix/<kratak-opis>`.
-3. Radite u manjim, smislenim commit-ovima.
-4. Pokrenite `dotnet build` i `dotnet test`.
-5. Otvorite Pull Request prema `main`.
-6. Odgovorite na review komentare i ne merge-ujte promenu sa neuspešnim CI proverama.
+Pokrenite:
 
-## Arhitektonska pravila
+```bash
+dotnet restore
+dotnet format --verify-no-changes --no-restore
+dotnet build --configuration Release --no-restore
+dotnet test --configuration Release --no-build
+```
 
-- poslovna pravila pripadaju `Domain` sloju;
+Za promene koje utiču na integracije ili Web UI pokrenite i kompletan demo preko `scripts/run-all.ps1` ili `scripts/run-all.sh`.
+
+## Pravila strukture
+
+- jedna javna klasa ili enum po fajlu;
+- naziv fajla prati naziv glavnog tipa;
+- poslovni modeli i poslovna pravila pripadaju `Domain` sloju;
 - use-case orkestracija pripada `Application` sloju;
-- EF Core, HTTP klijenti i implementacije portova pripadaju `Infrastructure` sloju;
-- `Api` je composition root i ne sadrži poslovnu logiku;
-- simulator nije mesto za poslovna pravila glavnog sistema;
-- nova apstrakcija se uvodi kada postoji stvarna granica ili razlog za zamenu implementacije, ne unapred.
+- EF Core, HTTP adapteri i security implementacije pripadaju `Infrastructure` sloju;
+- `Api` je transportna granica i composition root backend-a;
+- `Web` komunicira sa backend-om preko HTTP-a i nema reference ka unutrašnjim backend projektima;
+- simulator ne sadrži poslovna pravila ParcelBox sistema;
+- nova apstrakcija se uvodi samo kada predstavlja stvarnu granicu ili zamenjivu implementaciju;
+- očekivani poslovni neuspeh vraća typed Result umesto exception-based kontrolnog toka.
 
-Za odluku koja menja strukturu ili granice sistema dodajte kratak ADR u `docs/adr/`.
+## Organizacija Web projekta
+
+Velike Razor stranice treba razložiti na manje prezentacione komponente. Stranica orkestrira stanje, dok ponovljive ili jasno izdvojene vizuelne celine pripadaju `Components/` folderu.
+
+## Arhitektonske odluke
+
+Za promenu koja menja smer zavisnosti, projektne granice ili osnovni integration pattern dodajte ili ažurirajte ADR u `docs/adr/`.

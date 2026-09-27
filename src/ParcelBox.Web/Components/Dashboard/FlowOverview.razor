@@ -1,0 +1,31 @@
+<section class="hero-card">
+    <div>
+        <p class="section-kicker">END-TO-END FLOW</p>
+        <h2>One parcel. Three use-cases. Two external simulators.</h2>
+        <p>
+            Follow the state transition from registration to storage and pickup, then switch the external systems into failure modes.
+        </p>
+    </div>
+
+    <div class="flow-strip">
+        <div class="flow-node active">
+            <span>01</span>
+            <strong>Register</strong>
+        </div>
+        <div class="flow-line"></div>
+        <div class="flow-node @(Status is ParcelStatus.Stored or ParcelStatus.PickedUp ? "active" : string.Empty)">
+            <span>02</span>
+            <strong>Store</strong>
+        </div>
+        <div class="flow-line"></div>
+        <div class="flow-node @(Status == ParcelStatus.PickedUp ? "active" : string.Empty)">
+            <span>03</span>
+            <strong>Pickup</strong>
+        </div>
+    </div>
+</section>
+
+@code {
+    [Parameter]
+    public ParcelStatus? Status { get; set; }
+}
