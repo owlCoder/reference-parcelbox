@@ -5,255 +5,387 @@
 
 <PageTitle>ParcelBox Demo</PageTitle>
 
-<header class="topbar">
-    <div>
-        <p class="eyebrow">ERS REFERENCE DEMO</p>
-        <h1>ParcelBox</h1>
-        <p class="subtitle">A small end-to-end example of Clean Architecture, typed results and simulator integration.</p>
-    </div>
+<div class="page-shell">
+    <header class="app-header">
+        <div class="brand-block">
+            <div class="brand-mark">PB</div>
+            <div>
+                <p class="eyebrow">ERS REFERENCE DEMO</p>
+                <h1>ParcelBox</h1>
+                <p class="subtitle">Clean Architecture through one small, visible end-to-end flow.</p>
+            </div>
+        </div>
 
-    <div class="service-strip">
-        <div class="service-status">
-            <span class="status-dot @(_apiOnline ? "online" : "offline")"></span>
-            <span>API</span>
-        </div>
-        <div class="service-status">
-            <span class="status-dot @(_lockerOnline ? "online" : "offline")"></span>
-            <span>Locker</span>
-        </div>
-        <div class="service-status">
-            <span class="status-dot @(_messageOnline ? "online" : "offline")"></span>
-            <span>Message</span>
-        </div>
-        <button class="button secondary compact" type="button" @onclick="RefreshAllAsync" disabled="@_busy">Refresh</button>
-    </div>
-</header>
-
-<main>
-    <section class="workflow-grid">
-        <article class="panel">
-            <div class="panel-heading">
-                <span class="step">01</span>
-                <div>
-                    <h2>Register parcel</h2>
-                    <p>Create the parcel that will move through the demo.</p>
+        <div class="header-actions">
+            <div class="service-strip">
+                <div class="service-status @GetServiceClass(_apiOnline)">
+                    <span class="status-dot"></span>
+                    <span>API</span>
+                </div>
+                <div class="service-status @GetServiceClass(_lockerOnline)">
+                    <span class="status-dot"></span>
+                    <span>Locker</span>
+                </div>
+                <div class="service-status @GetServiceClass(_messageOnline)">
+                    <span class="status-dot"></span>
+                    <span>Message</span>
                 </div>
             </div>
 
-            <label>
-                Tracking code
-                <input @bind="_trackingCode" placeholder="PKG-001" />
-            </label>
-
-            <label>
-                Recipient phone
-                <input @bind="_recipientPhone" placeholder="+38160111222" />
-            </label>
-
-            <label>
-                Size
-                <select @bind="_size">
-                    @foreach (var size in Enum.GetValues<SizeCategory>())
-                    {
-                        <option value="@size">@size</option>
-                    }
-                </select>
-            </label>
-
-            <button class="button primary" type="button" @onclick="RegisterAsync" disabled="@_busy">
-                Register
+            <button class="button quiet" type="button" @onclick="RefreshAllAsync" disabled="@_busy">
+                <span class="button-icon">↻</span>
+                Refresh
             </button>
+        </div>
+    </header>
 
-            @if (_currentParcel is not null)
-            {
-                <div class="entity-card">
-                    <div class="entity-card-row">
-                        <span>Tracking</span>
-                        <strong>@_currentParcel.TrackingCode</strong>
-                    </div>
-                    <div class="entity-card-row">
-                        <span>Status</span>
-                        <strong class="state-pill">@_currentParcel.Status</strong>
-                    </div>
-                    <div class="entity-card-row">
-                        <span>Size</span>
-                        <strong>@_currentParcel.Size</strong>
-                    </div>
-                </div>
-
-                <button class="button secondary" type="button" @onclick="StoreAsync" disabled="@(_busy || _currentParcel.Status != ParcelStatus.Registered)">
-                    Store parcel
-                </button>
-            }
-        </article>
-
-        <article class="panel locker-panel">
-            <div class="panel-heading">
-                <span class="step">02</span>
-                <div>
-                    <h2>Locker wall</h2>
-                    <p>The API owns compartment state. The simulator only opens hardware.</p>
-                </div>
+    <main>
+        <section class="hero-card">
+            <div>
+                <p class="section-kicker">END-TO-END FLOW</p>
+                <h2>One parcel. Three use-cases. Two external simulators.</h2>
+                <p>
+                    Follow the state transition from registration to storage and pickup, then break the external systems on purpose.
+                </p>
             </div>
 
-            <div class="locker-grid">
-                @if (_compartments.Count == 0)
-                {
-                    <p class="muted">No compartment data available.</p>
-                }
-                else
-                {
-                    @foreach (var compartment in _compartments)
-                    {
-                        <div class="locker-cell @(compartment.Status == CompartmentStatus.Available ? "available" : "occupied")">
-                            <div class="locker-code">@compartment.Number</div>
-                            <div>@compartment.Size</div>
-                            <strong>@compartment.Status</strong>
-                            @if (compartment.ParcelId.HasValue)
-                            {
-                                <small>Parcel assigned</small>
-                            }
+            <div class="flow-strip">
+                <div class="flow-node active">
+                    <span>01</span>
+                    <strong>Register</strong>
+                </div>
+                <div class="flow-line"></div>
+                <div class="flow-node @(_currentParcel?.Status is ParcelStatus.Stored or ParcelStatus.PickedUp ? "active" : string.Empty)">
+                    <span>02</span>
+                    <strong>Store</strong>
+                </div>
+                <div class="flow-line"></div>
+                <div class="flow-node @(_currentParcel?.Status == ParcelStatus.PickedUp ? "active" : string.Empty)">
+                    <span>03</span>
+                    <strong>Pickup</strong>
+                </div>
+            </div>
+        </section>
+
+        <section class="workspace-grid">
+            <div class="workflow-column">
+                <article class="surface action-card">
+                    <div class="card-title-row">
+                        <div class="step-badge">01</div>
+                        <div>
+                            <p class="section-kicker">PARCELS</p>
+                            <h2>Register parcel</h2>
+                            <p>Create the aggregate that starts the demo flow.</p>
                         </div>
-                    }
-                }
-            </div>
-        </article>
-
-        <article class="panel">
-            <div class="panel-heading">
-                <span class="step">03</span>
-                <div>
-                    <h2>Pickup</h2>
-                    <p>Validate the pickup code, open the locker and only then complete the domain transition.</p>
-                </div>
-            </div>
-
-            <label>
-                Tracking code
-                <input @bind="_pickupTrackingCode" placeholder="PKG-001" />
-            </label>
-
-            <label>
-                Pickup code
-                <input @bind="_pickupCode" placeholder="6 digit code" inputmode="numeric" />
-            </label>
-
-            <button class="button primary" type="button" @onclick="PickupAsync" disabled="@_busy">
-                Open &amp; pickup
-            </button>
-
-            @if (_currentParcel is not null && _currentParcel.Status == ParcelStatus.PickedUp)
-            {
-                <div class="success-card">
-                    Parcel <strong>@_currentParcel.TrackingCode</strong> was picked up successfully.
-                </div>
-            }
-        </article>
-    </section>
-
-    <section class="timeline panel wide-panel">
-        <div class="panel-heading horizontal-heading">
-            <div>
-                <p class="eyebrow">OBSERVABILITY</p>
-                <h2>Activity timeline</h2>
-            </div>
-            <button class="button ghost compact" type="button" @onclick="ClearActivity">Clear</button>
-        </div>
-
-        @if (_activity.Count == 0)
-        {
-            <p class="muted">Run the demo to see application outcomes here.</p>
-        }
-        else
-        {
-            <ol>
-                @foreach (var item in _activity)
-                {
-                    <li>@item</li>
-                }
-            </ol>
-        }
-    </section>
-
-    <section class="demo-panel">
-        <div class="demo-header">
-            <div>
-                <p class="eyebrow">TEACHING / TEST HARNESS</p>
-                <h2>Demo controls</h2>
-                <p>These controls belong to the simulators, not to the ParcelBox business domain.</p>
-            </div>
-        </div>
-
-        <div class="demo-grid">
-            <div class="demo-control">
-                <h3>Locker Controller</h3>
-                <p>Current mode: <strong>@(_lockerMode?.ToString() ?? "Offline")</strong></p>
-                <div class="segmented-control">
-                    @foreach (var mode in Enum.GetValues<LockerMode>())
-                    {
-                        <button type="button"
-                                class="@GetLockerModeClass(mode)"
-                                @onclick="() => SetLockerModeAsync(mode)"
-                                disabled="@_busy">
-                            @mode
-                        </button>
-                    }
-                </div>
-            </div>
-
-            <div class="demo-control">
-                <h3>Message Gateway</h3>
-                <p>Current mode: <strong>@(_messageMode?.ToString() ?? "Offline")</strong></p>
-                <div class="segmented-control">
-                    @foreach (var mode in Enum.GetValues<MessageGatewayMode>())
-                    {
-                        <button type="button"
-                                class="@GetMessageModeClass(mode)"
-                                @onclick="() => SetMessageModeAsync(mode)"
-                                disabled="@_busy">
-                            @mode
-                        </button>
-                    }
-                </div>
-            </div>
-
-            <div class="message-inbox">
-                <div class="inbox-heading">
-                    <div>
-                        <h3>Gateway inbox</h3>
-                        <p>Use the delivered code for the pickup step.</p>
                     </div>
-                    <button class="button ghost compact" type="button" @onclick="ClearMessagesAsync" disabled="@_busy">Clear</button>
-                </div>
 
-                @if (_messages.Count == 0)
-                {
-                    <p class="muted">No delivered messages.</p>
-                }
-                else
-                {
-                    @foreach (var message in _messages.OrderByDescending(x => x.SentAt))
+                    <div class="form-grid">
+                        <label>
+                            <span>Tracking code</span>
+                            <input @bind="_trackingCode" placeholder="PKG-001" autocomplete="off" />
+                        </label>
+
+                        <label>
+                            <span>Recipient phone</span>
+                            <input @bind="_recipientPhone" placeholder="+38160111222" autocomplete="off" />
+                        </label>
+
+                        <label class="full-width">
+                            <span>Parcel size</span>
+                            <select @bind="_size">
+                                @foreach (var size in Enum.GetValues<SizeCategory>())
+                                {
+                                    <option value="@size">@size</option>
+                                }
+                            </select>
+                        </label>
+                    </div>
+
+                    <button class="button primary full-button" type="button" @onclick="RegisterAsync" disabled="@_busy">
+                        Register parcel
+                        <span>→</span>
+                    </button>
+
+                    @if (_currentParcel is not null)
                     {
-                        var pickupCode = ExtractPickupCode(message.Text);
-                        <div class="message-card">
-                            <div class="message-meta">
-                                <strong>@message.Destination</strong>
-                                <span>@message.SentAt.ToLocalTime().ToString("HH:mm:ss")</span>
+                        <div class="parcel-summary">
+                            <div class="summary-heading">
+                                <div>
+                                    <span class="summary-label">CURRENT PARCEL</span>
+                                    <strong>@_currentParcel.TrackingCode</strong>
+                                </div>
+                                <span class="status-badge @GetParcelStatusClass(_currentParcel.Status)">@_currentParcel.Status</span>
                             </div>
-                            <p>@message.Text</p>
-                            @if (pickupCode is not null)
+
+                            <div class="summary-grid">
+                                <div>
+                                    <span>Size</span>
+                                    <strong>@_currentParcel.Size</strong>
+                                </div>
+                                <div>
+                                    <span>Recipient</span>
+                                    <strong>@_currentParcel.RecipientPhone</strong>
+                                </div>
+                                <div>
+                                    <span>Locker</span>
+                                    <strong>@(_currentParcel.LockerCode ?? "—")</strong>
+                                </div>
+                                <div>
+                                    <span>Compartment</span>
+                                    <strong>@(_currentParcel.CompartmentNumber ?? "—")</strong>
+                                </div>
+                            </div>
+
+                            @if (_currentParcel.Status == ParcelStatus.Registered)
                             {
-                                <button class="button secondary compact" type="button" @onclick="() => UsePickupCode(pickupCode)">
-                                    Use code @pickupCode
+                                <button class="button accent full-button" type="button" @onclick="StoreAsync" disabled="@_busy">
+                                    Store in available compartment
+                                    <span>→</span>
                                 </button>
                             }
                         </div>
                     }
-                }
+                </article>
+
+                <article class="surface action-card">
+                    <div class="card-title-row">
+                        <div class="step-badge">03</div>
+                        <div>
+                            <p class="section-kicker">PICKUP</p>
+                            <h2>Open &amp; pickup</h2>
+                            <p>The domain transition finishes only after the locker controller succeeds.</p>
+                        </div>
+                    </div>
+
+                    <div class="form-grid">
+                        <label>
+                            <span>Tracking code</span>
+                            <input @bind="_pickupTrackingCode" placeholder="PKG-001" autocomplete="off" />
+                        </label>
+
+                        <label>
+                            <span>Pickup code</span>
+                            <input @bind="_pickupCode" placeholder="6 digit code" inputmode="numeric" autocomplete="one-time-code" />
+                        </label>
+                    </div>
+
+                    <button class="button primary full-button" type="button" @onclick="PickupAsync" disabled="@_busy">
+                        Open locker &amp; complete pickup
+                        <span>→</span>
+                    </button>
+
+                    @if (_currentParcel?.Status == ParcelStatus.PickedUp)
+                    {
+                        <div class="notice success-notice">
+                            <span class="notice-icon">✓</span>
+                            <div>
+                                <strong>Pickup completed</strong>
+                                <p>@_currentParcel.TrackingCode reached the final domain state.</p>
+                            </div>
+                        </div>
+                    }
+                </article>
             </div>
+
+            <div class="visual-column">
+                <article class="surface locker-surface">
+                    <div class="section-heading-row">
+                        <div>
+                            <p class="section-kicker">02 · LOCKERS</p>
+                            <h2>Locker wall</h2>
+                            <p>Application state lives in ParcelBox. The simulator only represents the external hardware controller.</p>
+                        </div>
+                        <span class="count-chip">@_compartments.Count compartments</span>
+                    </div>
+
+                    <div class="locker-cabinet">
+                        @if (_compartments.Count == 0)
+                        {
+                            <div class="empty-state">
+                                <span>□</span>
+                                <strong>No compartment data</strong>
+                                <p>Check the API connection and refresh the dashboard.</p>
+                            </div>
+                        }
+                        else
+                        {
+                            @foreach (var compartment in _compartments)
+                            {
+                                <div class="locker-cell @GetCompartmentClass(compartment)">
+                                    <div class="locker-door-top">
+                                        <span class="locker-number">@compartment.Number</span>
+                                        <span class="size-chip">@compartment.Size</span>
+                                    </div>
+
+                                    <div class="locker-door-center">
+                                        <span class="locker-state-dot"></span>
+                                        <strong>@compartment.Status</strong>
+                                    </div>
+
+                                    <div class="locker-door-bottom">
+                                        <span>@compartment.LockerCode</span>
+                                        @if (compartment.ParcelId.HasValue)
+                                        {
+                                            <span>Parcel assigned</span>
+                                        }
+                                        else
+                                        {
+                                            <span>Ready</span>
+                                        }
+                                    </div>
+                                </div>
+                            }
+                        }
+                    </div>
+                </article>
+
+                <article class="surface timeline-surface">
+                    <div class="section-heading-row compact-heading">
+                        <div>
+                            <p class="section-kicker">OBSERVABILITY</p>
+                            <h2>Activity</h2>
+                        </div>
+                        <button class="button quiet small" type="button" @onclick="ClearActivity">Clear</button>
+                    </div>
+
+                    @if (_activity.Count == 0)
+                    {
+                        <div class="empty-state small-empty">
+                            <span>◎</span>
+                            <strong>Nothing happened yet</strong>
+                            <p>Run one of the use-cases and watch the outcomes appear here.</p>
+                        </div>
+                    }
+                    else
+                    {
+                        <ol class="activity-list">
+                            @foreach (var item in _activity)
+                            {
+                                <li>
+                                    <span class="activity-dot"></span>
+                                    <span>@item</span>
+                                </li>
+                            }
+                        </ol>
+                    }
+                </article>
+            </div>
+        </section>
+
+        <section class="simulator-zone">
+            <div class="simulator-zone-header">
+                <div>
+                    <p class="section-kicker">TEACHING / TEST HARNESS</p>
+                    <h2>External system controls</h2>
+                    <p>These switches are deliberately outside the ParcelBox business flow. Use them to demonstrate integration failures.</p>
+                </div>
+                <span class="boundary-chip">outside business domain</span>
+            </div>
+
+            <div class="simulator-grid">
+                <article class="simulator-card">
+                    <div class="simulator-title">
+                        <div class="simulator-icon">LC</div>
+                        <div>
+                            <h3>Locker Controller</h3>
+                            <p>Physical compartment hardware simulator</p>
+                        </div>
+                    </div>
+
+                    <div class="current-mode">
+                        <span>Current mode</span>
+                        <strong>@(_lockerMode?.ToString() ?? "Offline")</strong>
+                    </div>
+
+                    <div class="segmented-control">
+                        @foreach (var mode in Enum.GetValues<LockerMode>())
+                        {
+                            <button type="button"
+                                    class="@GetLockerModeClass(mode)"
+                                    @onclick="() => SetLockerModeAsync(mode)"
+                                    disabled="@_busy">
+                                @mode
+                            </button>
+                        }
+                    </div>
+                </article>
+
+                <article class="simulator-card">
+                    <div class="simulator-title">
+                        <div class="simulator-icon">MG</div>
+                        <div>
+                            <h3>Message Gateway</h3>
+                            <p>External delivery provider simulator</p>
+                        </div>
+                    </div>
+
+                    <div class="current-mode">
+                        <span>Current mode</span>
+                        <strong>@(_messageMode?.ToString() ?? "Offline")</strong>
+                    </div>
+
+                    <div class="segmented-control">
+                        @foreach (var mode in Enum.GetValues<MessageGatewayMode>())
+                        {
+                            <button type="button"
+                                    class="@GetMessageModeClass(mode)"
+                                    @onclick="() => SetMessageModeAsync(mode)"
+                                    disabled="@_busy">
+                                @mode
+                            </button>
+                        }
+                    </div>
+                </article>
+
+                <article class="simulator-card inbox-card">
+                    <div class="section-heading-row compact-heading">
+                        <div>
+                            <h3>Gateway inbox</h3>
+                            <p>The pickup code is visible here only because this is a teaching simulator.</p>
+                        </div>
+                        <button class="button quiet small" type="button" @onclick="ClearMessagesAsync" disabled="@_busy">Clear</button>
+                    </div>
+
+                    @if (_messages.Count == 0)
+                    {
+                        <div class="inbox-empty">No delivered messages.</div>
+                    }
+                    else
+                    {
+                        <div class="message-list">
+                            @foreach (var message in _messages.OrderByDescending(x => x.SentAt))
+                            {
+                                var pickupCode = ExtractPickupCode(message.Text);
+                                <div class="message-card">
+                                    <div class="message-meta">
+                                        <strong>@message.Destination</strong>
+                                        <span>@message.SentAt.ToLocalTime().ToString("HH:mm:ss")</span>
+                                    </div>
+                                    <p>@message.Text</p>
+                                    @if (pickupCode is not null)
+                                    {
+                                        <button class="code-button" type="button" @onclick="() => UsePickupCode(pickupCode)">
+                                            <span>@pickupCode</span>
+                                            Use code
+                                        </button>
+                                    }
+                                </div>
+                            }
+                        </div>
+                    }
+                </article>
+            </div>
+        </section>
+    </main>
+
+    @if (_busy)
+    {
+        <div class="busy-indicator" role="status">
+            <span class="spinner"></span>
+            Working…
         </div>
-    </section>
-</main>
+    }
+</div>
 
 @code {
     private string _trackingCode = "PKG-001";
@@ -462,6 +594,7 @@
     private void UsePickupCode(string pickupCode)
     {
         _pickupCode = pickupCode;
+        AddActivity($"Pickup code {pickupCode} copied from simulator inbox.");
     }
 
     private string GetLockerModeClass(LockerMode mode)
@@ -472,6 +605,29 @@
     private string GetMessageModeClass(MessageGatewayMode mode)
     {
         return _messageMode == mode ? "segment active" : "segment";
+    }
+
+    private static string GetServiceClass(bool online)
+    {
+        return online ? "online" : "offline";
+    }
+
+    private static string GetParcelStatusClass(ParcelStatus status)
+    {
+        return status switch
+        {
+            ParcelStatus.Registered => "neutral",
+            ParcelStatus.Stored => "stored",
+            ParcelStatus.PickedUp => "completed",
+            _ => "neutral"
+        };
+    }
+
+    private string GetCompartmentClass(CompartmentDetails compartment)
+    {
+        var statusClass = compartment.Status == CompartmentStatus.Available ? "available" : "occupied";
+        var currentClass = _currentParcel?.CompartmentNumber == compartment.Number ? " current" : string.Empty;
+        return statusClass + currentClass;
     }
 
     private static string? ExtractPickupCode(string text)
