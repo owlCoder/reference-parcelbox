@@ -1,8 +1,8 @@
 using Microsoft.EntityFrameworkCore;
 using ParcelBox.Application.Interfaces.Repositories;
-using ParcelBox.Domain.Pickup;
+using ParcelBox.Domain.Pickup.Models;
 
-namespace ParcelBox.Infrastructure.Persistence;
+namespace ParcelBox.Infrastructure.Persistence.Repositories;
 
 internal sealed class PickupAccessRepository : IPickupAccessRepository
 {
@@ -18,7 +18,7 @@ internal sealed class PickupAccessRepository : IPickupAccessRepository
         CancellationToken cancellationToken)
     {
         return _db.PickupAccesses.SingleOrDefaultAsync(
-            x => x.ParcelId == parcelId,
+            access => access.ParcelId == parcelId,
             cancellationToken);
     }
 

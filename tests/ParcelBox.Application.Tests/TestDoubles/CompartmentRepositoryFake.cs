@@ -1,5 +1,6 @@
 using ParcelBox.Application.Interfaces.Repositories;
-using ParcelBox.Domain.Lockers;
+using ParcelBox.Domain.Lockers.Enums;
+using ParcelBox.Domain.Lockers.Models;
 
 namespace ParcelBox.Application.Tests.TestDoubles;
 
@@ -11,9 +12,9 @@ internal sealed class CompartmentRepositoryFake : ICompartmentRepository
         CancellationToken cancellationToken)
     {
         IReadOnlyList<Compartment> result = Items
-            .Where(x => x.Status == CompartmentStatus.Available)
-            .OrderBy(x => x.LockerCode)
-            .ThenBy(x => x.Number)
+            .Where(compartment => compartment.Status == CompartmentStatus.Available)
+            .OrderBy(compartment => compartment.LockerCode)
+            .ThenBy(compartment => compartment.Number)
             .ToList();
 
         return Task.FromResult(result);
@@ -23,7 +24,8 @@ internal sealed class CompartmentRepositoryFake : ICompartmentRepository
         Guid parcelId,
         CancellationToken cancellationToken)
     {
-        return Task.FromResult(Items.SingleOrDefault(x => x.ParcelId == parcelId));
+        return Task.FromResult(
+            Items.SingleOrDefault(compartment => compartment.ParcelId == parcelId));
     }
 
     public Task<IReadOnlyList<Compartment>> GetAllAsync(CancellationToken cancellationToken)

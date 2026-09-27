@@ -1,11 +1,11 @@
 using ParcelBox.Application.Common.Results;
-using ParcelBox.Application.DTOs.Lockers;
 using ParcelBox.Application.Enums;
 using ParcelBox.Application.Interfaces.External;
 using ParcelBox.Application.Interfaces.Repositories;
 using ParcelBox.Application.Interfaces.Services;
 using ParcelBox.Domain.Common.Enums;
-using ParcelBox.Domain.Lockers;
+using ParcelBox.Domain.Lockers.Enums;
+using ParcelBox.Domain.Lockers.Models;
 
 namespace ParcelBox.Application.Services;
 
@@ -20,22 +20,6 @@ public sealed class LockerService : ILockerService
     {
         _compartments = compartments;
         _lockerController = lockerController;
-    }
-
-    public async Task<IReadOnlyList<CompartmentDetails>> GetCompartmentsAsync(
-        CancellationToken cancellationToken)
-    {
-        var compartments = await _compartments.GetAllAsync(cancellationToken);
-
-        return compartments
-            .Select(x => new CompartmentDetails(
-                x.Id,
-                x.LockerCode,
-                x.Number,
-                x.Size,
-                x.Status,
-                x.ParcelId))
-            .ToList();
     }
 
     public async Task<Result<Compartment, LockerOperationError>> AssignAsync(
@@ -68,7 +52,7 @@ public sealed class LockerService : ILockerService
 
         foreach (var size in compatibleSizes)
         {
-            compartment = available.FirstOrDefault(x => x.Size == size);
+            compartment = available.FirstOrDefault(candidate => candidate.Size == size);
 
             if (compartment is not null)
             {
@@ -95,11 +79,8 @@ public sealed class LockerService : ILockerService
 
         if (openResult.IsFailure)
         {
-            var error = openResult.Error == LockerControllerError.Jammed
-                ? LockerOperationError.Jammed
-                : LockerOperationError.Unavailable;
-
-            return Result<Compartment, LockerOperationError>.Failure(error);
+            return Result<Compartment, LockerOperationError>.Failure(
+                MapControllerError(openResult.Error));
         }
 
         compartment.Status = CompartmentStatus.Occupied;
@@ -131,16 +112,9 @@ public sealed class LockerService : ILockerService
             compartment.Number,
             cancellationToken);
 
-        if (openResult.IsFailure)
-        {
-            var error = openResult.Error == LockerControllerError.Jammed
-                ? LockerOperationError.Jammed
-                : LockerOperationError.Unavailable;
-
-            return Result<Compartment, LockerOperationError>.Failure(error);
-        }
-
-        return Result<Compartment, LockerOperationError>.Success(compartment);
+        return openResult.IsFailure
+            ? Result<Compartment, LockerOperationError>.Failure(MapControllerError(openResult.Error))
+            : Result<Compartment, LockerOperationError>.Success(compartment);
     }
 
     public Result<LockerOperationError> Release(Compartment compartment, Guid parcelId)
@@ -155,5 +129,12 @@ public sealed class LockerService : ILockerService
         compartment.ParcelId = null;
 
         return Result<LockerOperationError>.Success();
+    }
+
+    private static LockerOperationError MapControllerError(LockerControllerError error)
+    {
+        return error == LockerControllerError.Jammed
+            ? LockerOperationError.Jammed
+            : LockerOperationError.Unavailable;
     }
 }

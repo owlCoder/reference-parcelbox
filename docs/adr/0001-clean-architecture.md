@@ -6,33 +6,28 @@ Prihvaćeno.
 
 ## Kontekst
 
-ParcelBox je nastavnički referentni projekat. Struktura mora jasno da pokaže gde pripadaju podaci, persistence, poslovna pravila i transport, bez skrivanja odgovornosti u helper metodama modela ili repository upitima.
+ParcelBox je nastavnički referentni projekat. Struktura mora jasno da pokaže gde pripadaju stanje, data access, poslovna pravila, integracije i transport, bez skrivanja odgovornosti u helper metodama modela ili repository upitima.
 
 ## Odluka
 
-Backend koristi četiri projekta:
+Backend koristi projekte `ParcelBox.Domain`, `ParcelBox.Application`, `ParcelBox.Infrastructure` i `ParcelBox.Api`.
 
-- `ParcelBox.Domain`;
-- `ParcelBox.Application`;
-- `ParcelBox.Infrastructure`;
-- `ParcelBox.Api`.
+Usvojena su sledeća pravila:
 
-Primjenjuje se sledeća podela:
+1. `Domain` sadrži state-only modele i domenske enum-e; folder i namespace moraju da budu usklađeni (`Models`, `Enums`).
+2. Repository interfejsi su u `Application/Interfaces/Repositories`; implementacije su u `Infrastructure/Persistence/Repositories`.
+3. `IUnitOfWork` je persistence port i nalazi se u `Application/Interfaces/Persistence`.
+4. `Application/Interfaces` sadrži samo interface tipove. DTO-i i enum-i imaju zasebne foldere.
+5. Poslovna pravila i use-case orkestracija pripadaju application servisima.
+6. Service interfejsi treba da budu uski. Query prikaz pretinaca je odvojen od locker command pravila, a storage orkestracija od registracije/čitanja paketa.
+7. Servis prema drugom servisu prosleđuje minimalan potreban ugovor kada ceo domen model nije potreban; `NotificationService`, na primer, dobija `PickupNotification` DTO.
+8. Infrastructure adapteri implementiraju external/security/persistence portove.
+9. `Api` je composition root i endpoint zavisi od service interfejsa, ne od repository-ja ili `DbContext`-a.
+10. Očekivani poslovni i integracioni neuspeh vraća typed Result; exception nije kontrolni tok za očekivano ponašanje.
 
-1. **Domain models** sadrže stanje i domenske enum-e.
-2. **Repository interfaces** su u `Application/Interfaces/Repositories`.
-3. **Persistence interface** `IUnitOfWork` je u `Application/Interfaces/Persistence`.
-4. **Repository implementations** su u Infrastructure sloju.
-5. **Application services** sadrže validaciju, poslovna pravila i orkestraciju.
-6. **Service interfaces** su granica koju koristi API.
-7. **External interfaces** sadrže samo portove; integration error enum-i su u `Application/Enums`, a transportni DTO-i u `Application/DTOs/External`.
-8. **Infrastructure adapters** implementiraju spoljne portove.
-9. **Api** je composition root i povezuje implementacije kroz dependency injection.
-10. **Result pattern** pripada Application sloju; očekivani poslovni neuspeh nije exception.
+Modeli namerno nemaju metode poput `CanFit`, `CanBeStored`, `ValidateAttempt` ili `MarkUsed`. Repository ne odlučuje koji je pretinac poslovno odgovarajući. Takva pravila moraju biti vidljiva u odgovarajućem application servisu.
 
-`Application/Interfaces` je namerno stroga taksonomska granica: u tom stablu ne sme biti enum-a, record-a ili concrete class-a.
-
-Modeli namerno nemaju `CanFit`, `CanBeStored`, `ValidateAttempt`, `MarkUsed` ili slične poslovne helper metode. Repository ne donosi odluke poput kompatibilnosti veličina. Takva pravila moraju biti vidljiva u odgovarajućem servisu.
+`ParcelBox.Web` i simulatori ostaju zasebni procesi i komuniciraju preko HTTP-a.
 
 ## Posledice
 
@@ -48,6 +43,4 @@ ili integracioni tok:
 Service -> External interface -> HTTP adapter -> Simulator
 ```
 
-CI proverava i fizičku organizaciju i smer zavisnosti, da se taksonomija ne bi vremenom ponovo pomešala.
-
-Cena ovog izbora je anemičniji Domain model, ali je to namerna nastavna odluka: u ovom primeru želimo eksplicitnu service/repository podelu i lako uočljive SOLID odgovornosti.
+Cena pristupa je anemičniji Domain model i nekoliko eksplicitnih application servisa. To je namerna nastavna odluka: u ovom primeru prioritet su jasna podela odgovornosti, dependency inversion i lako uočljiva struktura.

@@ -1,8 +1,8 @@
 using Microsoft.EntityFrameworkCore;
 using ParcelBox.Application.Interfaces.Persistence;
-using ParcelBox.Domain.Lockers;
-using ParcelBox.Domain.Parcels;
-using ParcelBox.Domain.Pickup;
+using ParcelBox.Domain.Lockers.Models;
+using ParcelBox.Domain.Parcels.Models;
+using ParcelBox.Domain.Pickup.Models;
 
 namespace ParcelBox.Infrastructure.Persistence;
 

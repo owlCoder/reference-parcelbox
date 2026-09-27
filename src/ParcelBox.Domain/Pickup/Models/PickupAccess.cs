@@ -1,4 +1,6 @@
-namespace ParcelBox.Domain.Pickup;
+using ParcelBox.Domain.Pickup.Enums;
+
+namespace ParcelBox.Domain.Pickup.Models;
 
 public sealed class PickupAccess
 {

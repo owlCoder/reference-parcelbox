@@ -49,7 +49,7 @@ public static class ParcelEndpoints
 
     private static async Task<IResult> StoreAsync(
         Guid id,
-        IParcelService service,
+        IParcelStorageService service,
         CancellationToken cancellationToken)
     {
         var result = await service.StoreAsync(id, cancellationToken);

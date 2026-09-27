@@ -1,4 +1,4 @@
-using ParcelBox.Domain.Pickup;
+using ParcelBox.Domain.Pickup.Models;
 
 namespace ParcelBox.Application.Interfaces.Repositories;
 

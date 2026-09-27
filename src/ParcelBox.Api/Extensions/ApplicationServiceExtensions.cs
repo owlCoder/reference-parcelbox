@@ -8,6 +8,8 @@ public static class ApplicationServiceExtensions
     public static IServiceCollection AddApplicationServices(this IServiceCollection services)
     {
         services.AddScoped<IParcelService, ParcelService>();
+        services.AddScoped<IParcelStorageService, ParcelStorageService>();
+        services.AddScoped<ICompartmentService, CompartmentService>();
         services.AddScoped<ILockerService, LockerService>();
         services.AddScoped<IPickupAccessService, PickupAccessService>();
         services.AddScoped<IPickupService, PickupService>();

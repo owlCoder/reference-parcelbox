@@ -1,4 +1,4 @@
-using ParcelBox.Domain.Lockers;
+using ParcelBox.Domain.Lockers.Models;
 
 namespace ParcelBox.Application.Interfaces.Repositories;
 

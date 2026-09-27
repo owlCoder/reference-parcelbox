@@ -1,5 +1,5 @@
 using ParcelBox.Application.Interfaces.Repositories;
-using ParcelBox.Domain.Pickup;
+using ParcelBox.Domain.Pickup.Models;
 
 namespace ParcelBox.Application.Tests.TestDoubles;
 
@@ -11,7 +11,8 @@ internal sealed class PickupAccessRepositoryFake : IPickupAccessRepository
         Guid parcelId,
         CancellationToken cancellationToken)
     {
-        return Task.FromResult(Items.SingleOrDefault(x => x.ParcelId == parcelId));
+        return Task.FromResult(
+            Items.SingleOrDefault(access => access.ParcelId == parcelId));
     }
 
     public Task AddAsync(PickupAccess pickupAccess, CancellationToken cancellationToken)

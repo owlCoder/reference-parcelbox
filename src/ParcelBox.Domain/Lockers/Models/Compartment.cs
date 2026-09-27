@@ -1,6 +1,7 @@
 using ParcelBox.Domain.Common.Enums;
+using ParcelBox.Domain.Lockers.Enums;
 
-namespace ParcelBox.Domain.Lockers;
+namespace ParcelBox.Domain.Lockers.Models;
 
 public sealed class Compartment
 {

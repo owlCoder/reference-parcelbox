@@ -1,8 +1,8 @@
 using ParcelBox.Application.DTOs.External;
+using ParcelBox.Application.DTOs.Notifications;
 using ParcelBox.Application.Enums;
 using ParcelBox.Application.Interfaces.External;
 using ParcelBox.Application.Interfaces.Services;
-using ParcelBox.Domain.Parcels;
 
 namespace ParcelBox.Application.Services;
 
@@ -16,13 +16,12 @@ public sealed class NotificationService : INotificationService
     }
 
     public async Task<PickupMessageStatus> SendPickupCodeAsync(
-        Parcel parcel,
-        string pickupCode,
+        PickupNotification notification,
         CancellationToken cancellationToken)
     {
         var message = new OutboundMessage(
-            parcel.RecipientPhone,
-            $"Parcel {parcel.TrackingCode} is ready. Pickup code: {pickupCode}");
+            notification.RecipientPhone,
+            $"Parcel {notification.TrackingCode} is ready. Pickup code: {notification.PickupCode}");
 
         var result = await _messageGateway.SendAsync(message, cancellationToken);
 

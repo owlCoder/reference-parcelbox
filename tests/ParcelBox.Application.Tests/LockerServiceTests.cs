@@ -2,7 +2,8 @@ using ParcelBox.Application.Enums;
 using ParcelBox.Application.Services;
 using ParcelBox.Application.Tests.TestDoubles;
 using ParcelBox.Domain.Common.Enums;
-using ParcelBox.Domain.Lockers;
+using ParcelBox.Domain.Lockers.Enums;
+using ParcelBox.Domain.Lockers.Models;
 
 namespace ParcelBox.Application.Tests;
 

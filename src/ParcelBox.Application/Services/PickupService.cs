@@ -3,7 +3,7 @@ using ParcelBox.Application.Enums;
 using ParcelBox.Application.Interfaces.Persistence;
 using ParcelBox.Application.Interfaces.Repositories;
 using ParcelBox.Application.Interfaces.Services;
-using ParcelBox.Domain.Parcels;
+using ParcelBox.Domain.Parcels.Enums;
 
 namespace ParcelBox.Application.Services;
 
@@ -79,15 +79,8 @@ public sealed class PickupService : IPickupService
 
         if (openedCompartment.IsFailure)
         {
-            var error = openedCompartment.Error switch
-            {
-                LockerOperationError.CompartmentNotFound => PickupOperationError.CompartmentNotFound,
-                LockerOperationError.Jammed => PickupOperationError.LockerJammed,
-                LockerOperationError.Unavailable => PickupOperationError.LockerUnavailable,
-                _ => PickupOperationError.CompartmentStateConflict
-            };
-
-            return Result<PickupOperationError>.Failure(error);
+            return Result<PickupOperationError>.Failure(
+                MapLockerError(openedCompartment.Error));
         }
 
         var releaseResult = _lockers.Release(openedCompartment.Value, parcel.Id);
@@ -105,5 +98,16 @@ public sealed class PickupService : IPickupService
         await _unitOfWork.SaveChangesAsync(cancellationToken);
 
         return Result<PickupOperationError>.Success();
+    }
+
+    private static PickupOperationError MapLockerError(LockerOperationError error)
+    {
+        return error switch
+        {
+            LockerOperationError.CompartmentNotFound => PickupOperationError.CompartmentNotFound,
+            LockerOperationError.Jammed => PickupOperationError.LockerJammed,
+            LockerOperationError.Unavailable => PickupOperationError.LockerUnavailable,
+            _ => PickupOperationError.CompartmentStateConflict
+        };
     }
 }

@@ -4,7 +4,8 @@ using ParcelBox.Application.Enums;
 using ParcelBox.Application.Interfaces.Repositories;
 using ParcelBox.Application.Interfaces.Security;
 using ParcelBox.Application.Interfaces.Services;
-using ParcelBox.Domain.Pickup;
+using ParcelBox.Domain.Pickup.Enums;
+using ParcelBox.Domain.Pickup.Models;
 
 namespace ParcelBox.Application.Services;
 
@@ -24,14 +25,14 @@ public sealed class PickupAccessService : IPickupAccessService
         _pickupCodes = pickupCodes;
     }
 
-    public async Task<Result<PickupPreparation, PickupOperationError>> CreateAsync(
+    public async Task<Result<PickupAccessPreparation, PickupOperationError>> CreateAsync(
         Guid parcelId,
         DateTimeOffset now,
         CancellationToken cancellationToken)
     {
         if (parcelId == Guid.Empty)
         {
-            return Result<PickupPreparation, PickupOperationError>.Failure(
+            return Result<PickupAccessPreparation, PickupOperationError>.Failure(
                 PickupOperationError.ParcelNotFound);
         }
 
@@ -48,8 +49,8 @@ public sealed class PickupAccessService : IPickupAccessService
 
         await _pickupAccesses.AddAsync(access, cancellationToken);
 
-        return Result<PickupPreparation, PickupOperationError>.Success(
-            new PickupPreparation(code));
+        return Result<PickupAccessPreparation, PickupOperationError>.Success(
+            new PickupAccessPreparation(code));
     }
 
     public async Task<Result<PickupAccess, PickupOperationError>> ValidateAsync(

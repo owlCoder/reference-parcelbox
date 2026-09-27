@@ -1,5 +1,5 @@
 using ParcelBox.Domain.Common.Enums;
-using ParcelBox.Domain.Lockers;
+using ParcelBox.Domain.Lockers.Enums;
 
 namespace ParcelBox.Application.DTOs.Lockers;
 

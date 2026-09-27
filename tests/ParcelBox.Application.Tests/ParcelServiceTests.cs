@@ -3,9 +3,8 @@ using ParcelBox.Application.Enums;
 using ParcelBox.Application.Services;
 using ParcelBox.Application.Tests.TestDoubles;
 using ParcelBox.Domain.Common.Enums;
-using ParcelBox.Domain.Lockers;
-using ParcelBox.Domain.Parcels;
-using ParcelBox.Domain.Pickup;
+using ParcelBox.Domain.Parcels.Enums;
+using ParcelBox.Domain.Parcels.Models;
 
 namespace ParcelBox.Application.Tests;
 
@@ -15,60 +14,24 @@ public sealed class ParcelServiceTests
         DateTimeOffset.Parse("2026-01-01T10:00:00+00:00");
 
     [Fact]
-    public async Task StoreAsync_UpdatesModelsAndCreatesPickupAccess()
+    public async Task RegisterAsync_CreatesRegisteredParcel()
     {
         var parcels = new ParcelRepositoryFake();
-        var compartments = new CompartmentRepositoryFake();
-        var pickupAccesses = new PickupAccessRepositoryFake();
         var unitOfWork = new UnitOfWorkFake();
-        var lockerController = new LockerControllerFake();
-        var messageGateway = new MessageGatewayFake();
-        var pickupCodes = new PickupCodeServiceFake();
-        var timeProvider = new FixedTimeProvider(Now);
-
-        var parcel = new Parcel
-        {
-            Id = Guid.NewGuid(),
-            TrackingCode = "PKG-001",
-            RecipientPhone = "+38160111222",
-            Size = SizeCategory.Medium,
-            Status = ParcelStatus.Registered,
-            CreatedAt = Now
-        };
-        parcels.Items.Add(parcel);
-
-        var compartment = new Compartment
-        {
-            Id = Guid.NewGuid(),
-            LockerCode = "PB-01",
-            Number = "B1",
-            Size = SizeCategory.Medium,
-            Status = CompartmentStatus.Available
-        };
-        compartments.Items.Add(compartment);
-
-        var lockerService = new LockerService(compartments, lockerController);
-        var pickupAccessService = new PickupAccessService(pickupAccesses, pickupCodes);
-        var notificationService = new NotificationService(messageGateway);
-        var parcelService = new ParcelService(
+        var service = new ParcelService(
             parcels,
-            lockerService,
-            pickupAccessService,
-            notificationService,
             unitOfWork,
-            timeProvider);
+            new FixedTimeProvider(Now));
 
-        var result = await parcelService.StoreAsync(parcel.Id, CancellationToken.None);
+        var result = await service.RegisterAsync(
+            new RegisterParcelInput("PKG-001", "+38160111222", SizeCategory.Medium),
+            CancellationToken.None);
 
         Assert.True(result.IsSuccess);
-        Assert.Equal(ParcelStatus.Stored, parcel.Status);
-        Assert.Equal(CompartmentStatus.Occupied, compartment.Status);
-        Assert.Equal(parcel.Id, compartment.ParcelId);
-        Assert.Single(pickupAccesses.Items);
-        Assert.Equal(PickupStatus.Active, pickupAccesses.Items[0].Status);
-        Assert.Equal(PickupMessageStatus.Delivered, result.Value.MessageDelivery);
+        Assert.Equal(ParcelStatus.Registered, result.Value.Status);
+        Assert.Equal(Now, result.Value.CreatedAt);
+        Assert.Single(parcels.Items);
         Assert.Equal(1, unitOfWork.SaveCalls);
-        Assert.NotNull(messageGateway.LastMessage);
     }
 
     [Fact]
@@ -85,18 +48,9 @@ public sealed class ParcelServiceTests
             CreatedAt = Now
         });
 
-        var compartments = new CompartmentRepositoryFake();
-        var lockerService = new LockerService(compartments, new LockerControllerFake());
-        var unitOfWork = new UnitOfWorkFake();
-        var pickupAccessService = new PickupAccessService(
-            new PickupAccessRepositoryFake(),
-            new PickupCodeServiceFake());
         var service = new ParcelService(
             parcels,
-            lockerService,
-            pickupAccessService,
-            new NotificationService(new MessageGatewayFake()),
-            unitOfWork,
+            new UnitOfWorkFake(),
             new FixedTimeProvider(Now));
 
         var result = await service.RegisterAsync(

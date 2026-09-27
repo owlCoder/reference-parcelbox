@@ -1,5 +1,5 @@
 using ParcelBox.Application.Interfaces.Repositories;
-using ParcelBox.Domain.Parcels;
+using ParcelBox.Domain.Parcels.Models;
 
 namespace ParcelBox.Application.Tests.TestDoubles;
 
@@ -11,19 +11,21 @@ internal sealed class ParcelRepositoryFake : IParcelRepository
         string trackingCode,
         CancellationToken cancellationToken)
     {
-        return Task.FromResult(Items.Any(x => x.TrackingCode == trackingCode));
+        return Task.FromResult(
+            Items.Any(parcel => parcel.TrackingCode == trackingCode));
     }
 
     public Task<Parcel?> GetByIdAsync(Guid id, CancellationToken cancellationToken)
     {
-        return Task.FromResult(Items.SingleOrDefault(x => x.Id == id));
+        return Task.FromResult(Items.SingleOrDefault(parcel => parcel.Id == id));
     }
 
     public Task<Parcel?> GetByTrackingCodeAsync(
         string trackingCode,
         CancellationToken cancellationToken)
     {
-        return Task.FromResult(Items.SingleOrDefault(x => x.TrackingCode == trackingCode));
+        return Task.FromResult(
+            Items.SingleOrDefault(parcel => parcel.TrackingCode == trackingCode));
     }
 
     public Task AddAsync(Parcel parcel, CancellationToken cancellationToken)

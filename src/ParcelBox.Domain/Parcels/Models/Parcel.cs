@@ -1,6 +1,7 @@
 using ParcelBox.Domain.Common.Enums;
+using ParcelBox.Domain.Parcels.Enums;
 
-namespace ParcelBox.Domain.Parcels;
+namespace ParcelBox.Domain.Parcels.Models;
 
 public sealed class Parcel
 {

@@ -1,5 +1,5 @@
 using ParcelBox.Domain.Common.Enums;
-using ParcelBox.Domain.Parcels;
+using ParcelBox.Domain.Parcels.Enums;
 
 namespace ParcelBox.Application.DTOs.Parcels;
 

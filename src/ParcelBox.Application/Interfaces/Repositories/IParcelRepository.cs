@@ -1,4 +1,4 @@
-using ParcelBox.Domain.Parcels;
+using ParcelBox.Domain.Parcels.Models;
 
 namespace ParcelBox.Application.Interfaces.Repositories;
 

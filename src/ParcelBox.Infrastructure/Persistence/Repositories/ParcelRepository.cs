@@ -1,8 +1,8 @@
 using Microsoft.EntityFrameworkCore;
 using ParcelBox.Application.Interfaces.Repositories;
-using ParcelBox.Domain.Parcels;
+using ParcelBox.Domain.Parcels.Models;
 
-namespace ParcelBox.Infrastructure.Persistence;
+namespace ParcelBox.Infrastructure.Persistence.Repositories;
 
 internal sealed class ParcelRepository : IParcelRepository
 {
@@ -18,13 +18,13 @@ internal sealed class ParcelRepository : IParcelRepository
         CancellationToken cancellationToken)
     {
         return _db.Parcels.AnyAsync(
-            x => x.TrackingCode == trackingCode,
+            parcel => parcel.TrackingCode == trackingCode,
             cancellationToken);
     }
 
     public Task<Parcel?> GetByIdAsync(Guid id, CancellationToken cancellationToken)
     {
-        return _db.Parcels.SingleOrDefaultAsync(x => x.Id == id, cancellationToken);
+        return _db.Parcels.SingleOrDefaultAsync(parcel => parcel.Id == id, cancellationToken);
     }
 
     public Task<Parcel?> GetByTrackingCodeAsync(
@@ -32,7 +32,7 @@ internal sealed class ParcelRepository : IParcelRepository
         CancellationToken cancellationToken)
     {
         return _db.Parcels.SingleOrDefaultAsync(
-            x => x.TrackingCode == trackingCode,
+            parcel => parcel.TrackingCode == trackingCode,
             cancellationToken);
     }
 

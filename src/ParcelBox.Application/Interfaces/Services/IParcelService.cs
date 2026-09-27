@@ -13,8 +13,4 @@ public interface IParcelService
     Task<Result<ParcelDetails, ParcelOperationError>> GetAsync(
         Guid id,
         CancellationToken cancellationToken);
-
-    Task<Result<StoreParcelResult, ParcelOperationError>> StoreAsync(
-        Guid id,
-        CancellationToken cancellationToken);
 }

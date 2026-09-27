@@ -1,4 +1,4 @@
-namespace ParcelBox.Domain.Parcels;
+namespace ParcelBox.Domain.Parcels.Enums;
 
 public enum ParcelStatus
 {

@@ -1,6 +1,6 @@
 using System.Reflection;
 using ParcelBox.Application.Services;
-using ParcelBox.Domain.Lockers;
+using ParcelBox.Domain.Lockers.Models;
 
 namespace ParcelBox.Application.Tests;
 
@@ -50,29 +50,24 @@ public sealed class ArchitectureTests
             .Where(parameter =>
                 !parameter.ParameterType.IsInterface &&
                 parameter.ParameterType != typeof(TimeProvider))
-            .Select(parameter => $"{parameter.Member.DeclaringType?.Name}.{parameter.Name}: {parameter.ParameterType.Name}")
+            .Select(parameter =>
+                $"{parameter.Member.DeclaringType?.Name}.{parameter.Name}: {parameter.ParameterType.Name}")
             .ToArray();
 
         Assert.Empty(invalidParameters);
     }
 
     [Fact]
-    public void DomainModels_AreStateOnly()
+    public void DomainModels_AreStateOnlyAndUseModelsNamespace()
     {
-        var domainAssembly = typeof(Compartment).Assembly;
-        var modelNamespaces = new[]
-        {
-            "ParcelBox.Domain.Lockers",
-            "ParcelBox.Domain.Parcels",
-            "ParcelBox.Domain.Pickup"
-        };
-
-        var businessMethods = domainAssembly
+        var modelTypes = typeof(Compartment).Assembly
             .GetTypes()
-            .Where(type =>
-                type.IsPublic &&
-                type.IsClass &&
-                modelNamespaces.Contains(type.Namespace, StringComparer.Ordinal))
+            .Where(type => type.IsPublic && type.IsClass)
+            .ToArray();
+
+        Assert.All(modelTypes, type => Assert.EndsWith(".Models", type.Namespace));
+
+        var businessMethods = modelTypes
             .SelectMany(type => type.GetMethods(
                 BindingFlags.Instance |
                 BindingFlags.Public |
@@ -82,5 +77,21 @@ public sealed class ArchitectureTests
             .ToArray();
 
         Assert.Empty(businessMethods);
+    }
+
+    [Fact]
+    public void DomainEnums_UseEnumsNamespace()
+    {
+        var invalidEnums = typeof(Compartment).Assembly
+            .GetTypes()
+            .Where(type =>
+                type.IsPublic &&
+                type.IsEnum &&
+                !string.Equals(type.Namespace, "ParcelBox.Domain.Common.Enums", StringComparison.Ordinal) &&
+                type.Namespace?.EndsWith(".Enums", StringComparison.Ordinal) != true)
+            .Select(type => type.FullName)
+            .ToArray();
+
+        Assert.Empty(invalidEnums);
     }
 }

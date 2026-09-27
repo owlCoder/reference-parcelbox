@@ -6,17 +6,17 @@ public static class LockerEndpoints
 {
     public static IEndpointRouteBuilder MapLockerEndpoints(this IEndpointRouteBuilder endpoints)
     {
-        endpoints.MapGet("/api/compartments", ListAsync)
+        endpoints.MapGet("/api/lockers/compartments", GetCompartmentsAsync)
             .WithTags("Lockers");
 
         return endpoints;
     }
 
-    private static async Task<IResult> ListAsync(
-        ILockerService service,
+    private static async Task<IResult> GetCompartmentsAsync(
+        ICompartmentService service,
         CancellationToken cancellationToken)
     {
-        var compartments = await service.GetCompartmentsAsync(cancellationToken);
+        var compartments = await service.GetAllAsync(cancellationToken);
         return Results.Ok(compartments);
     }
 }

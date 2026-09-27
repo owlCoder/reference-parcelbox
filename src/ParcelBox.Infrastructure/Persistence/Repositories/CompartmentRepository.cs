@@ -1,8 +1,9 @@
 using Microsoft.EntityFrameworkCore;
 using ParcelBox.Application.Interfaces.Repositories;
-using ParcelBox.Domain.Lockers;
+using ParcelBox.Domain.Lockers.Enums;
+using ParcelBox.Domain.Lockers.Models;
 
-namespace ParcelBox.Infrastructure.Persistence;
+namespace ParcelBox.Infrastructure.Persistence.Repositories;
 
 internal sealed class CompartmentRepository : ICompartmentRepository
 {
@@ -17,9 +18,9 @@ internal sealed class CompartmentRepository : ICompartmentRepository
         CancellationToken cancellationToken)
     {
         return await _db.Compartments
-            .Where(x => x.Status == CompartmentStatus.Available)
-            .OrderBy(x => x.LockerCode)
-            .ThenBy(x => x.Number)
+            .Where(compartment => compartment.Status == CompartmentStatus.Available)
+            .OrderBy(compartment => compartment.LockerCode)
+            .ThenBy(compartment => compartment.Number)
             .ToListAsync(cancellationToken);
     }
 
@@ -28,7 +29,7 @@ internal sealed class CompartmentRepository : ICompartmentRepository
         CancellationToken cancellationToken)
     {
         return _db.Compartments.SingleOrDefaultAsync(
-            x => x.ParcelId == parcelId,
+            compartment => compartment.ParcelId == parcelId,
             cancellationToken);
     }
 
@@ -36,8 +37,9 @@ internal sealed class CompartmentRepository : ICompartmentRepository
         CancellationToken cancellationToken)
     {
         return await _db.Compartments
-            .OrderBy(x => x.LockerCode)
-            .ThenBy(x => x.Number)
+            .AsNoTracking()
+            .OrderBy(compartment => compartment.LockerCode)
+            .ThenBy(compartment => compartment.Number)
             .ToListAsync(cancellationToken);
     }
 }

@@ -2,9 +2,12 @@ using ParcelBox.Application.Enums;
 using ParcelBox.Application.Services;
 using ParcelBox.Application.Tests.TestDoubles;
 using ParcelBox.Domain.Common.Enums;
-using ParcelBox.Domain.Lockers;
-using ParcelBox.Domain.Parcels;
-using ParcelBox.Domain.Pickup;
+using ParcelBox.Domain.Lockers.Enums;
+using ParcelBox.Domain.Lockers.Models;
+using ParcelBox.Domain.Parcels.Enums;
+using ParcelBox.Domain.Parcels.Models;
+using ParcelBox.Domain.Pickup.Enums;
+using ParcelBox.Domain.Pickup.Models;
 
 namespace ParcelBox.Application.Tests;
 

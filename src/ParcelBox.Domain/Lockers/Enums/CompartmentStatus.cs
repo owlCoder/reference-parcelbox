@@ -1,4 +1,4 @@
-namespace ParcelBox.Domain.Lockers;
+namespace ParcelBox.Domain.Lockers.Enums;
 
 public enum CompartmentStatus
 {

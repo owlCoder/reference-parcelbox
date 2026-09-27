@@ -1,4 +1,4 @@
-namespace ParcelBox.Domain.Pickup;
+namespace ParcelBox.Domain.Pickup.Enums;
 
 public enum PickupStatus
 {
