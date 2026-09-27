@@ -32,8 +32,8 @@ builder.Services.AddHttpClient<MessageGatewayClient>(client =>
 
 var app = builder.Build();
 
-app.UseStaticFiles();
 app.UseAntiforgery();
+app.MapStaticAssets();
 
 app.MapRazorComponents<App>()
     .AddInteractiveServerRenderMode();
