@@ -82,9 +82,10 @@ Api -> Infrastructure -> Application -> Domain
 - `Infrastructure` implementira portove preko EF Core-a, `HttpClient`-a i standardnih kriptografskih API-ja.
 - `Api` je transportni sloj: tek tu se typed error prevodi u HTTP status i tekst Problem Details odgovora.
 - `SizeCategory` je zajednički domenski koncept koji koriste i paket i kapacitet pretinca; nema duplih `ParcelSize` / `CompartmentSize` enum-a ni mapping helper-a.
-- `PickupAccess` je odgovoran samo za pickup kod, rok i pokušaje. Status slanja poruke nije deo tog domena.
+- `PickupAccess` odlučuje o statusu pristupa i broju pokušaja, dok Infrastructure security servis generiše, hash-uje i proverava pickup kod.
 
 Detaljnije obrazloženje je u [`docs/architecture.md`](docs/architecture.md).
+Predlog nastavničkog UI-ja je u [`docs/ui-proposal.md`](docs/ui-proposal.md).
 
 ## Result pattern
 
@@ -99,17 +100,23 @@ Application ima svoj error ugovor, npr. `ParcelOperationError` i `PickupOperatio
 
 ## Pokretanje
 
-Potrebni su .NET SDK 10 i, opciono, Docker.
+Potreban je .NET SDK 10. Docker je opcion.
 
-### Lokalno
+### Sve odjednom lokalno
 
-U tri terminala:
+Windows PowerShell:
+
+```powershell
+./scripts/run-all.ps1
+```
+
+Linux/macOS:
 
 ```bash
-dotnet run --project simulators/ParcelBox.Simulators.LockerController
-dotnet run --project simulators/ParcelBox.Simulators.MessageGateway
-dotnet run --project src/ParcelBox.Api
+./scripts/run-all.sh
 ```
+
+Skripta prvo build-uje solution, zatim pokreće oba simulatora i API u istom terminalu. `Ctrl+C` zaustavlja procese.
 
 Podrazumevani portovi:
 
@@ -117,19 +124,27 @@ Podrazumevani portovi:
 - Locker Controller Simulator: `http://localhost:5101`
 - Message Gateway Simulator: `http://localhost:5102`
 
-Primeri HTTP zahteva nalaze se u `src/ParcelBox.Api/ParcelBox.Api.http`.
-
 ### Docker Compose
+
+Isti sistem se može pokrenuti jednom komandom:
 
 ```bash
 docker compose up --build
 ```
 
+Za gašenje:
+
+```bash
+docker compose down
+```
+
+Primeri HTTP zahteva nalaze se u `src/ParcelBox.Api/ParcelBox.Api.http`.
+
 ## Provera koda
 
 ```bash
 dotnet restore
-dotnet format whitespace --verify-no-changes --no-restore
+dotnet format --verify-no-changes --no-restore
 dotnet build --configuration Release --no-restore
 dotnet test --configuration Release --no-build
 ```
