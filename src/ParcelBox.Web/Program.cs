@@ -3,7 +3,20 @@ using System.Text.Json.Serialization;
 using ParcelBox.Web.Clients;
 using ParcelBox.Web.Components;
 
-var builder = WebApplication.CreateBuilder(args);
+var currentDirectory = Directory.GetCurrentDirectory();
+var projectDirectory = Directory.Exists(Path.Combine(currentDirectory, "wwwroot"))
+    ? currentDirectory
+    : Path.Combine(currentDirectory, "src", "ParcelBox.Web");
+
+var contentRoot = Directory.Exists(Path.Combine(projectDirectory, "wwwroot"))
+    ? projectDirectory
+    : currentDirectory;
+
+var builder = WebApplication.CreateBuilder(new WebApplicationOptions
+{
+    Args = args,
+    ContentRootPath = contentRoot
+});
 
 builder.Services.AddRazorComponents()
     .AddInteractiveServerComponents();
@@ -32,6 +45,7 @@ builder.Services.AddHttpClient<MessageGatewayClient>(client =>
 
 var app = builder.Build();
 
+app.UseStaticFiles();
 app.UseAntiforgery();
 app.MapStaticAssets();
 
