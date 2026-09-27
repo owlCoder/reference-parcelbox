@@ -9,7 +9,7 @@ Kurir registruje paket, sistem pronalazi odgovarajući pretinac i otvara ga prek
 
 ```mermaid
 flowchart LR
-    Client --> API[ParcelBox API]
+    Web[ParcelBox Web] -->|HTTP| API[ParcelBox API]
     API --> Application
     Application --> Parcels
     Application --> Lockers
@@ -54,10 +54,15 @@ src/
 │   │   └── Repositories/
 │   ├── External/
 │   └── Security/
-└── ParcelBox.Api/
+├── ParcelBox.Api/
+│   ├── Contracts/
+│   ├── Endpoints/
+│   └── Extensions/
+└── ParcelBox.Web/
+    ├── Clients/
+    ├── Components/
     ├── Contracts/
-    ├── Endpoints/
-    └── Extensions/
+    └── wwwroot/
 
 simulators/
 ├── ParcelBox.Simulators.LockerController/
@@ -74,6 +79,7 @@ Zavisnosti idu ka unutra:
 ```text
 Api -> Application -> Domain
 Api -> Infrastructure -> Application -> Domain
+Web -> HTTP -> Api
 ```
 
 - `Domain` sadrži modele, domenske enum-e, poslovna pravila i generički typed `Result`.
@@ -81,11 +87,12 @@ Api -> Infrastructure -> Application -> Domain
 - `Application` orkestrira use-case-ove, mapira domenske ishode u application error enum-e i definiše male portove prema persistence-u, simulatorima i security servisima.
 - `Infrastructure` implementira portove preko EF Core-a, `HttpClient`-a i standardnih kriptografskih API-ja.
 - `Api` je transportni sloj: tek tu se typed error prevodi u HTTP status i tekst Problem Details odgovora.
+- `Web` je zaseban Blazor Web App i komunicira sa API-jem i nastavničkim simulatorima isključivo preko HTTP-a; nema project reference na Domain, Application ili Infrastructure.
 - `SizeCategory` je zajednički domenski koncept koji koriste i paket i kapacitet pretinca; nema duplih `ParcelSize` / `CompartmentSize` enum-a ni mapping helper-a.
 - `PickupAccess` odlučuje o statusu pristupa i broju pokušaja, dok Infrastructure security servis generiše, hash-uje i proverava pickup kod.
 
 Detaljnije obrazloženje je u [`docs/architecture.md`](docs/architecture.md).
-Predlog nastavničkog UI-ja je u [`docs/ui-proposal.md`](docs/ui-proposal.md).
+UI koncept i način demonstracije su u [`docs/ui-proposal.md`](docs/ui-proposal.md).
 
 ## Result pattern
 
@@ -97,6 +104,20 @@ Result<ParcelError> storeResult = parcel.Store(...);
 ```
 
 Application ima svoj error ugovor, npr. `ParcelOperationError` i `PickupOperationError`. Time Domain ne zna za HTTP, spoljne servise ili presentation poruke.
+
+## Demo UI
+
+Blazor UI je namenjen demonstraciji toka na računarskim vežbama. Na jednom ekranu se vide:
+
+- registracija i trenutno stanje paketa;
+- vizuelni prikaz pretinaca;
+- pickup tok;
+- status API-ja i oba simulatora;
+- activity timeline;
+- odvojeni **Demo controls** za `Normal`, `Jammed` i `Unavailable` scenarije;
+- inbox Message Gateway simulatora sa prečicom za korišćenje generisanog pickup koda.
+
+Demo controls su namerno vizuelno odvojeni od poslovnog UI-ja kako bi bilo jasno da pripadaju test harness-u, a ne ParcelBox domenu.
 
 ## Pokretanje
 
@@ -116,13 +137,16 @@ Linux/macOS:
 ./scripts/run-all.sh
 ```
 
-Skripta prvo build-uje solution, zatim pokreće oba simulatora i API u istom terminalu. `Ctrl+C` zaustavlja procese.
+Skripta prvo build-uje solution, zatim pokreće Web, API i oba simulatora. `Ctrl+C` zaustavlja procese.
 
 Podrazumevani portovi:
 
+- ParcelBox Web: `http://localhost:5000`
 - ParcelBox API: `http://localhost:5100`
 - Locker Controller Simulator: `http://localhost:5101`
 - Message Gateway Simulator: `http://localhost:5102`
+
+Otvori `http://localhost:5000` za kompletan demo.
 
 ### Docker Compose
 
@@ -138,7 +162,7 @@ Za gašenje:
 docker compose down
 ```
 
-Primeri HTTP zahteva nalaze se u `src/ParcelBox.Api/ParcelBox.Api.http`.
+Primeri sirovih HTTP zahteva nalaze se u `src/ParcelBox.Api/ParcelBox.Api.http`.
 
 ## Provera koda
 
