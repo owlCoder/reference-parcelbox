@@ -1,7 +1,7 @@
 # ParcelBox Reference
 
 `ParcelBox` je mali referentni sistem za računarske vežbe iz predmeta Elementi razvoja softvera.
-Domen je namerno nepovezan sa glavnim studentskim projektom. Cilj repozitorijuma je da pokaže kako izgleda uredan .NET projekat sa jasnim granicama, poslovnim pravilima, spoljnim adapterima, testovima i normalnim Git tokom rada.
+Domen je namerno nepovezan sa glavnim studentskim projektom. Cilj repozitorijuma je da pokaže uredan .NET 10 projekat sa jasnim slojevima, poslovnim pravilima, spoljnim adapterima, testovima i normalnim Git tokom rada.
 
 ## Šta sistem radi
 
@@ -17,27 +17,36 @@ flowchart LR
     U --> MG[Message Gateway Simulator]
 ```
 
-Tri male celine su:
+## Struktura
 
-- **Parcels** — registracija i životni ciklus paketa;
-- **Lockers** — izbor i zauzimanje pretinca;
-- **Pickup** — pickup kod, pokušaji unosa i završetak preuzimanja.
-
-Spoljni sistemi su:
-
-- **Locker Controller Simulator** — simulira fizičko otvaranje pretinca;
-- **Message Gateway Simulator** — simulira slanje pickup koda.
-
-## Arhitektura
-
-Repozitorijum koristi jednostavnu Clean Architecture podelu:
+Repozitorijum koristi jednostavnu Clean Architecture podelu bez dodatnih framework slojeva.
 
 ```text
 src/
-├── ParcelBox.Domain/          poslovni model i pravila
-├── ParcelBox.Application/     use-case-ovi i portovi
-├── ParcelBox.Infrastructure/  EF Core i spoljni adapteri
-└── ParcelBox.Api/             HTTP granica i composition root
+├── ParcelBox.Domain/
+│   ├── Parcels/
+│   │   ├── Models/
+│   │   └── Enums/
+│   ├── Lockers/
+│   │   ├── Models/
+│   │   └── Enums/
+│   ├── Pickup/
+│   │   ├── Models/
+│   │   └── Enums/
+│   └── Common/
+├── ParcelBox.Application/
+│   ├── Abstractions/
+│   ├── Common/
+│   ├── Parcels/
+│   ├── Lockers/
+│   └── Pickup/
+├── ParcelBox.Infrastructure/
+│   ├── Persistence/
+│   ├── External/
+│   └── Security/
+└── ParcelBox.Api/
+    ├── Contracts/
+    └── Endpoints/
 
 simulators/
 ├── ParcelBox.Simulators.LockerController/
@@ -55,11 +64,17 @@ Api -> Application -> Domain
 Api -> Infrastructure -> Application -> Domain
 ```
 
-`Domain` ne zna za HTTP, EF Core, konfiguraciju ili simulatore. `Application` definiše interfejse koje `Infrastructure` implementira.
+- `Domain` sadrži domenske modele, enum-e, poslovna pravila i domenske greške.
+- `Application` sadrži use-case handlere, DTO modele i interfejse prema spoljnim zavisnostima.
+- `Infrastructure` implementira persistence i spoljne adaptere.
+- `Api` mapira HTTP zahteve na application use-case-ove i predstavlja composition root.
+- jedan javni tip se drži u jednom fajlu; povezani tipovi se grupišu folderima, ne istim source fajlom.
+
+Detaljnije obrazloženje je u [`docs/architecture.md`](docs/architecture.md).
 
 ## Pokretanje
 
-Potrebni su .NET SDK 10 i Docker samo ako želite da pokrenete sve procese jednom komandom.
+Potrebni su .NET SDK 10 i, opciono, Docker.
 
 ### Lokalno
 
@@ -71,13 +86,13 @@ dotnet run --project simulators/ParcelBox.Simulators.MessageGateway
 dotnet run --project src/ParcelBox.Api
 ```
 
-Podrazumevani portovi su:
+Podrazumevani portovi:
 
 - ParcelBox API: `http://localhost:5100`
 - Locker Controller Simulator: `http://localhost:5101`
 - Message Gateway Simulator: `http://localhost:5102`
 
-Primeri zahteva se nalaze u `src/ParcelBox.Api/ParcelBox.Api.http`.
+Primeri HTTP zahteva nalaze se u `src/ParcelBox.Api/ParcelBox.Api.http`.
 
 ### Docker Compose
 
@@ -85,23 +100,14 @@ Primeri zahteva se nalaze u `src/ParcelBox.Api/ParcelBox.Api.http`.
 docker compose up --build
 ```
 
-## Demonstracioni tok
-
-1. registrujte paket;
-2. pozovite `store` za paket;
-3. proverite poslednju poruku u Message Gateway simulatoru i uzmite pickup kod;
-4. pozovite `pickup` sa tim kodom;
-5. promenite Locker Controller u `Jammed` režim i ponovite scenario;
-6. promenite Message Gateway u `Unavailable` režim i proverite da je paket ipak ostao smešten.
-
-Važna namerna granica: neuspeh slanja poruke ne poništava uspešno fizičko smeštanje paketa. Za produkcioni sistem bi se dalje razmatrao outbox/retry mehanizam; ovde je ta kompleksnost namerno izostavljena.
-
-## Build i testovi
+## Testovi
 
 ```bash
-dotnet restore
-dotnet build --no-restore
-dotnet test --no-build
+dotnet test
 ```
 
-Detaljnije obrazloženje strukture je u [docs/architecture.md](docs/architecture.md), a pravila doprinosa u [CONTRIBUTING.md](CONTRIBUTING.md).
+Domain testovi proveravaju poslovna pravila bez infrastrukture. Application testovi proveravaju orkestraciju use-case-a preko test doubles-a za portove.
+
+## Pravila za referentni primer
+
+Primer je namerno mali. Nema MediatR-a, message bus-a, generic repository-ja, outbox-a ili dodatnih slojeva bez konkretne potrebe. Fokus je na granicama, odgovornostima i čitljivosti koda.

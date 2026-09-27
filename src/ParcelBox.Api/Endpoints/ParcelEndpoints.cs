@@ -1,5 +1,5 @@
+using ParcelBox.Api.Contracts;
 using ParcelBox.Application.Parcels;
-using ParcelBox.Domain.Parcels;
 
 namespace ParcelBox.Api.Endpoints;
 
@@ -58,5 +58,3 @@ public static class ParcelEndpoints
             : Results.BadRequest(new { error = result.Error });
     }
 }
-
-public sealed record RegisterParcelRequest(string TrackingCode, string RecipientPhone, ParcelSize Size);

@@ -1,3 +1,5 @@
+using ParcelBox.Simulators.LockerController;
+
 var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddSingleton<SimulatorState>();
 
@@ -27,17 +29,3 @@ app.MapPost("/api/compartments/{lockerCode}/{number}/open", (
 });
 
 app.Run();
-
-public sealed class SimulatorState
-{
-    public LockerMode Mode { get; set; } = LockerMode.Normal;
-}
-
-public enum LockerMode
-{
-    Normal,
-    Jammed,
-    Unavailable
-}
-
-public sealed record SetModeRequest(string Mode);

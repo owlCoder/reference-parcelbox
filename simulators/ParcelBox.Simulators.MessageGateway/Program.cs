@@ -1,4 +1,4 @@
-using System.Collections.Concurrent;
+using ParcelBox.Simulators.MessageGateway;
 
 var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddSingleton<SimulatorState>();
@@ -31,30 +31,14 @@ app.MapPost("/api/messages", (SendMessageRequest request, SimulatorState state) 
     if (state.Mode == MessageGatewayMode.Unavailable)
         return Results.StatusCode(StatusCodes.Status503ServiceUnavailable);
 
-    var message = new SentMessage(Guid.NewGuid(), request.Destination, request.Text, DateTimeOffset.UtcNow);
+    var message = new SentMessage(
+        Guid.NewGuid(),
+        request.Destination,
+        request.Text,
+        DateTimeOffset.UtcNow);
+
     state.Messages.Enqueue(message);
     return Results.Accepted("/api/messages", message);
 });
 
 app.Run();
-
-public sealed class SimulatorState
-{
-    public MessageGatewayMode Mode { get; set; } = MessageGatewayMode.Normal;
-    public ConcurrentQueue<SentMessage> Messages { get; } = new();
-
-    public void Clear()
-    {
-        while (Messages.TryDequeue(out _)) { }
-    }
-}
-
-public enum MessageGatewayMode
-{
-    Normal,
-    Unavailable
-}
-
-public sealed record SetModeRequest(string Mode);
-public sealed record SendMessageRequest(string Destination, string Text);
-public sealed record SentMessage(Guid Id, string Destination, string Text, DateTimeOffset SentAt);
