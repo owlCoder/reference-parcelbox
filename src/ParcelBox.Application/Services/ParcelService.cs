@@ -11,20 +11,23 @@ public sealed class ParcelService : IParcelService
 {
     private readonly IParcelRepository _parcels;
     private readonly ILockerService _lockers;
-    private readonly IPickupService _pickup;
+    private readonly IPickupAccessService _pickupAccess;
+    private readonly INotificationService _notifications;
     private readonly IUnitOfWork _unitOfWork;
     private readonly TimeProvider _timeProvider;
 
     public ParcelService(
         IParcelRepository parcels,
         ILockerService lockers,
-        IPickupService pickup,
+        IPickupAccessService pickupAccess,
+        INotificationService notifications,
         IUnitOfWork unitOfWork,
         TimeProvider timeProvider)
     {
         _parcels = parcels;
         _lockers = lockers;
-        _pickup = pickup;
+        _pickupAccess = pickupAccess;
+        _notifications = notifications;
         _unitOfWork = unitOfWork;
         _timeProvider = timeProvider;
     }
@@ -104,15 +107,6 @@ public sealed class ParcelService : IParcelService
                 ParcelOperationError.NotRegisteredForStorage);
         }
 
-        var now = _timeProvider.GetUtcNow();
-        var preparation = await _pickup.PrepareAccessAsync(parcel.Id, now, cancellationToken);
-
-        if (preparation.IsFailure)
-        {
-            return Result<StoreParcelResult, ParcelOperationError>.Failure(
-                ParcelOperationError.PickupAccessInvalid);
-        }
-
         var assignment = await _lockers.AssignAsync(parcel.Id, parcel.Size, cancellationToken);
 
         if (assignment.IsFailure)
@@ -128,6 +122,15 @@ public sealed class ParcelService : IParcelService
             return Result<StoreParcelResult, ParcelOperationError>.Failure(error);
         }
 
+        var now = _timeProvider.GetUtcNow();
+        var preparation = await _pickupAccess.CreateAsync(parcel.Id, now, cancellationToken);
+
+        if (preparation.IsFailure)
+        {
+            return Result<StoreParcelResult, ParcelOperationError>.Failure(
+                ParcelOperationError.PickupAccessInvalid);
+        }
+
         parcel.LockerCode = assignment.Value.LockerCode;
         parcel.CompartmentNumber = assignment.Value.Number;
         parcel.StoredAt = now;
@@ -135,17 +138,16 @@ public sealed class ParcelService : IParcelService
 
         await _unitOfWork.SaveChangesAsync(cancellationToken);
 
-        var messageStatus = await _pickup.SendReadyMessageAsync(
+        var messageStatus = await _notifications.SendPickupCodeAsync(
             parcel,
             preparation.Value.Code,
             cancellationToken);
 
-        var result = new StoreParcelResult(
-            assignment.Value.LockerCode,
-            assignment.Value.Number,
-            messageStatus);
-
-        return Result<StoreParcelResult, ParcelOperationError>.Success(result);
+        return Result<StoreParcelResult, ParcelOperationError>.Success(
+            new StoreParcelResult(
+                assignment.Value.LockerCode,
+                assignment.Value.Number,
+                messageStatus));
     }
 
     private static ParcelDetails ToDetails(Parcel parcel)

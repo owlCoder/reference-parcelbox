@@ -48,18 +48,13 @@ public sealed class ParcelServiceTests
         compartments.Items.Add(compartment);
 
         var lockerService = new LockerService(compartments, lockerController);
-        var pickupService = new PickupService(
-            parcels,
-            pickupAccesses,
-            lockerService,
-            messageGateway,
-            pickupCodes,
-            unitOfWork,
-            timeProvider);
+        var pickupAccessService = new PickupAccessService(pickupAccesses, pickupCodes);
+        var notificationService = new NotificationService(messageGateway);
         var parcelService = new ParcelService(
             parcels,
             lockerService,
-            pickupService,
+            pickupAccessService,
+            notificationService,
             unitOfWork,
             timeProvider);
 
@@ -93,18 +88,14 @@ public sealed class ParcelServiceTests
         var compartments = new CompartmentRepositoryFake();
         var lockerService = new LockerService(compartments, new LockerControllerFake());
         var unitOfWork = new UnitOfWorkFake();
-        var pickupService = new PickupService(
-            parcels,
+        var pickupAccessService = new PickupAccessService(
             new PickupAccessRepositoryFake(),
-            lockerService,
-            new MessageGatewayFake(),
-            new PickupCodeServiceFake(),
-            unitOfWork,
-            new FixedTimeProvider(Now));
+            new PickupCodeServiceFake());
         var service = new ParcelService(
             parcels,
             lockerService,
-            pickupService,
+            pickupAccessService,
+            new NotificationService(new MessageGatewayFake()),
             unitOfWork,
             new FixedTimeProvider(Now));
 

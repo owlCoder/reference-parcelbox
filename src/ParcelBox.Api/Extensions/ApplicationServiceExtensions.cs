@@ -9,7 +9,9 @@ public static class ApplicationServiceExtensions
     {
         services.AddScoped<IParcelService, ParcelService>();
         services.AddScoped<ILockerService, LockerService>();
+        services.AddScoped<IPickupAccessService, PickupAccessService>();
         services.AddScoped<IPickupService, PickupService>();
+        services.AddScoped<INotificationService, NotificationService>();
         services.AddSingleton(TimeProvider.System);
 
         return services;

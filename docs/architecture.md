@@ -1,146 +1,92 @@
 # Arhitektura
 
-ParcelBox je mali referentni sistem organizovan po Clean Architecture i SOLID principima, uz eksplicitnu podelu **Model → Repository → Service → API**. Primer namerno koristi state-only modele: poslovne odluke nisu sakrivene u entity helper metodama, već su vidljive u application servisima.
+ParcelBox koristi eksplicitnu **Model → Repository → Service → API** podelu. Modeli predstavljaju stanje; repository sloj radi persistence; application servisi sadrže poslovna pravila; API je transport i composition root.
 
-## Pravac zavisnosti
+## Smer zavisnosti
 
 ```text
-ParcelBox.Domain
-        ^
-        |
-ParcelBox.Application
-        ^
-        |
-ParcelBox.Infrastructure
-        ^
-        |
-ParcelBox.Api
+Api --------> Application --------> Domain
+ |                 ^
+ |                 |
+ +----> Infrastructure
+
+Web ----HTTP----> Api
 ```
 
-Tačnije, `Infrastructure` referencira `Application` zato što implementira interfejse definisane unutra, dok `Api` referencira Application i Infrastructure samo da bi sastavio aplikaciju.
+Infrastructure zavisi od Application interfejsa koje implementira. Application zavisi od Domain modela. Domain nema reference ka višim slojevima.
 
-`ParcelBox.Web` nema project reference ka backend slojevima:
+## Domain
 
-```text
-ParcelBox.Web --HTTP--> ParcelBox.Api
-```
-
-## 1. Domain: modeli i enum-i
-
-Domain sadrži podatke koji predstavljaju poslovno stanje:
+Domain sadrži samo modele i enum-e. Model nema repository, servis, Result ili use-case helper metodu.
 
 ```text
-ParcelBox.Domain/
+Domain/
 ├── Common/Enums/
-│   └── SizeCategory.cs
-├── Parcels/
-│   ├── Models/Parcel.cs
-│   └── Enums/ParcelStatus.cs
-├── Lockers/
-│   ├── Models/Compartment.cs
-│   └── Enums/CompartmentStatus.cs
-└── Pickup/
-    ├── Models/PickupAccess.cs
-    └── Enums/PickupStatus.cs
+├── Parcels/Models + Enums
+├── Lockers/Models + Enums
+└── Pickup/Models + Enums
 ```
 
-Modeli nemaju:
+`Compartment`, na primer, samo čuva `Size`, `Status` i `ParcelId`. Pravilo kompatibilnosti veličina pripada `LockerService`-u.
 
-- `CanFit`, `CanBeStored` ili slične helper metode;
-- factory metode koje sadrže use-case validaciju;
-- repository ili service zavisnosti;
-- `Result` tip;
-- HTTP, EF Core ili simulator detalje.
+## Repository
 
-Primer:
-
-```csharp
-public sealed class Compartment
-{
-    public Guid Id { get; set; }
-    public string LockerCode { get; set; } = string.Empty;
-    public string Number { get; set; } = string.Empty;
-    public SizeCategory Size { get; set; }
-    public CompartmentStatus Status { get; set; }
-    public Guid? ParcelId { get; set; }
-}
-```
-
-Model ima jednu odgovornost: predstavljanje stanja.
-
-## 2. Repository interfejsi
-
-Repository interfejsi su u Application sloju:
+Interfejsi su u `Application/Interfaces/Repositories`, a EF Core implementacije u `Infrastructure/Persistence/Repositories`.
 
 ```text
-Interfaces/Repositories/
-├── IParcelRepository.cs
-├── ICompartmentRepository.cs
-├── IPickupAccessRepository.cs
-└── IUnitOfWork.cs
+IParcelRepository        -> ParcelRepository
+ICompartmentRepository   -> CompartmentRepository
+IPickupAccessRepository  -> PickupAccessRepository
+IUnitOfWork              -> ParcelBoxDbContext
 ```
 
-Repository je persistence apstrakcija. Ne sadrži poslovnu politiku.
+Repository sadrži data-access upite. Ne radi izbor “najboljeg” pretinca, statusnu tranziciju ili validaciju pickup koda.
 
-Na primer, `ICompartmentRepository` vraća dostupne pretince. On ne odlučuje da li `Medium` paket može u `Large` pretinac. Ta odluka pripada `LockerService`-u.
+## Servisi
 
-Ovim se izbegava skrivena poslovna logika u LINQ upitu repository-ja.
-
-## 3. Application servisi
-
-Javni use-case ugovori su u:
+Service ugovori su u `Application/Interfaces/Services`, implementacije u `Application/Services`.
 
 ```text
-Interfaces/Services/
-├── IParcelService.cs
-├── ILockerService.cs
-└── IPickupService.cs
-```
-
-Implementacije su u:
-
-```text
-Services/
-├── ParcelService.cs
-├── LockerService.cs
-└── PickupService.cs
+IParcelService        -> ParcelService
+ILockerService        -> LockerService
+IPickupAccessService  -> PickupAccessService
+IPickupService        -> PickupService
+INotificationService  -> NotificationService
 ```
 
 ### ParcelService
 
-Koristi `IParcelRepository` za podatke o paketima, `ILockerService` za smeštanje i `IPickupService` za pickup pristup. Vodi:
-
-- validaciju registracije;
-- proveru jedinstvenog tracking koda;
-- registraciju paketa;
-- prelaz `Registered -> Stored`;
-- orkestraciju store scenarija.
+Koristi `IParcelRepository`, `ILockerService`, `IPickupAccessService`, `INotificationService`, `IUnitOfWork` i `TimeProvider`. Odgovoran je za registraciju paketa i store orkestraciju.
 
 ### LockerService
 
-Koristi `ICompartmentRepository` i `ILockerController`. Vodi:
+Koristi `ICompartmentRepository` i `ILockerController`. Ovde je pravilo izbora najmanjeg kompatibilnog dostupnog pretinca, kao i promena stanja pretinca.
 
-- izbor najmanjeg kompatibilnog dostupnog pretinca;
-- proveru stanja pretinca;
-- poziv fizičkog kontrolera;
-- zauzimanje i oslobađanje pretinca.
+### PickupAccessService
 
-Kompatibilnost veličina je ovde, a ne u `Compartment` modelu i ne u repository-ju.
+Koristi `IPickupAccessRepository` i `IPickupCodeService`. Odgovoran je za kreiranje pickup pristupa, hash koda, rok važenja, proveru koda, broj neuspešnih pokušaja i zaključavanje.
 
 ### PickupService
 
-Koristi repository-je za paket i pickup pristup, `ILockerService`, `IMessageGateway`, `IPickupCodeService`, `IUnitOfWork` i `TimeProvider`. Vodi:
+Koristi `IParcelRepository`, `ILockerService`, `IPickupAccessService`, `IUnitOfWork` i `TimeProvider`. Orkestrira završetak pickup toka i ne sadrži kod za generisanje/hash pickup koda niti slanje poruka.
 
-- kreiranje pickup pristupa;
-- rok važenja koda;
-- broj neuspešnih pokušaja i zaključavanje;
-- proveru koda;
-- slanje poruke;
-- završetak pickup toka.
+### NotificationService
 
-## 4. Result pattern
+Koristi samo `IMessageGateway`. Formira i šalje poruku sa pickup kodom. Time message integration nije dodatna odgovornost `PickupService`-a.
 
-`Result` je deo Application sloja, jer opisuje ishod application operacije:
+## External i Security interfejsi
+
+Application definiše male portove:
+
+- `ILockerController`;
+- `IMessageGateway`;
+- `IPickupCodeService`.
+
+Infrastructure sadrži `HttpClient` i kriptografske implementacije. Očekivani transportni kvar adapter prevodi u typed rezultat.
+
+## Result pattern
+
+Result pripada Application sloju:
 
 ```text
 Application/Common/Results/
@@ -148,115 +94,49 @@ Application/Common/Results/
 └── ResultOfT.cs
 ```
 
-Primer:
+Poznati poslovni i integracioni ishodi su enum-i iz `Application/Enums`. Exception nije kontrolni tok za očekivanu validaciju ili nedostupan simulator.
 
-```csharp
-Task<Result<ParcelDetails, ParcelOperationError>> RegisterAsync(...);
-```
+## Dependency injection
 
-Očekivana validaciona, poslovna ili integraciona greška nije exception. Poznati ishodi su enum-i u `Application/Enums`.
-
-Infrastructure adapter može, na primer, `HttpRequestException` iz `HttpClient`-a da prevede u `LockerControllerError.Unavailable`. Ostatak aplikacije ne zavisi od transportnog exception tipa.
-
-## 5. Infrastructure
-
-```text
-ParcelBox.Infrastructure/
-├── Persistence/
-│   ├── Configurations/
-│   ├── Repositories/
-│   ├── ParcelBoxDbContext.cs
-│   └── DatabaseInitializer.cs
-├── External/
-└── Security/
-```
-
-Infrastructure implementira interfejse iz Application sloja:
-
-```text
-IParcelRepository        -> ParcelRepository
-ICompartmentRepository   -> CompartmentRepository
-IPickupAccessRepository  -> PickupAccessRepository
-ILockerController        -> LockerControllerClient
-IMessageGateway          -> MessageGatewayClient
-IPickupCodeService       -> PickupCodeService
-IUnitOfWork              -> ParcelBoxDbContext
-```
-
-Repository implementacije sadrže samo persistence upite. Poslovne odluke ostaju u servisima.
-
-## 6. Dependency injection
-
-`ParcelBox.Api` je composition root.
-
-Application servisi se registruju preko `AddApplicationServices()`:
+API sastavlja sistem:
 
 ```text
 IParcelService -> ParcelService
 ILockerService -> LockerService
+IPickupAccessService -> PickupAccessService
 IPickupService -> PickupService
+INotificationService -> NotificationService
+
+IParcelRepository -> ParcelRepository
+ICompartmentRepository -> CompartmentRepository
+IPickupAccessRepository -> PickupAccessRepository
+ILockerController -> LockerControllerClient
+IMessageGateway -> MessageGatewayClient
+IPickupCodeService -> PickupCodeService
 ```
 
-Infrastructure registruje repository-je i adaptere preko `AddInfrastructure()`.
+Endpoint dobija service interfejs, nikad `DbContext` ili konkretnu repository klasu.
 
-Endpoint zato dobija samo service interfejs:
+## SOLID
 
-```csharp
-private static async Task<IResult> StoreAsync(
-    Guid id,
-    IParcelService service,
-    CancellationToken cancellationToken)
-```
-
-Endpoint ne poznaje `DbContext`, repository implementaciju ili HTTP klijenta simulatora.
-
-## 7. API
-
-API sloj ima tri odgovornosti:
-
-1. HTTP contract;
-2. poziv service interfejsa;
-3. prevod Result-a u HTTP odgovor / Problem Details.
-
-API ne sadrži poslovna pravila i ne pristupa bazi direktno.
-
-## 8. Web i simulatori
-
-Blazor Web UI komunicira sa API-jem i nastavničkim simulatorima preko HTTP-a. Simulatori su zasebni procesi.
-
-Locker Controller: `Normal`, `Jammed`, `Unavailable`.
-
-Message Gateway: `Normal`, `Unavailable`.
-
-Simulator ne zna pravila o paketima, pickup kodovima ili statusnim tranzicijama.
-
-## SOLID u ovom primeru
-
-- **SRP** — model čuva stanje; repository čita/piše podatke; service donosi poslovne odluke; adapter komunicira sa spoljnim sistemom; endpoint radi HTTP mapiranje.
-- **OCP** — drugi repository ili external adapter može da implementira postojeći interfejs bez promene service koda.
-- **LSP** — test fake implementacije mogu da zamene repository i external adapter kroz isti ugovor.
-- **ISP** — interfejsi su mali i namenski (`IParcelRepository`, `ILockerController`, `IPickupCodeService`), bez jednog velikog “god service” ugovora.
-- **DIP** — servisi zavise od interfejsa; konkretni EF Core i HTTP tipovi ostaju u Infrastructure sloju.
+- **SRP** — modeli čuvaju stanje; repository radi podatke; svaki servis ima konkretnu poslovnu odgovornost; adapter radi jednu spoljnu integraciju; endpoint radi HTTP.
+- **OCP** — repository ili adapter se menja implementacijom istog interfejsa bez promene service koda.
+- **LSP** — fake implementacije u testovima zamenjuju produkcione implementacije istih interfejsa.
+- **ISP** — repository, service, external i security interfejsi su mali i namenski.
+- **DIP** — servisi zavise od interfejsa, a konkretni EF Core/HTTP/security detalji su u Infrastructure sloju.
 
 ## Testovi
 
-Pošto Domain modeli nemaju poslovne metode, testovi su fokusirani na application servise. Fake repository-ji i fake external adapteri omogućavaju proveru poslovnog pravila bez SQLite baze i bez pokretanja simulatora.
+Business pravila se testiraju na service nivou uz fake repository-je i fake external adaptere. Time test ne zahteva SQLite ni pokrenute simulatore.
 
-Primeri koje testovi pokrivaju:
+Pokriveni su, između ostalog:
 
-- izbor najmanjeg kompatibilnog pretinca;
-- odbijanje duplog tracking koda;
-- store tok menja odgovarajuća stanja;
-- jammed locker ne završava pickup;
-- tri pogrešna pickup koda zaključavaju pristup.
+- najmanji kompatibilni pretinac;
+- dupli tracking code;
+- store tok;
+- jammed locker;
+- zaključavanje pickup pristupa nakon tri pogrešna koda.
 
-## Namerna pojednostavljenja
+## Namerna ograničenja
 
-- SQLite i jedan `DbContext`;
-- nema generic repository-ja;
-- nema MediatR-a;
-- nema message bus-a ni outbox-a;
-- nema dodatnog Unit of Work framework-a — `DbContext` implementira mali `IUnitOfWork` ugovor;
-- nema produkcione konkurentne rezervacije pretinaca.
-
-Cilj je da struktura bude dovoljno mala za vežbe, ali da se smer zavisnosti i odgovornosti jasno vide iz koda.
+Nema MediatR-a, generic repository-ja, message bus-a, outbox-a ili dodatnog Unit of Work framework-a. `DbContext` implementira mali `IUnitOfWork` ugovor. Cilj je jasan referentni kod, ne produkcioni paketomat.

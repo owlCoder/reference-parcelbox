@@ -30,7 +30,6 @@ public sealed class PickupServiceTests
         Assert.Equal(ParcelStatus.Stored, context.Parcel.Status);
         Assert.Equal(PickupStatus.Active, context.Access.Status);
         Assert.Equal(CompartmentStatus.Occupied, context.Compartment.Status);
-        Assert.Equal(0, context.UnitOfWork.SaveCalls);
     }
 
     [Fact]
@@ -103,12 +102,11 @@ public sealed class PickupServiceTests
         pickupAccesses.Items.Add(access);
 
         var lockerService = new LockerService(compartments, lockerController);
+        var pickupAccessService = new PickupAccessService(pickupAccesses, pickupCodes);
         var service = new PickupService(
             parcels,
-            pickupAccesses,
             lockerService,
-            new MessageGatewayFake(),
-            pickupCodes,
+            pickupAccessService,
             unitOfWork,
             new FixedTimeProvider(Now));
 

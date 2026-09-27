@@ -1,12 +1,12 @@
-using ParcelBox.Application.Common.Results;
 using ParcelBox.Application.Enums;
+using ParcelBox.Domain.Parcels;
 
 namespace ParcelBox.Application.Interfaces.Services;
 
-public interface IPickupService
+public interface INotificationService
 {
-    Task<Result<PickupOperationError>> CompletePickupAsync(
-        string trackingCode,
+    Task<PickupMessageStatus> SendPickupCodeAsync(
+        Parcel parcel,
         string pickupCode,
         CancellationToken cancellationToken);
 }
