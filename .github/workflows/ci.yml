@@ -18,6 +18,73 @@ jobs:
       - run: dotnet format --verify-no-changes --no-restore
       - run: dotnet build --configuration Release --no-restore
       - run: dotnet test --configuration Release --no-build
+      - name: Smoke test simulator mode switching
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          (
+            cd simulators/ParcelBox.Simulators.LockerController
+            exec dotnet run --configuration Release --no-build --no-launch-profile --urls http://127.0.0.1:5101
+          ) > /tmp/locker-simulator.log 2>&1 &
+          locker_pid=$!
+
+          (
+            cd simulators/ParcelBox.Simulators.MessageGateway
+            exec dotnet run --configuration Release --no-build --no-launch-profile --urls http://127.0.0.1:5102
+          ) > /tmp/message-simulator.log 2>&1 &
+          message_pid=$!
+
+          trap 'kill "$locker_pid" "$message_pid" 2>/dev/null || true' EXIT
+
+          for attempt in {1..30}; do
+            locker_status=$(curl --silent --output /dev/null --write-out '%{http_code}' http://127.0.0.1:5101/health || true)
+            message_status=$(curl --silent --output /dev/null --write-out '%{http_code}' http://127.0.0.1:5102/health || true)
+
+            if [ "$locker_status" = "200" ] && [ "$message_status" = "200" ]; then
+              break
+            fi
+
+            sleep 1
+          done
+
+          curl --fail --silent --show-error \
+            -X PUT \
+            -H 'Content-Type: application/json' \
+            -d '{"mode":"Unavailable"}' \
+            http://127.0.0.1:5101/api/simulator/mode \
+            | grep -q 'Unavailable'
+
+          test "$(curl --silent --output /dev/null --write-out '%{http_code}' http://127.0.0.1:5101/health)" = "503"
+          curl --fail --silent --show-error http://127.0.0.1:5101/api/simulator/mode | grep -q 'Unavailable'
+
+          curl --fail --silent --show-error \
+            -X PUT \
+            -H 'Content-Type: application/json' \
+            -d '{"mode":"Normal"}' \
+            http://127.0.0.1:5101/api/simulator/mode \
+            | grep -q 'Normal'
+
+          curl --fail --silent --show-error http://127.0.0.1:5101/health > /dev/null
+
+          curl --fail --silent --show-error \
+            -X PUT \
+            -H 'Content-Type: application/json' \
+            -d '{"mode":"Unavailable"}' \
+            http://127.0.0.1:5102/api/simulator/mode \
+            | grep -q 'Unavailable'
+
+          test "$(curl --silent --output /dev/null --write-out '%{http_code}' http://127.0.0.1:5102/health)" = "503"
+          curl --fail --silent --show-error http://127.0.0.1:5102/api/simulator/mode | grep -q 'Unavailable'
+
+          curl --fail --silent --show-error \
+            -X PUT \
+            -H 'Content-Type: application/json' \
+            -d '{"mode":"Normal"}' \
+            http://127.0.0.1:5102/api/simulator/mode \
+            | grep -q 'Normal'
+
+          curl --fail --silent --show-error http://127.0.0.1:5102/health > /dev/null
       - name: Smoke test ParcelBox Web assets
         working-directory: src/ParcelBox.Web
         shell: bash
@@ -59,11 +126,14 @@ jobs:
             exit 1
           fi
 
-          css_path=$(grep -oE 'href="[^"]*app[^"]*\.css"' /tmp/parcelbox-home.html | head -1 | cut -d'"' -f2)
+          app_css_path=$(grep -oE 'href="[^"]*app[^"]*\.css"' /tmp/parcelbox-home.html | head -1 | cut -d'"' -f2)
+          simulator_css_path=$(grep -oE 'href="[^"]*simulator[^"]*\.css"' /tmp/parcelbox-home.html | head -1 | cut -d'"' -f2)
           js_path=$(grep -oE 'src="[^"]*blazor\.web[^"]*\.js"' /tmp/parcelbox-home.html | head -1 | cut -d'"' -f2)
 
-          test -n "$css_path"
+          test -n "$app_css_path"
+          test -n "$simulator_css_path"
           test -n "$js_path"
 
-          curl --fail --silent --show-error "http://127.0.0.1:5000/${css_path#/}" --output /dev/null || { cat /tmp/parcelbox-web.log; exit 1; }
+          curl --fail --silent --show-error "http://127.0.0.1:5000/${app_css_path#/}" --output /dev/null || { cat /tmp/parcelbox-web.log; exit 1; }
+          curl --fail --silent --show-error "http://127.0.0.1:5000/${simulator_css_path#/}" --output /dev/null || { cat /tmp/parcelbox-web.log; exit 1; }
           curl --fail --silent --show-error "http://127.0.0.1:5000/${js_path#/}" --output /dev/null || { cat /tmp/parcelbox-web.log; exit 1; }
