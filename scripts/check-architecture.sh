@@ -40,7 +40,6 @@ while IFS= read -r file; do
   if ! grep -Eq '^namespace ParcelBox\.Domain\.[A-Za-z0-9_]+\.Models;' "$file"; then
     report "$file is under Domain/*/Models but its namespace does not end in .Models."
   fi
-
 done < <(find src/ParcelBox.Domain -path '*/Models/*.cs' -type f -print | sort)
 
 while IFS= read -r file; do
@@ -58,6 +57,16 @@ while IFS= read -r file; do
     report "$file is under Infrastructure/Persistence/Repositories but has a mismatched namespace."
   fi
 done < <(find src/ParcelBox.Infrastructure/Persistence/Repositories -type f -name '*.cs' -print | sort)
+
+while IFS= read -r file; do
+  folder=$(basename "$(dirname "$file")")
+
+  if [[ "$folder" == "Contracts" || "$folder" == "Enums" || "$folder" == "Models" ]]; then
+    if ! grep -Eq "^namespace ParcelBox\\.Simulators\\.[A-Za-z0-9_]+\\.${folder};" "$file"; then
+      report "$file has a namespace that does not match its simulator folder."
+    fi
+  fi
+done < <(find simulators -type f -name '*.cs' -print | sort)
 
 if grep -R -nE 'Microsoft\.EntityFrameworkCore|ParcelBox\.Infrastructure' \
   src/ParcelBox.Application src/ParcelBox.Domain --include='*.cs'; then

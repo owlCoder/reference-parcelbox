@@ -1,5 +1,6 @@
 using System.Text.Json.Serialization;
-using ParcelBox.Simulators.LockerController;
+using ParcelBox.Simulators.LockerController.Endpoints;
+using ParcelBox.Simulators.LockerController.Models;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -12,36 +13,7 @@ builder.Services.AddSingleton<SimulatorState>();
 
 var app = builder.Build();
 
-app.MapGet("/health", (SimulatorState state) =>
-{
-    return state.Mode == LockerMode.Unavailable
-        ? Results.StatusCode(StatusCodes.Status503ServiceUnavailable)
-        : Results.Ok(new { status = "ok" });
-});
-
-app.MapGet(
-    "/api/simulator/mode",
-    (SimulatorState state) => Results.Ok(new SimulatorModeResponse(state.Mode)));
-
-app.MapPut("/api/simulator/mode", (SetModeRequest request, SimulatorState state) =>
-{
-    state.Mode = request.Mode;
-    return Results.Ok(new SimulatorModeResponse(state.Mode));
-});
-
-app.MapPost("/api/compartments/{lockerCode}/{number}/open", (
-    string lockerCode,
-    string number,
-    SimulatorState state) =>
-{
-    return state.Mode switch
-    {
-        LockerMode.Normal => Results.Ok(
-            new OpenCompartmentResponse(lockerCode, number, LockerOpenStatus.Opened)),
-        LockerMode.Jammed => Results.Conflict(
-            new OpenCompartmentResponse(lockerCode, number, LockerOpenStatus.Jammed)),
-        _ => Results.StatusCode(StatusCodes.Status503ServiceUnavailable)
-    };
-});
+app.MapSimulatorEndpoints();
+app.MapCompartmentEndpoints();
 
 app.Run();

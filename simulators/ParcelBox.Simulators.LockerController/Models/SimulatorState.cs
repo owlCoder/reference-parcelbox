@@ -1,4 +1,6 @@
-namespace ParcelBox.Simulators.LockerController;
+using ParcelBox.Simulators.LockerController.Enums;
+
+namespace ParcelBox.Simulators.LockerController.Models;
 
 public sealed class SimulatorState
 {

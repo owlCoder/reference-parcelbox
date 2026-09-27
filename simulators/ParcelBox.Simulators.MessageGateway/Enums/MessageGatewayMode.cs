@@ -1,7 +1,7 @@
-namespace ParcelBox.Simulators.MessageGateway;
+namespace ParcelBox.Simulators.MessageGateway.Enums;
 
 public enum MessageGatewayMode
 {
-    Normal,
-    Unavailable
+    Normal = 0,
+    Unavailable = 1
 }

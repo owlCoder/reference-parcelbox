@@ -1,4 +1,4 @@
-namespace ParcelBox.Simulators.LockerController;
+namespace ParcelBox.Simulators.LockerController.Enums;
 
 public enum LockerOpenStatus
 {

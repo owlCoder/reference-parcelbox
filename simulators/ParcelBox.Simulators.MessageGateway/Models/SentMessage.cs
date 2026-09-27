@@ -1,4 +1,4 @@
-namespace ParcelBox.Simulators.MessageGateway;
+namespace ParcelBox.Simulators.MessageGateway.Models;
 
 public sealed record SentMessage(
     Guid Id,

@@ -1,8 +1,8 @@
-namespace ParcelBox.Simulators.LockerController;
+namespace ParcelBox.Simulators.LockerController.Enums;
 
 public enum LockerMode
 {
-    Normal,
-    Jammed,
-    Unavailable
+    Normal = 0,
+    Jammed = 1,
+    Unavailable = 2
 }
