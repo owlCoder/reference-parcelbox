@@ -56,9 +56,11 @@ Result<CompartmentError> occupyResult = compartment.Occupy(...);
 
 Nema `Error.Code`, `Error.Message`, `ErrorType` ni statičkih `*Errors` kataloga u domenu. Time je neuspeh compile-time vidljiv i ne zavisi od tekstualnog identifikatora.
 
-`SizeCategory` je mali shared domain koncept (`Small`, `Medium`, `Large`). Koriste ga i veličina paketa i kapacitet pretinca. To uklanja dupliranje dva ista enum-a i nepotrebni mapping između njih.
+`SizeCategory` je mali shared domain koncept (`Small`, `Medium`, `Large`). Koriste ga i veličina paketa i kapacitet pretinca. Kompatibilnost pretinca je eksplicitno domensko pravilo; ne zavisi od slučajnog numeričkog redosleda enum vrednosti.
 
-`PickupAccess` vodi samo pickup pristup: hash koda, rok važenja, broj neuspešnih pokušaja i status pristupa. Isporuka SMS/poruke je integraciona odgovornost i nije stanje `PickupAccess` entiteta.
+`PickupAccess` vodi pickup pristup: hash koda, rok važenja, broj neuspešnih pokušaja i status pristupa. Entitet ne poznaje algoritam za hash niti kriptografsko poređenje. Dobija samo rezultat provere koda (`codeMatches`) i na osnovu njega sprovodi poslovno pravilo o pokušajima i zaključavanju. Rok mora biti u budućnosti u trenutku kreiranja pristupa.
+
+Isporuka poruke je integraciona odgovornost i nije stanje `PickupAccess` entiteta.
 
 ## Application
 
@@ -80,6 +82,10 @@ Handler mapira precizan domenski ishod u use-case ishod. Na primer `ParcelError.
 
 `ILockerController` i `IMessageGateway` vraćaju typed `Result` sa `LockerControllerError` odnosno `MessageGatewayError`. Infrastructure adapter zato pretvara očekivani HTTP kvar u eksplicitan rezultat umesto da transportni exception koristi kao poslovni tok.
 
+`IMessageGateway` je generički izlazni port. Ne poznaje paket, tracking code niti pickup kod; prima samo `OutboundMessage`. Tek konkretan use-case odlučuje koji tekst treba poslati. Time adapter za slanje poruka ne sadrži poslovnu logiku ParcelBox-a.
+
+`IPickupCodeService` je security port. Application traži generisanje, hash i proveru koda, dok konkretna kriptografska implementacija ostaje u Infrastructure sloju.
+
 Vreme se dobija preko ugrađenog .NET `TimeProvider` tipa. Testovi zato mogu da koriste determinističko vreme bez sopstvenog clock framework-a.
 
 ## Infrastructure
@@ -90,7 +96,7 @@ Infrastructure sadrži konkretne implementacije:
 - EF konfiguracije;
 - SQLite `DbContext`;
 - `HttpClient` adaptere prema simulatorima;
-- generisanje i hash pickup koda.
+- generisanje, hash i fixed-time proveru pickup koda.
 
 `DatabaseInitializer` je normalan DI servis, a ne globalni static helper. EF konfiguracije su odvojene po entitetu, a svaki repository ima svoj fajl.
 
@@ -105,6 +111,8 @@ API ne donosi poslovne odluke. Endpoint:
 3. vrati uspešan HTTP odgovor ili prevede application error enum u Problem Details.
 
 Tek na API granici postoje tekstualne poruke za klijenta. `ErrorHttpExtensions` mapira enum na HTTP status i `detail`; ti stringovi nisu domenski identifikatori niti poslovno stanje.
+
+Enum-i se na HTTP granici serijalizuju kao nazivi (`"Medium"`, `"Stored"`) umesto kao nečitljivi numerički kodovi. Numeričke enum vrednosti nisu deo javnog JSON ugovora.
 
 Statičke klase u ovom sloju koriste se samo za idiomatske ASP.NET extension metode. To nije isto što i držanje poslovnih podataka u statičkim klasama.
 
@@ -145,6 +153,7 @@ flowchart LR
     Store --> PickupAccess[PickupAccess]
     Store --> MessagePort[IMessageGateway]
     Pickup[PickupParcelHandler] --> LockerPort
+    Pickup --> SecurityPort[IPickupCodeService]
 ```
 
 Važan detalj: neuspešno slanje poruke ne vraća skladištenje paketa unazad. Rezultat skladištenja samo izveštava `PickupMessageStatus.Failed`. Notification stanje zato nije ugurano u `PickupAccess` domen.
@@ -156,6 +165,7 @@ Važan detalj: neuspešno slanje poruke ne vraća skladištenje paketa unazad. R
 - sinhrona HTTP integracija sa simulatorima;
 - nema message bus-a, MediatR-a, generic repository-ja ni posebnog Unit of Work wrappera;
 - nema outbox-a ni automatskog retry procesa za poruke;
+- nema konkurentne rezervacije pretinca; demo je fokusiran na arhitektonske granice, ne na produkcionu koordinaciju više paralelnih kurira;
 - Result implementacija je mala i lokalna, bez dodatne biblioteke.
 
 Primer ostaje mali, ali granice, tipizirani ishodi i odgovornosti treba da budu očigledni studentu koji prvi put otvori repo.
