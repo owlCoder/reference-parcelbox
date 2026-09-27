@@ -4,6 +4,8 @@ set -euo pipefail
 repo_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 cd "$repo_root"
 
+export ASPNETCORE_ENVIRONMENT=Development
+
 dotnet build ParcelBox.sln
 
 pids=()
@@ -39,6 +41,7 @@ echo "ParcelBox Web:             http://localhost:5000"
 echo "ParcelBox API:             http://localhost:5100"
 echo "Locker Controller:         http://localhost:5101"
 echo "Message Gateway:           http://localhost:5102"
+echo "Environment:               Development"
 echo "Press Ctrl+C to stop all processes."
 
 wait
