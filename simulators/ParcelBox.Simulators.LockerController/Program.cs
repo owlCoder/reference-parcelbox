@@ -12,7 +12,12 @@ builder.Services.AddSingleton<SimulatorState>();
 
 var app = builder.Build();
 
-app.MapGet("/health", () => Results.Ok(new { status = "ok" }));
+app.MapGet("/health", (SimulatorState state) =>
+{
+    return state.Mode == LockerMode.Unavailable
+        ? Results.StatusCode(StatusCodes.Status503ServiceUnavailable)
+        : Results.Ok(new { status = "ok" });
+});
 
 app.MapGet(
     "/api/simulator/mode",
