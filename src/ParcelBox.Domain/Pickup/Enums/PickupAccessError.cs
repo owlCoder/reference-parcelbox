@@ -7,5 +7,6 @@ public enum PickupAccessError
     CodeHashRequired = 2,
     ExpirationRequired = 3,
     NotActive = 4,
-    Expired = 5
+    Expired = 5,
+    ExpirationMustBeInFuture = 6
 }

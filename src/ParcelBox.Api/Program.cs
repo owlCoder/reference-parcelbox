@@ -1,3 +1,4 @@
+using System.Text.Json.Serialization;
 using ParcelBox.Api.Endpoints;
 using ParcelBox.Application.Lockers;
 using ParcelBox.Application.Parcels;
@@ -9,6 +10,11 @@ var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddProblemDetails();
 builder.Services.AddOpenApi();
+builder.Services.ConfigureHttpJsonOptions(options =>
+{
+    options.SerializerOptions.Converters.Add(
+        new JsonStringEnumConverter(allowIntegerValues: false));
+});
 builder.Services.AddScoped<RegisterParcelHandler>();
 builder.Services.AddScoped<GetParcelHandler>();
 builder.Services.AddScoped<StoreParcelHandler>();

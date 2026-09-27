@@ -36,7 +36,8 @@ public sealed class PickupParcelHandlerTests
         var accessResult = PickupAccess.Create(
             parcel.Id,
             "hash:123456",
-            Now.AddHours(1));
+            Now.AddHours(1),
+            Now);
         Assert.True(accessResult.IsSuccess);
 
         var pickupAccesses = new PickupAccessRepositoryFake();
@@ -81,7 +82,8 @@ public sealed class PickupParcelHandlerTests
         var accessResult = PickupAccess.Create(
             parcel.Id,
             "hash:123456",
-            Now.AddHours(1));
+            Now.AddHours(1),
+            Now);
         Assert.True(accessResult.IsSuccess);
 
         var pickupAccesses = new PickupAccessRepositoryFake();

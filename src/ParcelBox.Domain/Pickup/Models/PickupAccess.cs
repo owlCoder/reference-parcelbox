@@ -30,7 +30,8 @@ public sealed class PickupAccess
     public static Result<PickupAccess, PickupAccessError> Create(
         Guid parcelId,
         string codeHash,
-        DateTimeOffset expiresAt)
+        DateTimeOffset expiresAt,
+        DateTimeOffset now)
     {
         if (parcelId == Guid.Empty)
         {
@@ -45,6 +46,12 @@ public sealed class PickupAccess
         if (expiresAt == default)
         {
             return Result<PickupAccess, PickupAccessError>.Failure(PickupAccessError.ExpirationRequired);
+        }
+
+        if (expiresAt <= now)
+        {
+            return Result<PickupAccess, PickupAccessError>.Failure(
+                PickupAccessError.ExpirationMustBeInFuture);
         }
 
         var access = new PickupAccess(Guid.NewGuid(), parcelId, codeHash, expiresAt);

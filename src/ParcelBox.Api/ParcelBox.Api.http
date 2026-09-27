@@ -12,7 +12,7 @@ Content-Type: application/json
 {
   "trackingCode": "PKG-001",
   "recipientPhone": "+38160111222",
-  "size": 2
+  "size": "Medium"
 }
 
 ### List compartments

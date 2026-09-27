@@ -13,23 +13,15 @@ internal sealed class MessageGatewayClient : IMessageGateway
         _httpClient = httpClient;
     }
 
-    public async Task<Result<MessageGatewayError>> SendPickupCodeAsync(
-        string destination,
-        string trackingCode,
-        string pickupCode,
+    public async Task<Result<MessageGatewayError>> SendAsync(
+        OutboundMessage message,
         CancellationToken cancellationToken)
     {
         try
         {
-            var request = new
-            {
-                destination,
-                text = $"Parcel {trackingCode} is ready. Pickup code: {pickupCode}"
-            };
-
             using var response = await _httpClient.PostAsJsonAsync(
                 "api/messages",
-                request,
+                message,
                 cancellationToken);
 
             return response.IsSuccessStatusCode

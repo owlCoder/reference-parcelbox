@@ -12,12 +12,13 @@ internal sealed class MessageGatewayFake : IMessageGateway
         _result = result;
     }
 
-    public Task<Result<MessageGatewayError>> SendPickupCodeAsync(
-        string destination,
-        string trackingCode,
-        string pickupCode,
+    public OutboundMessage? LastMessage { get; private set; }
+
+    public Task<Result<MessageGatewayError>> SendAsync(
+        OutboundMessage message,
         CancellationToken cancellationToken)
     {
+        LastMessage = message;
         return Task.FromResult(_result);
     }
 }

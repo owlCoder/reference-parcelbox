@@ -96,7 +96,8 @@ public sealed class StoreParcelHandler
         var accessResult = PickupAccess.Create(
             parcel.Id,
             _pickupCodes.Hash(code),
-            now.AddHours(24));
+            now.AddHours(24),
+            now);
 
         if (accessResult.IsFailure)
         {
@@ -107,11 +108,11 @@ public sealed class StoreParcelHandler
         await _pickupAccesses.AddAsync(accessResult.Value, cancellationToken);
         await _db.SaveChangesAsync(cancellationToken);
 
-        var deliveryResult = await _messageGateway.SendPickupCodeAsync(
+        var message = new OutboundMessage(
             parcel.RecipientPhone,
-            parcel.TrackingCode,
-            code,
-            cancellationToken);
+            $"Parcel {parcel.TrackingCode} is ready. Pickup code: {code}");
+
+        var deliveryResult = await _messageGateway.SendAsync(message, cancellationToken);
 
         var deliveryStatus = deliveryResult.IsSuccess
             ? PickupMessageStatus.Delivered

@@ -4,9 +4,7 @@ namespace ParcelBox.Application.Abstractions.External;
 
 public interface IMessageGateway
 {
-    Task<Result<MessageGatewayError>> SendPickupCodeAsync(
-        string destination,
-        string trackingCode,
-        string pickupCode,
+    Task<Result<MessageGatewayError>> SendAsync(
+        OutboundMessage message,
         CancellationToken cancellationToken);
 }
