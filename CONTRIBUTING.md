@@ -12,44 +12,47 @@ dotnet build --configuration Release --no-restore
 dotnet test --configuration Release --no-build
 ```
 
-Za izmene UI-ja ili integracija pokrenite i kompletan demo preko `scripts/run-all.ps1` ili `scripts/run-all.sh`.
+Za UI ili integracione izmene pokrenite i kompletan demo preko `scripts/run-all.ps1` ili `scripts/run-all.sh`.
 
-## Obavezna pravila strukture
+## Pravila strukture
 
 - jedna javna klasa, record, interface ili enum po fajlu;
 - naziv fajla prati naziv glavnog tipa;
-- `Application/Interfaces` sadrži samo interface tipove — bez enum-a, record-a, DTO-a ili concrete class-a;
-- application i integration enum-i pripadaju `Application/Enums`;
-- DTO/record ugovori pripadaju `Application/DTOs`;
-- `IUnitOfWork` je persistence ugovor i pripada `Application/Interfaces/Persistence`, ne `Repositories`;
+- folder i namespace moraju da budu usklađeni;
+- `Domain/*/Models` sadrži state-only modele, a `Domain/*/Enums` domenske enum-e;
+- model nema repository/service zavisnost, Result tip ili business helper metode (`CanFit`, `Validate...`, `Mark...` i slično);
+- `Application/Interfaces` sadrži samo interface tipove;
+- application/integration enum-i su u `Application/Enums`;
+- DTO/record ugovori su u `Application/DTOs`;
 - repository interfejsi su u `Application/Interfaces/Repositories` i nazivaju se `I*Repository`;
+- `IUnitOfWork` pripada `Application/Interfaces/Persistence`;
 - repository implementacije su u `Infrastructure/Persistence/Repositories`;
-- `Domain` model predstavlja stanje i ne sadrži poslovne helper metode;
-- u model ne dodavati `CanFit`, `Validate...`, `Mark...`, factory/use-case logiku, repository ili service zavisnost;
-- repository radi data access, ne bira poslovno “najbolji” rezultat i ne sadrži poslovne tranzicije;
-- poslovna pravila pripadaju `Application/Services`;
-- javni ugovor servisa pripada `Application/Interfaces/Services`;
-- servis zavisi od repository/external/persistence/security interfejsa, ne od EF Core klase ili konkretnog HTTP adaptera;
+- repository radi data access, ne bira poslovno “najbolji” rezultat i ne radi poslovne tranzicije;
+- poslovna pravila i orkestracija pripadaju `Application/Services`;
+- service interfejs treba da bude uzak; ne spajati nepovezan query i command API samo zato što rade nad sličnim podacima;
+- servis drugom servisu ne prosleđuje ceo domain model ako je dovoljan mali DTO/ugovor;
+- application servis zavisi od repository/external/persistence/security interfejsa, ne od EF Core klase ili konkretnog HTTP adaptera;
 - `Api` poziva service interfejs i ne koristi `DbContext` ili repository direktno;
-- `Infrastructure` implementira persistence, external i security interfejse;
+- `Infrastructure` implementira persistence, external i security portove;
 - `Web` nema project reference prema backend slojevima i komunicira HTTP-om;
 - simulator ne sadrži poslovna pravila ParcelBox-a;
-- očekivani neuspeh application operacije vraća typed `Result`, ne exception-based kontrolni tok.
+- očekivani neuspeh vraća typed `Result`, ne exception-based kontrolni tok.
 
 ## Dependency injection
 
-Sve produkcione konkretne implementacije vezuju se kroz DI. Endpoint i application servis ne smeju da rade `new ParcelRepository(...)`, `new LockerControllerClient(...)` ili da direktno konstruišu production dependency.
+Produkcione konkretne implementacije vezuju se kroz DI. Endpoint i application servis ne konstruišu production repository, adapter ili servis ručno.
 
 ## Code hygiene
 
 - ne uvoditi static helper klasu za poslovna pravila;
 - ne duplirati mapiranje ili validaciju kroz više slojeva;
-- ne stavljati više nepovezanih odgovornosti u isti fajl;
+- ne držati više nepovezanih odgovornosti u istom servisu ili fajlu;
 - koristiti standardni Visual Studio / `dotnet format` stil;
+- koristiti opisna imena promenljivih umesto generičkih `x`, `item`, `data` kada kontekst nije očigledan;
 - komentarisati samo odluku koja nije očigledna iz naziva i strukture;
 - ne uvoditi novu apstrakciju bez stvarne granice ili razloga za zamenu implementacije.
 
-CI izvršava `check-architecture.sh` i `ArchitectureTests`, tako da pogrešno smešten enum/DTO, persistence zavisnost u endpointu ili concrete Infrastructure zavisnost u Application sloju treba da padnu odmah.
+CI izvršava `check-architecture.sh` i `ArchitectureTests`, pa pogrešno smešten tip ili zabranjena zavisnost treba da padnu pre merge-a.
 
 ## Arhitektonske odluke
 
