@@ -1,3 +1,4 @@
+using ParcelBox.Api.Contracts;
 using ParcelBox.Application.Pickup;
 
 namespace ParcelBox.Api.Endpoints;
@@ -27,5 +28,3 @@ public static class PickupEndpoints
             : Results.BadRequest(new { error = result.Error });
     }
 }
-
-public sealed record PickupRequest(string Code);

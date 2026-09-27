@@ -5,11 +5,6 @@ using ParcelBox.Domain.Pickup;
 
 namespace ParcelBox.Application.Parcels;
 
-public sealed record StoreParcelResult(
-    string LockerCode,
-    string CompartmentNumber,
-    MessageDeliveryStatus MessageDelivery);
-
 public sealed class StoreParcelHandler(
     IParcelRepository parcels,
     ICompartmentRepository compartments,
@@ -19,7 +14,9 @@ public sealed class StoreParcelHandler(
     IPickupCodeService pickupCodes,
     IAppDbSession db)
 {
-    public async Task<OperationResult<StoreParcelResult>> HandleAsync(Guid parcelId, CancellationToken cancellationToken)
+    public async Task<OperationResult<StoreParcelResult>> HandleAsync(
+        Guid parcelId,
+        CancellationToken cancellationToken)
     {
         var parcel = await parcels.GetByIdAsync(parcelId, cancellationToken);
         if (parcel is null)
@@ -32,7 +29,11 @@ public sealed class StoreParcelHandler(
         if (compartment is null)
             return OperationResult<StoreParcelResult>.Failure("No compatible compartment is available.");
 
-        var openResult = await lockerController.OpenAsync(compartment.LockerCode, compartment.Number, cancellationToken);
+        var openResult = await lockerController.OpenAsync(
+            compartment.LockerCode,
+            compartment.Number,
+            cancellationToken);
+
         if (openResult != LockerOpenResult.Opened)
             return OperationResult<StoreParcelResult>.Failure($"Locker could not be opened: {openResult}.");
 
