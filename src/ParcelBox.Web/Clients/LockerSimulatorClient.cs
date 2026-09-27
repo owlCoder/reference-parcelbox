@@ -68,13 +68,26 @@ public sealed class LockerSimulatorClient
                 _jsonOptions,
                 cancellationToken);
 
-            return response.IsSuccessStatusCode;
+            if (!response.IsSuccessStatusCode)
+            {
+                return false;
+            }
+
+            var confirmed = await response.Content.ReadFromJsonAsync<SimulatorModeResponse<LockerMode>>(
+                _jsonOptions,
+                cancellationToken);
+
+            return confirmed?.Mode == mode;
         }
         catch (HttpRequestException)
         {
             return false;
         }
         catch (OperationCanceledException) when (!cancellationToken.IsCancellationRequested)
+        {
+            return false;
+        }
+        catch (JsonException)
         {
             return false;
         }
