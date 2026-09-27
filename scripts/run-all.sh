@@ -27,6 +27,10 @@ pids+=("$!")
 dotnet run --project src/ParcelBox.Api --no-build --no-launch-profile --urls http://localhost:5100 &
 pids+=("$!")
 
+dotnet run --project src/ParcelBox.Web --no-build --no-launch-profile --urls http://localhost:5000 &
+pids+=("$!")
+
+echo "ParcelBox Web:             http://localhost:5000"
 echo "ParcelBox API:             http://localhost:5100"
 echo "Locker Controller:         http://localhost:5101"
 echo "Message Gateway:           http://localhost:5102"

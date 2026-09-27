@@ -10,6 +10,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ParcelBox.Infrastructure", 
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ParcelBox.Api", "src\ParcelBox.Api\ParcelBox.Api.csproj", "{BC8DCB30-5BFA-4F6A-905A-2C56BC3FC492}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ParcelBox.Web", "src\ParcelBox.Web\ParcelBox.Web.csproj", "{6DDB714F-A472-4D2B-9A11-C2CFB1E6AD13}"
+EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "LockerController", "simulators\ParcelBox.Simulators.LockerController\ParcelBox.Simulators.LockerController.csproj", "{E77A0B54-7CB7-4EC5-A649-C8A09BB271F5}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MessageGateway", "simulators\ParcelBox.Simulators.MessageGateway\ParcelBox.Simulators.MessageGateway.csproj", "{76E0A274-2929-45EF-A084-92B60DE85BA8}"
@@ -40,6 +42,10 @@ Global
         {BC8DCB30-5BFA-4F6A-905A-2C56BC3FC492}.Debug|Any CPU.Build.0 = Debug|Any CPU
         {BC8DCB30-5BFA-4F6A-905A-2C56BC3FC492}.Release|Any CPU.ActiveCfg = Release|Any CPU
         {BC8DCB30-5BFA-4F6A-905A-2C56BC3FC492}.Release|Any CPU.Build.0 = Release|Any CPU
+        {6DDB714F-A472-4D2B-9A11-C2CFB1E6AD13}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+        {6DDB714F-A472-4D2B-9A11-C2CFB1E6AD13}.Debug|Any CPU.Build.0 = Debug|Any CPU
+        {6DDB714F-A472-4D2B-9A11-C2CFB1E6AD13}.Release|Any CPU.ActiveCfg = Release|Any CPU
+        {6DDB714F-A472-4D2B-9A11-C2CFB1E6AD13}.Release|Any CPU.Build.0 = Release|Any CPU
         {E77A0B54-7CB7-4EC5-A649-C8A09BB271F5}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
         {E77A0B54-7CB7-4EC5-A649-C8A09BB271F5}.Debug|Any CPU.Build.0 = Debug|Any CPU
         {E77A0B54-7CB7-4EC5-A649-C8A09BB271F5}.Release|Any CPU.ActiveCfg = Release|Any CPU

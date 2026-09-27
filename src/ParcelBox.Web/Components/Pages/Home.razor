@@ -1,0 +1,490 @@
+@page "/"
+@inject ParcelBoxApiClient Api
+@inject LockerSimulatorClient LockerSimulator
+@inject MessageGatewayClient MessageGateway
+
+<PageTitle>ParcelBox Demo</PageTitle>
+
+<header class="topbar">
+    <div>
+        <p class="eyebrow">ERS REFERENCE DEMO</p>
+        <h1>ParcelBox</h1>
+        <p class="subtitle">A small end-to-end example of Clean Architecture, typed results and simulator integration.</p>
+    </div>
+
+    <div class="service-strip">
+        <div class="service-status">
+            <span class="status-dot @(_apiOnline ? "online" : "offline")"></span>
+            <span>API</span>
+        </div>
+        <div class="service-status">
+            <span class="status-dot @(_lockerOnline ? "online" : "offline")"></span>
+            <span>Locker</span>
+        </div>
+        <div class="service-status">
+            <span class="status-dot @(_messageOnline ? "online" : "offline")"></span>
+            <span>Message</span>
+        </div>
+        <button class="button secondary compact" type="button" @onclick="RefreshAllAsync" disabled="@_busy">Refresh</button>
+    </div>
+</header>
+
+<main>
+    <section class="workflow-grid">
+        <article class="panel">
+            <div class="panel-heading">
+                <span class="step">01</span>
+                <div>
+                    <h2>Register parcel</h2>
+                    <p>Create the parcel that will move through the demo.</p>
+                </div>
+            </div>
+
+            <label>
+                Tracking code
+                <input @bind="_trackingCode" placeholder="PKG-001" />
+            </label>
+
+            <label>
+                Recipient phone
+                <input @bind="_recipientPhone" placeholder="+38160111222" />
+            </label>
+
+            <label>
+                Size
+                <select @bind="_size">
+                    @foreach (var size in Enum.GetValues<SizeCategory>())
+                    {
+                        <option value="@size">@size</option>
+                    }
+                </select>
+            </label>
+
+            <button class="button primary" type="button" @onclick="RegisterAsync" disabled="@_busy">
+                Register
+            </button>
+
+            @if (_currentParcel is not null)
+            {
+                <div class="entity-card">
+                    <div class="entity-card-row">
+                        <span>Tracking</span>
+                        <strong>@_currentParcel.TrackingCode</strong>
+                    </div>
+                    <div class="entity-card-row">
+                        <span>Status</span>
+                        <strong class="state-pill">@_currentParcel.Status</strong>
+                    </div>
+                    <div class="entity-card-row">
+                        <span>Size</span>
+                        <strong>@_currentParcel.Size</strong>
+                    </div>
+                </div>
+
+                <button class="button secondary" type="button" @onclick="StoreAsync" disabled="@(_busy || _currentParcel.Status != ParcelStatus.Registered)">
+                    Store parcel
+                </button>
+            }
+        </article>
+
+        <article class="panel locker-panel">
+            <div class="panel-heading">
+                <span class="step">02</span>
+                <div>
+                    <h2>Locker wall</h2>
+                    <p>The API owns compartment state. The simulator only opens hardware.</p>
+                </div>
+            </div>
+
+            <div class="locker-grid">
+                @if (_compartments.Count == 0)
+                {
+                    <p class="muted">No compartment data available.</p>
+                }
+                else
+                {
+                    @foreach (var compartment in _compartments)
+                    {
+                        <div class="locker-cell @(compartment.Status == CompartmentStatus.Available ? "available" : "occupied")">
+                            <div class="locker-code">@compartment.Number</div>
+                            <div>@compartment.Size</div>
+                            <strong>@compartment.Status</strong>
+                            @if (compartment.ParcelId.HasValue)
+                            {
+                                <small>Parcel assigned</small>
+                            }
+                        </div>
+                    }
+                }
+            </div>
+        </article>
+
+        <article class="panel">
+            <div class="panel-heading">
+                <span class="step">03</span>
+                <div>
+                    <h2>Pickup</h2>
+                    <p>Validate the pickup code, open the locker and only then complete the domain transition.</p>
+                </div>
+            </div>
+
+            <label>
+                Tracking code
+                <input @bind="_pickupTrackingCode" placeholder="PKG-001" />
+            </label>
+
+            <label>
+                Pickup code
+                <input @bind="_pickupCode" placeholder="6 digit code" inputmode="numeric" />
+            </label>
+
+            <button class="button primary" type="button" @onclick="PickupAsync" disabled="@_busy">
+                Open &amp; pickup
+            </button>
+
+            @if (_currentParcel is not null && _currentParcel.Status == ParcelStatus.PickedUp)
+            {
+                <div class="success-card">
+                    Parcel <strong>@_currentParcel.TrackingCode</strong> was picked up successfully.
+                </div>
+            }
+        </article>
+    </section>
+
+    <section class="timeline panel wide-panel">
+        <div class="panel-heading horizontal-heading">
+            <div>
+                <p class="eyebrow">OBSERVABILITY</p>
+                <h2>Activity timeline</h2>
+            </div>
+            <button class="button ghost compact" type="button" @onclick="ClearActivity">Clear</button>
+        </div>
+
+        @if (_activity.Count == 0)
+        {
+            <p class="muted">Run the demo to see application outcomes here.</p>
+        }
+        else
+        {
+            <ol>
+                @foreach (var item in _activity)
+                {
+                    <li>@item</li>
+                }
+            </ol>
+        }
+    </section>
+
+    <section class="demo-panel">
+        <div class="demo-header">
+            <div>
+                <p class="eyebrow">TEACHING / TEST HARNESS</p>
+                <h2>Demo controls</h2>
+                <p>These controls belong to the simulators, not to the ParcelBox business domain.</p>
+            </div>
+        </div>
+
+        <div class="demo-grid">
+            <div class="demo-control">
+                <h3>Locker Controller</h3>
+                <p>Current mode: <strong>@(_lockerMode?.ToString() ?? "Offline")</strong></p>
+                <div class="segmented-control">
+                    @foreach (var mode in Enum.GetValues<LockerMode>())
+                    {
+                        <button type="button"
+                                class="@GetLockerModeClass(mode)"
+                                @onclick="() => SetLockerModeAsync(mode)"
+                                disabled="@_busy">
+                            @mode
+                        </button>
+                    }
+                </div>
+            </div>
+
+            <div class="demo-control">
+                <h3>Message Gateway</h3>
+                <p>Current mode: <strong>@(_messageMode?.ToString() ?? "Offline")</strong></p>
+                <div class="segmented-control">
+                    @foreach (var mode in Enum.GetValues<MessageGatewayMode>())
+                    {
+                        <button type="button"
+                                class="@GetMessageModeClass(mode)"
+                                @onclick="() => SetMessageModeAsync(mode)"
+                                disabled="@_busy">
+                            @mode
+                        </button>
+                    }
+                </div>
+            </div>
+
+            <div class="message-inbox">
+                <div class="inbox-heading">
+                    <div>
+                        <h3>Gateway inbox</h3>
+                        <p>Use the delivered code for the pickup step.</p>
+                    </div>
+                    <button class="button ghost compact" type="button" @onclick="ClearMessagesAsync" disabled="@_busy">Clear</button>
+                </div>
+
+                @if (_messages.Count == 0)
+                {
+                    <p class="muted">No delivered messages.</p>
+                }
+                else
+                {
+                    @foreach (var message in _messages.OrderByDescending(x => x.SentAt))
+                    {
+                        var code = ExtractPickupCode(message.Text);
+                        <div class="message-card">
+                            <div class="message-meta">
+                                <strong>@message.Destination</strong>
+                                <span>@message.SentAt.ToLocalTime().ToString("HH:mm:ss")</span>
+                            </div>
+                            <p>@message.Text</p>
+                            @if (code is not null)
+                            {
+                                <button class="button secondary compact" type="button" @onclick="() => UsePickupCode(code)">
+                                    Use code @code
+                                </button>
+                            }
+                        </div>
+                    }
+                }
+            </div>
+        </div>
+    </section>
+</main>
+
+@code {
+    private string _trackingCode = "PKG-001";
+    private string _recipientPhone = "+38160111222";
+    private SizeCategory _size = SizeCategory.Medium;
+    private string _pickupTrackingCode = "PKG-001";
+    private string _pickupCode = string.Empty;
+    private ParcelDetails? _currentParcel;
+    private List<CompartmentDetails> _compartments = [];
+    private List<SentMessage> _messages = [];
+    private readonly List<string> _activity = [];
+    private bool _apiOnline;
+    private bool _lockerOnline;
+    private bool _messageOnline;
+    private LockerMode? _lockerMode;
+    private MessageGatewayMode? _messageMode;
+    private bool _busy;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await RefreshAllAsync();
+    }
+
+    private async Task RegisterAsync()
+    {
+        await RunBusyAsync(async () =>
+        {
+            var result = await Api.RegisterAsync(
+                new RegisterParcelRequest(_trackingCode, _recipientPhone, _size));
+
+            if (result.Value is null)
+            {
+                AddActivity($"Registration failed: {result.Error}");
+                return;
+            }
+
+            _currentParcel = result.Value;
+            _pickupTrackingCode = result.Value.TrackingCode;
+            AddActivity($"Parcel {result.Value.TrackingCode} registered as {result.Value.Size}.");
+        });
+    }
+
+    private async Task StoreAsync()
+    {
+        if (_currentParcel is null)
+        {
+            return;
+        }
+
+        await RunBusyAsync(async () =>
+        {
+            var result = await Api.StoreAsync(_currentParcel.Id);
+
+            if (result.Value is null)
+            {
+                AddActivity($"Store failed: {result.Error}");
+                await RefreshOperationalStateAsync();
+                return;
+            }
+
+            AddActivity(
+                $"Parcel stored in {result.Value.LockerCode}/{result.Value.CompartmentNumber}; message {result.Value.MessageDelivery}.");
+
+            await RefreshCurrentParcelAsync();
+            await RefreshOperationalStateAsync();
+        });
+    }
+
+    private async Task PickupAsync()
+    {
+        await RunBusyAsync(async () =>
+        {
+            var error = await Api.PickupAsync(_pickupTrackingCode, _pickupCode);
+
+            if (error is not null)
+            {
+                AddActivity($"Pickup failed: {error}");
+                await RefreshOperationalStateAsync();
+                return;
+            }
+
+            AddActivity($"Parcel {_pickupTrackingCode} picked up successfully.");
+            await RefreshCurrentParcelAsync();
+            await RefreshOperationalStateAsync();
+        });
+    }
+
+    private async Task RefreshAllAsync()
+    {
+        await RunBusyAsync(async () =>
+        {
+            _apiOnline = await Api.IsHealthyAsync();
+            _lockerOnline = await LockerSimulator.IsHealthyAsync();
+            _messageOnline = await MessageGateway.IsHealthyAsync();
+
+            await RefreshOperationalStateAsync();
+
+            if (_currentParcel is not null)
+            {
+                await RefreshCurrentParcelAsync();
+            }
+        });
+    }
+
+    private async Task RefreshOperationalStateAsync()
+    {
+        var compartments = await Api.ListCompartmentsAsync();
+        _compartments = compartments.Value?.ToList() ?? [];
+
+        _lockerMode = await LockerSimulator.GetModeAsync();
+        _messageMode = await MessageGateway.GetModeAsync();
+        _messages = (await MessageGateway.ListMessagesAsync()).ToList();
+
+        _apiOnline = await Api.IsHealthyAsync();
+        _lockerOnline = await LockerSimulator.IsHealthyAsync();
+        _messageOnline = await MessageGateway.IsHealthyAsync();
+    }
+
+    private async Task RefreshCurrentParcelAsync()
+    {
+        if (_currentParcel is null)
+        {
+            return;
+        }
+
+        var result = await Api.GetAsync(_currentParcel.Id);
+
+        if (result.Value is not null)
+        {
+            _currentParcel = result.Value;
+        }
+    }
+
+    private async Task SetLockerModeAsync(LockerMode mode)
+    {
+        await RunBusyAsync(async () =>
+        {
+            var changed = await LockerSimulator.SetModeAsync(mode);
+            _lockerMode = await LockerSimulator.GetModeAsync();
+            _lockerOnline = await LockerSimulator.IsHealthyAsync();
+
+            AddActivity(changed
+                ? $"Locker simulator switched to {mode}."
+                : "Locker simulator mode change failed.");
+        });
+    }
+
+    private async Task SetMessageModeAsync(MessageGatewayMode mode)
+    {
+        await RunBusyAsync(async () =>
+        {
+            var changed = await MessageGateway.SetModeAsync(mode);
+            _messageMode = await MessageGateway.GetModeAsync();
+            _messageOnline = await MessageGateway.IsHealthyAsync();
+
+            AddActivity(changed
+                ? $"Message simulator switched to {mode}."
+                : "Message simulator mode change failed.");
+        });
+    }
+
+    private async Task ClearMessagesAsync()
+    {
+        await RunBusyAsync(async () =>
+        {
+            var cleared = await MessageGateway.ClearMessagesAsync();
+            _messages = (await MessageGateway.ListMessagesAsync()).ToList();
+            AddActivity(cleared ? "Message simulator inbox cleared." : "Message simulator inbox could not be cleared.");
+        });
+    }
+
+    private async Task RunBusyAsync(Func<Task> action)
+    {
+        if (_busy)
+        {
+            return;
+        }
+
+        _busy = true;
+
+        try
+        {
+            await action();
+        }
+        finally
+        {
+            _busy = false;
+        }
+    }
+
+    private void AddActivity(string text)
+    {
+        _activity.Insert(0, $"{DateTimeOffset.Now:HH:mm:ss} · {text}");
+
+        if (_activity.Count > 12)
+        {
+            _activity.RemoveAt(_activity.Count - 1);
+        }
+    }
+
+    private void ClearActivity()
+    {
+        _activity.Clear();
+    }
+
+    private void UsePickupCode(string code)
+    {
+        _pickupCode = code;
+    }
+
+    private string GetLockerModeClass(LockerMode mode)
+    {
+        return _lockerMode == mode ? "segment active" : "segment";
+    }
+
+    private string GetMessageModeClass(MessageGatewayMode mode)
+    {
+        return _messageMode == mode ? "segment active" : "segment";
+    }
+
+    private static string? ExtractPickupCode(string text)
+    {
+        const string marker = "Pickup code: ";
+        var index = text.LastIndexOf(marker, StringComparison.OrdinalIgnoreCase);
+
+        if (index < 0)
+        {
+            return null;
+        }
+
+        var code = text[(index + marker.Length)..].Trim();
+        return code.Length == 6 && code.All(char.IsDigit) ? code : null;
+    }
+}

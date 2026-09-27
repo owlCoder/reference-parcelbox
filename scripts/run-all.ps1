@@ -24,6 +24,10 @@ try {
         @{
             Path = 'src/ParcelBox.Api'
             Url = 'http://localhost:5100'
+        },
+        @{
+            Path = 'src/ParcelBox.Web'
+            Url = 'http://localhost:5000'
         }
     )
 
@@ -43,6 +47,7 @@ try {
             -PassThru
     }
 
+    Write-Host 'ParcelBox Web:             http://localhost:5000'
     Write-Host 'ParcelBox API:             http://localhost:5100'
     Write-Host 'Locker Controller:         http://localhost:5101'
     Write-Host 'Message Gateway:           http://localhost:5102'
