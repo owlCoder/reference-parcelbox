@@ -1,4 +1,4 @@
-namespace ParcelBox.Application.Interfaces.External;
+namespace ParcelBox.Application.Enums;
 
 public enum MessageGatewayError
 {

@@ -1,4 +1,5 @@
 using ParcelBox.Application.Common.Results;
+using ParcelBox.Application.Enums;
 
 namespace ParcelBox.Application.Interfaces.External;
 

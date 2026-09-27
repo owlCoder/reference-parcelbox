@@ -1,6 +1,7 @@
 using ParcelBox.Application.Common.Results;
 using ParcelBox.Application.DTOs.Parcels;
 using ParcelBox.Application.Enums;
+using ParcelBox.Application.Interfaces.Persistence;
 using ParcelBox.Application.Interfaces.Repositories;
 using ParcelBox.Application.Interfaces.Services;
 using ParcelBox.Domain.Parcels;

@@ -1,4 +1,4 @@
-using ParcelBox.Application.Interfaces.Repositories;
+using ParcelBox.Application.Interfaces.Persistence;
 
 namespace ParcelBox.Application.Tests.TestDoubles;
 

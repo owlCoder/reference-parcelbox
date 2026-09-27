@@ -13,11 +13,11 @@ Api --------> Application --------> Domain
 Web ----HTTP----> Api
 ```
 
-Infrastructure zavisi od Application interfejsa koje implementira. Application zavisi od Domain modela. Domain nema reference ka višim slojevima.
+Infrastructure zavisi od Application portova koje implementira. Application zavisi od Domain modela. Domain nema reference ka višim slojevima.
 
 ## Domain
 
-Domain sadrži samo modele i enum-e. Model nema repository, servis, Result ili use-case helper metodu.
+Domain sadrži samo state-only modele i domenske enum-e:
 
 ```text
 Domain/
@@ -27,24 +27,58 @@ Domain/
 └── Pickup/Models + Enums
 ```
 
-`Compartment`, na primer, samo čuva `Size`, `Status` i `ParcelId`. Pravilo kompatibilnosti veličina pripada `LockerService`-u.
+Model ne poznaje repository, servis, Result, EF Core, HTTP ili simulator. `Compartment`, na primer, čuva `Size`, `Status` i `ParcelId`; pravilo kompatibilnosti veličina pripada `LockerService`-u.
 
-## Repository
+## Application: jasna taksonomija
 
-Interfejsi su u `Application/Interfaces/Repositories`, a EF Core implementacije u `Infrastructure/Persistence/Repositories`.
+```text
+Application/
+├── Common/Results/
+├── DTOs/
+│   ├── External/
+│   ├── Lockers/
+│   ├── Parcels/
+│   └── Pickup/
+├── Enums/
+├── Interfaces/
+│   ├── External/
+│   ├── Persistence/
+│   ├── Repositories/
+│   ├── Security/
+│   └── Services/
+└── Services/
+```
+
+Pravilo je namerno strogo:
+
+- `Interfaces` sadrži samo `interface` tipove;
+- `Enums` sadrži application i integration enum-e;
+- `DTOs` sadrži podatkovne ugovore/record-e;
+- `Services` sadrži konkretne application service implementacije.
+
+Zato su `LockerControllerError` i `MessageGatewayError` u `Application/Enums`, `OutboundMessage` u `Application/DTOs/External`, a `IUnitOfWork` u `Application/Interfaces/Persistence`.
+
+## Repository i persistence
+
+Repository ugovori su u `Application/Interfaces/Repositories`, implementacije u `Infrastructure/Persistence/Repositories`:
 
 ```text
 IParcelRepository        -> ParcelRepository
 ICompartmentRepository   -> CompartmentRepository
 IPickupAccessRepository  -> PickupAccessRepository
-IUnitOfWork              -> ParcelBoxDbContext
 ```
 
-Repository sadrži data-access upite. Ne radi izbor “najboljeg” pretinca, statusnu tranziciju ili validaciju pickup koda.
+`IUnitOfWork` nije repository i zato je odvojen u `Interfaces/Persistence`:
+
+```text
+IUnitOfWork -> ParcelBoxDbContext
+```
+
+Repository radi data access. Ne bira poslovno “najbolji” rezultat, ne validira pickup kod i ne vodi statusne tranzicije.
 
 ## Servisi
 
-Service ugovori su u `Application/Interfaces/Services`, implementacije u `Application/Services`.
+Service ugovori su u `Application/Interfaces/Services`, implementacije u `Application/Services`:
 
 ```text
 IParcelService        -> ParcelService
@@ -54,35 +88,19 @@ IPickupService        -> PickupService
 INotificationService  -> NotificationService
 ```
 
-### ParcelService
+- `ParcelService` vodi registraciju i store orkestraciju.
+- `LockerService` bira kompatibilan pretinac i vodi promenu njegovog stanja.
+- `PickupAccessService` vodi pickup kod, hash, rok važenja i neuspešne pokušaje.
+- `PickupService` orkestrira završetak pickup toka.
+- `NotificationService` formira i šalje pickup poruku.
 
-Koristi `IParcelRepository`, `ILockerService`, `IPickupAccessService`, `INotificationService`, `IUnitOfWork` i `TimeProvider`. Odgovoran je za registraciju paketa i store orkestraciju.
+Servisi zavise od interfejsa. Izuzetak je `TimeProvider`, koji je namerno injektovan kao standardna zamenjiva vremenska apstrakcija.
 
-### LockerService
+## External i Security portovi
 
-Koristi `ICompartmentRepository` i `ILockerController`. Ovde je pravilo izbora najmanjeg kompatibilnog dostupnog pretinca, kao i promena stanja pretinca.
+Application definiše portove `ILockerController`, `IMessageGateway` i `IPickupCodeService`. Infrastructure sadrži `HttpClient` i kriptografske implementacije.
 
-### PickupAccessService
-
-Koristi `IPickupAccessRepository` i `IPickupCodeService`. Odgovoran je za kreiranje pickup pristupa, hash koda, rok važenja, proveru koda, broj neuspešnih pokušaja i zaključavanje.
-
-### PickupService
-
-Koristi `IParcelRepository`, `ILockerService`, `IPickupAccessService`, `IUnitOfWork` i `TimeProvider`. Orkestrira završetak pickup toka i ne sadrži kod za generisanje/hash pickup koda niti slanje poruka.
-
-### NotificationService
-
-Koristi samo `IMessageGateway`. Formira i šalje poruku sa pickup kodom. Time message integration nije dodatna odgovornost `PickupService`-a.
-
-## External i Security interfejsi
-
-Application definiše male portove:
-
-- `ILockerController`;
-- `IMessageGateway`;
-- `IPickupCodeService`.
-
-Infrastructure sadrži `HttpClient` i kriptografske implementacije. Očekivani transportni kvar adapter prevodi u typed rezultat.
+Transportni DTO `OutboundMessage` nije interface i zato nije u `Interfaces/External`. Očekivani transportni kvar adapter prevodi u `LockerControllerError` ili `MessageGatewayError`, koji su application enum-i.
 
 ## Result pattern
 
@@ -94,11 +112,11 @@ Application/Common/Results/
 └── ResultOfT.cs
 ```
 
-Poznati poslovni i integracioni ishodi su enum-i iz `Application/Enums`. Exception nije kontrolni tok za očekivanu validaciju ili nedostupan simulator.
+Poznati poslovni i integracioni ishodi su typed enum vrednosti. Exception nije kontrolni tok za očekivanu validaciju ili nedostupan simulator.
 
 ## Dependency injection
 
-API sastavlja sistem:
+API je composition root. Application servisi i Infrastructure adapteri registruju se kao zamene njihovih interfejsa:
 
 ```text
 IParcelService -> ParcelService
@@ -107,6 +125,7 @@ IPickupAccessService -> PickupAccessService
 IPickupService -> PickupService
 INotificationService -> NotificationService
 
+IUnitOfWork -> ParcelBoxDbContext
 IParcelRepository -> ParcelRepository
 ICompartmentRepository -> CompartmentRepository
 IPickupAccessRepository -> PickupAccessRepository
@@ -115,27 +134,24 @@ IMessageGateway -> MessageGatewayClient
 IPickupCodeService -> PickupCodeService
 ```
 
-Endpoint dobija service interfejs, nikad `DbContext` ili konkretnu repository klasu.
+Endpoint dobija service interfejs, nikad `DbContext`, repository implementaciju ili HTTP adapter.
 
 ## SOLID
 
-- **SRP** — modeli čuvaju stanje; repository radi podatke; svaki servis ima konkretnu poslovnu odgovornost; adapter radi jednu spoljnu integraciju; endpoint radi HTTP.
-- **OCP** — repository ili adapter se menja implementacijom istog interfejsa bez promene service koda.
+- **SRP** — model čuva stanje; repository radi podatke; servis sadrži određenu poslovnu odgovornost; adapter radi jednu integraciju; endpoint radi HTTP.
+- **OCP** — repository, servis ili adapter može da se zameni implementacijom istog ugovora.
 - **LSP** — fake implementacije u testovima zamenjuju produkcione implementacije istih interfejsa.
-- **ISP** — repository, service, external i security interfejsi su mali i namenski.
-- **DIP** — servisi zavise od interfejsa, a konkretni EF Core/HTTP/security detalji su u Infrastructure sloju.
+- **ISP** — repository, service, external, persistence i security interfejsi su mali i namenski.
+- **DIP** — servisi zavise od interfejsa; EF Core, HTTP i crypto detalji ostaju u Infrastructure sloju.
 
-## Testovi
+## Arhitektonske provere
 
-Business pravila se testiraju na service nivou uz fake repository-je i fake external adaptere. Time test ne zahteva SQLite ni pokrenute simulatore.
+Repo ima dve zaštite od ponovnog mešanja slojeva:
 
-Pokriveni su, između ostalog:
+1. `scripts/check-architecture.sh` proverava fizički raspored fajlova i zabranjene zavisnosti;
+2. `ArchitectureTests` refleksijom proverava da `Interfaces` namespace sadrži samo interfejse, da su application enum-i u `Enums`, da servisi zavise od apstrakcija i da Domain modeli ostanu state-only.
 
-- najmanji kompatibilni pretinac;
-- dupli tracking code;
-- store tok;
-- jammed locker;
-- zaključavanje pickup pristupa nakon tri pogrešna koda.
+CI pokreće obe provere pre smoke testova.
 
 ## Namerna ograničenja
 

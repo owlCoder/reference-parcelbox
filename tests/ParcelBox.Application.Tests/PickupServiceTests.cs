@@ -1,5 +1,4 @@
 using ParcelBox.Application.Enums;
-using ParcelBox.Application.Interfaces.External;
 using ParcelBox.Application.Services;
 using ParcelBox.Application.Tests.TestDoubles;
 using ParcelBox.Domain.Common.Enums;

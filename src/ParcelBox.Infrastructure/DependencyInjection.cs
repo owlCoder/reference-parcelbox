@@ -2,6 +2,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using ParcelBox.Application.Interfaces.External;
+using ParcelBox.Application.Interfaces.Persistence;
 using ParcelBox.Application.Interfaces.Repositories;
 using ParcelBox.Application.Interfaces.Security;
 using ParcelBox.Infrastructure.External;

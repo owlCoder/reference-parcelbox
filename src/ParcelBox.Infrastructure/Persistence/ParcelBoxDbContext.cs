@@ -1,5 +1,5 @@
 using Microsoft.EntityFrameworkCore;
-using ParcelBox.Application.Interfaces.Repositories;
+using ParcelBox.Application.Interfaces.Persistence;
 using ParcelBox.Domain.Lockers;
 using ParcelBox.Domain.Parcels;
 using ParcelBox.Domain.Pickup;

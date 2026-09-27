@@ -1,4 +1,4 @@
-namespace ParcelBox.Application.Interfaces.Repositories;
+namespace ParcelBox.Application.Interfaces.Persistence;
 
 public interface IUnitOfWork
 {

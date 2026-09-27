@@ -2,10 +2,6 @@
 
 `ParcelBox` je mali referentni .NET 10 sistem za računarske vežbe iz predmeta Elementi razvoja softvera. Repo pokazuje eksplicitnu podelu **Model → Repository → Service → API**, uz dependency injection i dva spoljna simulatora.
 
-## Demo scenario
-
-Kurir registruje paket. Sistem bira odgovarajući pretinac i otvara ga preko Locker Controller simulatora. Nakon smeštanja generiše se pickup kod i pokušava slanje preko Message Gateway simulatora. Primalac kasnije unosi kod i završava preuzimanje.
-
 ## Arhitektura
 
 ```text
@@ -26,8 +22,8 @@ Domain model
 ```
 
 - `Domain` sadrži state-only modele i domenske enum-e.
-- `Application` sadrži service interfejse i implementacije, repository interfejse, DTO-e, enum-e i Result pattern.
-- `Infrastructure` implementira repository-je, external adaptere i security servis.
+- `Application` sadrži servise, njihove interfejse, repository interfejse, DTO-e, enum-e i Result pattern.
+- `Infrastructure` implementira persistence, external i security portove.
 - `Api` je HTTP granica i composition root.
 - `Web` je zaseban Blazor klijent koji koristi HTTP.
 
@@ -42,12 +38,17 @@ src/
 ├── ParcelBox.Application/
 │   ├── Common/Results/
 │   ├── DTOs/
+│   │   ├── External/
+│   │   ├── Lockers/
+│   │   ├── Parcels/
+│   │   └── Pickup/
 │   ├── Enums/
 │   ├── Interfaces/
-│   │   ├── Repositories/
-│   │   ├── Services/
 │   │   ├── External/
-│   │   └── Security/
+│   │   ├── Persistence/
+│   │   ├── Repositories/
+│   │   ├── Security/
+│   │   └── Services/
 │   └── Services/
 ├── ParcelBox.Infrastructure/
 │   ├── Persistence/Repositories/
@@ -58,17 +59,11 @@ src/
 └── ParcelBox.Web/
 ```
 
-Modeli nemaju `CanFit`, `CanBeStored`, `ValidateAttempt` ili slične poslovne helper metode. Repository ne donosi poslovne odluke. Servisi koriste repository/external interfejse i sadrže pravila.
+`Application/Interfaces` sadrži **isključivo interfejse**. Integration error enum-i su u `Application/Enums`, transportni DTO-i su u `Application/DTOs`, a `IUnitOfWork` je persistence ugovor i zato je u `Interfaces/Persistence`.
 
-Glavni servisi su:
+Modeli nemaju `CanFit`, `CanBeStored`, `ValidateAttempt` ili slične poslovne helper metode. Repository ne donosi poslovne odluke. Servisi koriste repository/external/security interfejse i sadrže pravila.
 
-- `ParcelService` — registracija i store orkestracija;
-- `LockerService` — izbor i stanje pretinca;
-- `PickupAccessService` — pickup kod, rok i neuspešni pokušaji;
-- `PickupService` — završetak pickup toka;
-- `NotificationService` — slanje pickup poruke.
-
-Sve implementacije povezuju se kroz DI.
+Glavni servisi su `ParcelService`, `LockerService`, `PickupAccessService`, `PickupService` i `NotificationService`. Sve produkcione implementacije povezuju se kroz DI; endpoint ne kreira repository, adapter ili servis ručno.
 
 ## Pokretanje
 
@@ -100,12 +95,13 @@ docker compose up --build
 ## Provera
 
 ```bash
+./scripts/check-architecture.sh
 dotnet restore
 dotnet format --verify-no-changes --no-restore
 dotnet build --configuration Release --no-restore
 dotnet test --configuration Release --no-build
 ```
 
-CI dodatno proverava simulator mode switching i Blazor assets.
+CI prvo proverava arhitektonske granice, zatim format, build, testove, simulatore i Blazor assets.
 
 UI: [`docs/demo-ui.md`](docs/demo-ui.md).
