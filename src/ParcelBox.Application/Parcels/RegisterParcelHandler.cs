@@ -20,7 +20,7 @@ public sealed class RegisterParcelHandler
         _timeProvider = timeProvider;
     }
 
-    public async Task<Result<ParcelDetails>> HandleAsync(
+    public async Task<Result<ParcelDetails, ParcelOperationError>> HandleAsync(
         RegisterParcelCommand command,
         CancellationToken cancellationToken)
     {
@@ -32,7 +32,8 @@ public sealed class RegisterParcelHandler
 
         if (parcelResult.IsFailure)
         {
-            return Result<ParcelDetails>.Failure(parcelResult.Error);
+            return Result<ParcelDetails, ParcelOperationError>.Failure(
+                MapParcelError(parcelResult.Error));
         }
 
         var parcel = parcelResult.Value;
@@ -42,12 +43,24 @@ public sealed class RegisterParcelHandler
 
         if (trackingCodeExists)
         {
-            return Result<ParcelDetails>.Failure(ParcelApplicationErrors.TrackingCodeAlreadyExists);
+            return Result<ParcelDetails, ParcelOperationError>.Failure(
+                ParcelOperationError.TrackingCodeAlreadyExists);
         }
 
         await _parcels.AddAsync(parcel, cancellationToken);
         await _db.SaveChangesAsync(cancellationToken);
 
-        return Result<ParcelDetails>.Success(parcel.ToDetails());
+        return Result<ParcelDetails, ParcelOperationError>.Success(ParcelDetails.From(parcel));
+    }
+
+    private static ParcelOperationError MapParcelError(ParcelError error)
+    {
+        return error switch
+        {
+            ParcelError.TrackingCodeRequired => ParcelOperationError.TrackingCodeRequired,
+            ParcelError.RecipientPhoneRequired => ParcelOperationError.RecipientPhoneRequired,
+            ParcelError.InvalidSize => ParcelOperationError.InvalidSize,
+            _ => ParcelOperationError.UnexpectedDomainFailure
+        };
     }
 }

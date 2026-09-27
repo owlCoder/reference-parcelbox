@@ -5,14 +5,14 @@ namespace ParcelBox.Application.Tests.TestDoubles;
 
 internal sealed class LockerControllerFake : ILockerController
 {
-    private readonly Result _result;
+    private readonly Result<LockerControllerError> _result;
 
-    public LockerControllerFake(Result result)
+    public LockerControllerFake(Result<LockerControllerError> result)
     {
         _result = result;
     }
 
-    public Task<Result> OpenAsync(
+    public Task<Result<LockerControllerError>> OpenAsync(
         string lockerCode,
         string compartmentNumber,
         CancellationToken cancellationToken)

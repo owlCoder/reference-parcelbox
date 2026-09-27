@@ -1,3 +1,4 @@
+using ParcelBox.Domain.Common.Enums;
 using ParcelBox.Domain.Parcels;
 
 namespace ParcelBox.Domain.Tests;
@@ -11,7 +12,7 @@ public sealed class ParcelTests
         var registerResult = Parcel.Register(
             "PKG-1",
             "+38160000000",
-            ParcelSize.Medium,
+            SizeCategory.Medium,
             now);
 
         Assert.True(registerResult.IsSuccess);
@@ -31,7 +32,7 @@ public sealed class ParcelTests
         var registerResult = Parcel.Register(
             "PKG-1",
             "+38160000000",
-            ParcelSize.Small,
+            SizeCategory.Small,
             DateTimeOffset.UtcNow);
 
         Assert.True(registerResult.IsSuccess);
@@ -39,7 +40,7 @@ public sealed class ParcelTests
         var result = registerResult.Value.MarkPickedUp(DateTimeOffset.UtcNow);
 
         Assert.True(result.IsFailure);
-        Assert.Equal(ParcelErrors.NotStoredForPickup, result.Error);
+        Assert.Equal(ParcelError.NotStoredForPickup, result.Error);
     }
 
     [Fact]
@@ -48,10 +49,10 @@ public sealed class ParcelTests
         var result = Parcel.Register(
             "PKG-1",
             "+38160000000",
-            (ParcelSize)999,
+            (SizeCategory)999,
             DateTimeOffset.UtcNow);
 
         Assert.True(result.IsFailure);
-        Assert.Equal(ParcelErrors.InvalidSize, result.Error);
+        Assert.Equal(ParcelError.InvalidSize, result.Error);
     }
 }

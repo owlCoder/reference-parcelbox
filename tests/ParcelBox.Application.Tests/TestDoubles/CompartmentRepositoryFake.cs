@@ -1,4 +1,5 @@
 using ParcelBox.Application.Abstractions.Persistence;
+using ParcelBox.Domain.Common.Enums;
 using ParcelBox.Domain.Lockers;
 
 namespace ParcelBox.Application.Tests.TestDoubles;
@@ -13,11 +14,11 @@ internal sealed class CompartmentRepositoryFake : ICompartmentRepository
     }
 
     public Task<Compartment?> FindAvailableAsync(
-        CompartmentSize requiredSize,
+        SizeCategory requiredSize,
         CancellationToken cancellationToken)
     {
         var result = _compartment.CanFit(requiredSize) ? _compartment : null;
-        return Task.FromResult<Compartment?>(result);
+        return Task.FromResult(result);
     }
 
     public Task<Compartment?> GetByParcelIdAsync(
@@ -25,7 +26,7 @@ internal sealed class CompartmentRepositoryFake : ICompartmentRepository
         CancellationToken cancellationToken)
     {
         var result = _compartment.ParcelId == parcelId ? _compartment : null;
-        return Task.FromResult<Compartment?>(result);
+        return Task.FromResult(result);
     }
 
     public Task<IReadOnlyList<Compartment>> ListAsync(CancellationToken cancellationToken)

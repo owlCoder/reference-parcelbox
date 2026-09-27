@@ -1,3 +1,4 @@
+using ParcelBox.Domain.Common.Enums;
 using ParcelBox.Domain.Lockers;
 
 namespace ParcelBox.Application.Abstractions.Persistence;
@@ -5,7 +6,7 @@ namespace ParcelBox.Application.Abstractions.Persistence;
 public interface ICompartmentRepository
 {
     Task<Compartment?> FindAvailableAsync(
-        CompartmentSize requiredSize,
+        SizeCategory requiredSize,
         CancellationToken cancellationToken);
 
     Task<Compartment?> GetByParcelIdAsync(

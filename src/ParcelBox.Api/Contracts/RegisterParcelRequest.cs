@@ -1,8 +1,8 @@
-using ParcelBox.Domain.Parcels;
+using ParcelBox.Domain.Common.Enums;
 
 namespace ParcelBox.Api.Contracts;
 
 public sealed record RegisterParcelRequest(
     string TrackingCode,
     string RecipientPhone,
-    ParcelSize Size);
+    SizeCategory Size);

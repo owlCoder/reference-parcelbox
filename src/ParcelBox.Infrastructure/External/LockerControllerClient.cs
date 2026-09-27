@@ -13,7 +13,7 @@ internal sealed class LockerControllerClient : ILockerController
         _httpClient = httpClient;
     }
 
-    public async Task<Result> OpenAsync(
+    public async Task<Result<LockerControllerError>> OpenAsync(
         string lockerCode,
         string compartmentNumber,
         CancellationToken cancellationToken)
@@ -27,23 +27,23 @@ internal sealed class LockerControllerClient : ILockerController
 
             if (response.IsSuccessStatusCode)
             {
-                return Result.Success();
+                return Result<LockerControllerError>.Success();
             }
 
             if (response.StatusCode == HttpStatusCode.Conflict)
             {
-                return Result.Failure(LockerControllerErrors.Jammed);
+                return Result<LockerControllerError>.Failure(LockerControllerError.Jammed);
             }
 
-            return Result.Failure(LockerControllerErrors.Unavailable);
+            return Result<LockerControllerError>.Failure(LockerControllerError.Unavailable);
         }
         catch (OperationCanceledException) when (!cancellationToken.IsCancellationRequested)
         {
-            return Result.Failure(LockerControllerErrors.Unavailable);
+            return Result<LockerControllerError>.Failure(LockerControllerError.Unavailable);
         }
         catch (HttpRequestException)
         {
-            return Result.Failure(LockerControllerErrors.Unavailable);
+            return Result<LockerControllerError>.Failure(LockerControllerError.Unavailable);
         }
     }
 }

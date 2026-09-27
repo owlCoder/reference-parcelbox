@@ -13,7 +13,7 @@ internal sealed class MessageGatewayClient : IMessageGateway
         _httpClient = httpClient;
     }
 
-    public async Task<Result> SendPickupCodeAsync(
+    public async Task<Result<MessageGatewayError>> SendPickupCodeAsync(
         string destination,
         string trackingCode,
         string pickupCode,
@@ -32,20 +32,17 @@ internal sealed class MessageGatewayClient : IMessageGateway
                 request,
                 cancellationToken);
 
-            if (response.IsSuccessStatusCode)
-            {
-                return Result.Success();
-            }
-
-            return Result.Failure(MessageGatewayErrors.Unavailable);
+            return response.IsSuccessStatusCode
+                ? Result<MessageGatewayError>.Success()
+                : Result<MessageGatewayError>.Failure(MessageGatewayError.Unavailable);
         }
         catch (OperationCanceledException) when (!cancellationToken.IsCancellationRequested)
         {
-            return Result.Failure(MessageGatewayErrors.Unavailable);
+            return Result<MessageGatewayError>.Failure(MessageGatewayError.Unavailable);
         }
         catch (HttpRequestException)
         {
-            return Result.Failure(MessageGatewayErrors.Unavailable);
+            return Result<MessageGatewayError>.Failure(MessageGatewayError.Unavailable);
         }
     }
 }

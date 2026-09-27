@@ -1,3 +1,4 @@
+using ParcelBox.Domain.Common.Enums;
 using ParcelBox.Domain.Lockers;
 
 namespace ParcelBox.Domain.Tests;
@@ -5,13 +6,13 @@ namespace ParcelBox.Domain.Tests;
 public sealed class CompartmentTests
 {
     [Theory]
-    [InlineData(CompartmentSize.Small, CompartmentSize.Small, true)]
-    [InlineData(CompartmentSize.Medium, CompartmentSize.Small, true)]
-    [InlineData(CompartmentSize.Large, CompartmentSize.Medium, true)]
-    [InlineData(CompartmentSize.Small, CompartmentSize.Medium, false)]
-    public void Compatibility_depends_on_compartment_size(
-        CompartmentSize compartmentSize,
-        CompartmentSize requiredSize,
+    [InlineData(SizeCategory.Small, SizeCategory.Small, true)]
+    [InlineData(SizeCategory.Medium, SizeCategory.Small, true)]
+    [InlineData(SizeCategory.Large, SizeCategory.Medium, true)]
+    [InlineData(SizeCategory.Small, SizeCategory.Medium, false)]
+    public void Compatibility_depends_on_size(
+        SizeCategory compartmentSize,
+        SizeCategory requiredSize,
         bool expected)
     {
         var createResult = Compartment.Create("PB-01", "A1", compartmentSize);
@@ -23,9 +24,9 @@ public sealed class CompartmentTests
     [Fact]
     public void Compartment_requires_a_valid_location()
     {
-        var result = Compartment.Create("", "A1", CompartmentSize.Small);
+        var result = Compartment.Create("", "A1", SizeCategory.Small);
 
         Assert.True(result.IsFailure);
-        Assert.Equal(CompartmentErrors.LockerCodeRequired, result.Error);
+        Assert.Equal(CompartmentError.LockerCodeRequired, result.Error);
     }
 }

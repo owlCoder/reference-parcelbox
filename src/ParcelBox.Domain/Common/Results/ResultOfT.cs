@@ -1,8 +1,9 @@
 namespace ParcelBox.Domain.Common.Results;
 
-public sealed class Result<T>
+public sealed class Result<TValue, TError>
+    where TError : struct, Enum
 {
-    private Result(bool isSuccess, T value, Error error)
+    private Result(bool isSuccess, TValue value, TError error)
     {
         IsSuccess = isSuccess;
         Value = value;
@@ -10,20 +11,17 @@ public sealed class Result<T>
     }
 
     public bool IsSuccess { get; }
-
     public bool IsFailure => !IsSuccess;
+    public TValue Value { get; }
+    public TError Error { get; }
 
-    public T Value { get; }
-
-    public Error Error { get; }
-
-    public static Result<T> Success(T value)
+    public static Result<TValue, TError> Success(TValue value)
     {
-        return new Result<T>(true, value, Error.None);
+        return new Result<TValue, TError>(true, value, default);
     }
 
-    public static Result<T> Failure(Error error)
+    public static Result<TValue, TError> Failure(TError error)
     {
-        return new Result<T>(false, default!, error);
+        return new Result<TValue, TError>(false, default!, error);
     }
 }

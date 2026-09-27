@@ -1,8 +1,8 @@
 using ParcelBox.Application.Abstractions.External;
 using ParcelBox.Application.Abstractions.Persistence;
 using ParcelBox.Application.Abstractions.Security;
-using ParcelBox.Application.Lockers;
 using ParcelBox.Domain.Common.Results;
+using ParcelBox.Domain.Lockers;
 using ParcelBox.Domain.Parcels;
 using ParcelBox.Domain.Pickup;
 
@@ -39,7 +39,7 @@ public sealed class StoreParcelHandler
         _timeProvider = timeProvider;
     }
 
-    public async Task<Result<StoreParcelResult>> HandleAsync(
+    public async Task<Result<StoreParcelResult, ParcelOperationError>> HandleAsync(
         Guid parcelId,
         CancellationToken cancellationToken)
     {
@@ -47,28 +47,21 @@ public sealed class StoreParcelHandler
 
         if (parcel is null)
         {
-            return Result<StoreParcelResult>.Failure(ParcelApplicationErrors.NotFound);
+            return Result<StoreParcelResult, ParcelOperationError>.Failure(ParcelOperationError.NotFound);
         }
 
         if (!parcel.CanBeStored)
         {
-            return Result<StoreParcelResult>.Failure(ParcelErrors.NotRegisteredForStorage);
+            return Result<StoreParcelResult, ParcelOperationError>.Failure(
+                ParcelOperationError.NotRegisteredForStorage);
         }
 
-        var sizeResult = CompartmentSizeMapping.ToCompartmentSize(parcel.Size);
-
-        if (sizeResult.IsFailure)
-        {
-            return Result<StoreParcelResult>.Failure(sizeResult.Error);
-        }
-
-        var compartment = await _compartments.FindAvailableAsync(
-            sizeResult.Value,
-            cancellationToken);
+        var compartment = await _compartments.FindAvailableAsync(parcel.Size, cancellationToken);
 
         if (compartment is null)
         {
-            return Result<StoreParcelResult>.Failure(ParcelApplicationErrors.NoCompatibleCompartment);
+            return Result<StoreParcelResult, ParcelOperationError>.Failure(
+                ParcelOperationError.NoCompatibleCompartment);
         }
 
         var openResult = await _lockerController.OpenAsync(
@@ -78,7 +71,8 @@ public sealed class StoreParcelHandler
 
         if (openResult.IsFailure)
         {
-            return Result<StoreParcelResult>.Failure(openResult.Error);
+            return Result<StoreParcelResult, ParcelOperationError>.Failure(
+                MapLockerError(openResult.Error));
         }
 
         var now = _timeProvider.GetUtcNow();
@@ -86,14 +80,16 @@ public sealed class StoreParcelHandler
 
         if (storeResult.IsFailure)
         {
-            return Result<StoreParcelResult>.Failure(storeResult.Error);
+            return Result<StoreParcelResult, ParcelOperationError>.Failure(
+                MapParcelError(storeResult.Error));
         }
 
         var occupyResult = compartment.Occupy(parcel.Id);
 
         if (occupyResult.IsFailure)
         {
-            return Result<StoreParcelResult>.Failure(occupyResult.Error);
+            return Result<StoreParcelResult, ParcelOperationError>.Failure(
+                MapCompartmentError(occupyResult.Error));
         }
 
         var code = _pickupCodes.Generate();
@@ -104,11 +100,11 @@ public sealed class StoreParcelHandler
 
         if (accessResult.IsFailure)
         {
-            return Result<StoreParcelResult>.Failure(accessResult.Error);
+            return Result<StoreParcelResult, ParcelOperationError>.Failure(
+                ParcelOperationError.PickupAccessInvalid);
         }
 
-        var access = accessResult.Value;
-        await _pickupAccesses.AddAsync(access, cancellationToken);
+        await _pickupAccesses.AddAsync(accessResult.Value, cancellationToken);
         await _db.SaveChangesAsync(cancellationToken);
 
         var deliveryResult = await _messageGateway.SendPickupCodeAsync(
@@ -117,22 +113,44 @@ public sealed class StoreParcelHandler
             code,
             cancellationToken);
 
-        if (deliveryResult.IsSuccess)
-        {
-            access.MarkMessageDelivered();
-        }
-        else
-        {
-            access.MarkMessageFailed();
-        }
-
-        await _db.SaveChangesAsync(cancellationToken);
+        var deliveryStatus = deliveryResult.IsSuccess
+            ? PickupMessageStatus.Delivered
+            : PickupMessageStatus.Failed;
 
         var result = new StoreParcelResult(
             compartment.LockerCode,
             compartment.Number,
-            access.MessageDelivery);
+            deliveryStatus);
 
-        return Result<StoreParcelResult>.Success(result);
+        return Result<StoreParcelResult, ParcelOperationError>.Success(result);
+    }
+
+    private static ParcelOperationError MapParcelError(ParcelError error)
+    {
+        return error switch
+        {
+            ParcelError.NotRegisteredForStorage => ParcelOperationError.NotRegisteredForStorage,
+            ParcelError.StorageLocationRequired => ParcelOperationError.StorageLocationRequired,
+            _ => ParcelOperationError.UnexpectedDomainFailure
+        };
+    }
+
+    private static ParcelOperationError MapCompartmentError(CompartmentError error)
+    {
+        return error switch
+        {
+            CompartmentError.NotAvailable => ParcelOperationError.CompartmentUnavailable,
+            _ => ParcelOperationError.UnexpectedDomainFailure
+        };
+    }
+
+    private static ParcelOperationError MapLockerError(LockerControllerError error)
+    {
+        return error switch
+        {
+            LockerControllerError.Jammed => ParcelOperationError.LockerJammed,
+            LockerControllerError.Unavailable => ParcelOperationError.LockerUnavailable,
+            _ => ParcelOperationError.UnexpectedDomainFailure
+        };
     }
 }

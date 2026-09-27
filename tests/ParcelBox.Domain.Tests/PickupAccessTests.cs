@@ -59,6 +59,6 @@ public sealed class PickupAccessTests
         var result = createResult.Value.MarkUsed(now);
 
         Assert.True(result.IsFailure);
-        Assert.Equal(PickupAccessErrors.Expired, result.Error);
+        Assert.Equal(PickupAccessError.Expired, result.Error);
     }
 }

@@ -5,14 +5,14 @@ namespace ParcelBox.Application.Tests.TestDoubles;
 
 internal sealed class MessageGatewayFake : IMessageGateway
 {
-    private readonly Result _result;
+    private readonly Result<MessageGatewayError> _result;
 
-    public MessageGatewayFake(Result result)
+    public MessageGatewayFake(Result<MessageGatewayError> result)
     {
         _result = result;
     }
 
-    public Task<Result> SendPickupCodeAsync(
+    public Task<Result<MessageGatewayError>> SendPickupCodeAsync(
         string destination,
         string trackingCode,
         string pickupCode,

@@ -15,15 +15,6 @@ public sealed class ListCompartmentsHandler
         CancellationToken cancellationToken)
     {
         var items = await _compartments.ListAsync(cancellationToken);
-
-        return items
-            .Select(x => new CompartmentDetails(
-                x.Id,
-                x.LockerCode,
-                x.Number,
-                x.Size,
-                x.Status,
-                x.ParcelId))
-            .ToList();
+        return items.Select(CompartmentDetails.From).ToList();
     }
 }

@@ -29,6 +29,7 @@ public static class DependencyInjection
         services.AddScoped<IParcelRepository, ParcelRepository>();
         services.AddScoped<ICompartmentRepository, CompartmentRepository>();
         services.AddScoped<IPickupAccessRepository, PickupAccessRepository>();
+        services.AddScoped<DatabaseInitializer>();
         services.AddSingleton<IPickupCodeService, PickupCodeService>();
         services.AddSingleton(TimeProvider.System);
 

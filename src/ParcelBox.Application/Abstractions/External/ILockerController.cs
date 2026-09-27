@@ -4,7 +4,7 @@ namespace ParcelBox.Application.Abstractions.External;
 
 public interface ILockerController
 {
-    Task<Result> OpenAsync(
+    Task<Result<LockerControllerError>> OpenAsync(
         string lockerCode,
         string compartmentNumber,
         CancellationToken cancellationToken);

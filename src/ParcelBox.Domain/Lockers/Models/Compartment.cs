@@ -1,3 +1,4 @@
+using ParcelBox.Domain.Common.Enums;
 using ParcelBox.Domain.Common.Results;
 
 namespace ParcelBox.Domain.Lockers;
@@ -8,7 +9,7 @@ public sealed class Compartment
     {
     }
 
-    private Compartment(Guid id, string lockerCode, string number, CompartmentSize size)
+    private Compartment(Guid id, string lockerCode, string number, SizeCategory size)
     {
         Id = id;
         LockerCode = lockerCode;
@@ -18,32 +19,30 @@ public sealed class Compartment
     }
 
     public Guid Id { get; private set; }
-
     public string LockerCode { get; private set; } = string.Empty;
-
     public string Number { get; private set; } = string.Empty;
-
-    public CompartmentSize Size { get; private set; }
-
+    public SizeCategory Size { get; private set; }
     public CompartmentStatus Status { get; private set; }
-
     public Guid? ParcelId { get; private set; }
 
-    public static Result<Compartment> Create(string lockerCode, string number, CompartmentSize size)
+    public static Result<Compartment, CompartmentError> Create(
+        string lockerCode,
+        string number,
+        SizeCategory size)
     {
         if (string.IsNullOrWhiteSpace(lockerCode))
         {
-            return Result<Compartment>.Failure(CompartmentErrors.LockerCodeRequired);
+            return Result<Compartment, CompartmentError>.Failure(CompartmentError.LockerCodeRequired);
         }
 
         if (string.IsNullOrWhiteSpace(number))
         {
-            return Result<Compartment>.Failure(CompartmentErrors.NumberRequired);
+            return Result<Compartment, CompartmentError>.Failure(CompartmentError.NumberRequired);
         }
 
         if (!Enum.IsDefined(size))
         {
-            return Result<Compartment>.Failure(CompartmentErrors.InvalidSize);
+            return Result<Compartment, CompartmentError>.Failure(CompartmentError.InvalidSize);
         }
 
         var compartment = new Compartment(
@@ -52,42 +51,42 @@ public sealed class Compartment
             number.Trim(),
             size);
 
-        return Result<Compartment>.Success(compartment);
+        return Result<Compartment, CompartmentError>.Success(compartment);
     }
 
-    public bool CanFit(CompartmentSize requiredSize)
+    public bool CanFit(SizeCategory requiredSize)
     {
-        return Status == CompartmentStatus.Available && (int)Size >= (int)requiredSize;
+        return Status == CompartmentStatus.Available && Size >= requiredSize;
     }
 
-    public Result Occupy(Guid parcelId)
+    public Result<CompartmentError> Occupy(Guid parcelId)
     {
         if (parcelId == Guid.Empty)
         {
-            return Result.Failure(CompartmentErrors.ParcelIdRequired);
+            return Result<CompartmentError>.Failure(CompartmentError.ParcelIdRequired);
         }
 
         if (Status != CompartmentStatus.Available)
         {
-            return Result.Failure(CompartmentErrors.NotAvailable);
+            return Result<CompartmentError>.Failure(CompartmentError.NotAvailable);
         }
 
         Status = CompartmentStatus.Occupied;
         ParcelId = parcelId;
 
-        return Result.Success();
+        return Result<CompartmentError>.Success();
     }
 
-    public Result Release(Guid parcelId)
+    public Result<CompartmentError> Release(Guid parcelId)
     {
         if (Status != CompartmentStatus.Occupied || ParcelId != parcelId)
         {
-            return Result.Failure(CompartmentErrors.NotOccupiedByParcel);
+            return Result<CompartmentError>.Failure(CompartmentError.NotOccupiedByParcel);
         }
 
         Status = CompartmentStatus.Available;
         ParcelId = null;
 
-        return Result.Success();
+        return Result<CompartmentError>.Success();
     }
 }

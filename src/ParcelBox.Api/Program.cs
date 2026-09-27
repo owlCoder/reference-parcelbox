@@ -32,15 +32,14 @@ app.MapPickupEndpoints();
 
 await using (var scope = app.Services.CreateAsyncScope())
 {
-    var db = scope.ServiceProvider.GetRequiredService<ParcelBoxDbContext>();
-    var initializationResult = await DatabaseInitializer.InitializeAsync(db);
+    var initializer = scope.ServiceProvider.GetRequiredService<DatabaseInitializer>();
+    var initializationResult = await initializer.InitializeAsync();
 
     if (initializationResult.IsFailure)
     {
         app.Logger.LogCritical(
-            "Database initialization failed: {ErrorCode} - {ErrorMessage}",
-            initializationResult.Error.Code,
-            initializationResult.Error.Message);
+            "Database initialization failed: {Error}",
+            initializationResult.Error);
 
         return;
     }

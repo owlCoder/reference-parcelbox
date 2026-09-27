@@ -1,3 +1,4 @@
+using ParcelBox.Domain.Common.Enums;
 using ParcelBox.Domain.Common.Results;
 
 namespace ParcelBox.Domain.Parcels;
@@ -12,7 +13,7 @@ public sealed class Parcel
         Guid id,
         string trackingCode,
         string recipientPhone,
-        ParcelSize size,
+        SizeCategory size,
         DateTimeOffset createdAt)
     {
         Id = id;
@@ -24,48 +25,38 @@ public sealed class Parcel
     }
 
     public Guid Id { get; private set; }
-
     public string TrackingCode { get; private set; } = string.Empty;
-
     public string RecipientPhone { get; private set; } = string.Empty;
-
-    public ParcelSize Size { get; private set; }
-
+    public SizeCategory Size { get; private set; }
     public ParcelStatus Status { get; private set; }
-
     public string? LockerCode { get; private set; }
-
     public string? CompartmentNumber { get; private set; }
-
     public DateTimeOffset CreatedAt { get; private set; }
-
     public DateTimeOffset? StoredAt { get; private set; }
-
     public DateTimeOffset? PickedUpAt { get; private set; }
 
     public bool CanBeStored => Status == ParcelStatus.Registered;
-
     public bool CanBePickedUp => Status == ParcelStatus.Stored;
 
-    public static Result<Parcel> Register(
+    public static Result<Parcel, ParcelError> Register(
         string trackingCode,
         string recipientPhone,
-        ParcelSize size,
+        SizeCategory size,
         DateTimeOffset now)
     {
         if (string.IsNullOrWhiteSpace(trackingCode))
         {
-            return Result<Parcel>.Failure(ParcelErrors.TrackingCodeRequired);
+            return Result<Parcel, ParcelError>.Failure(ParcelError.TrackingCodeRequired);
         }
 
         if (string.IsNullOrWhiteSpace(recipientPhone))
         {
-            return Result<Parcel>.Failure(ParcelErrors.RecipientPhoneRequired);
+            return Result<Parcel, ParcelError>.Failure(ParcelError.RecipientPhoneRequired);
         }
 
         if (!Enum.IsDefined(size))
         {
-            return Result<Parcel>.Failure(ParcelErrors.InvalidSize);
+            return Result<Parcel, ParcelError>.Failure(ParcelError.InvalidSize);
         }
 
         var parcel = new Parcel(
@@ -75,19 +66,22 @@ public sealed class Parcel
             size,
             now);
 
-        return Result<Parcel>.Success(parcel);
+        return Result<Parcel, ParcelError>.Success(parcel);
     }
 
-    public Result Store(string lockerCode, string compartmentNumber, DateTimeOffset now)
+    public Result<ParcelError> Store(
+        string lockerCode,
+        string compartmentNumber,
+        DateTimeOffset now)
     {
         if (!CanBeStored)
         {
-            return Result.Failure(ParcelErrors.NotRegisteredForStorage);
+            return Result<ParcelError>.Failure(ParcelError.NotRegisteredForStorage);
         }
 
         if (string.IsNullOrWhiteSpace(lockerCode) || string.IsNullOrWhiteSpace(compartmentNumber))
         {
-            return Result.Failure(ParcelErrors.StorageLocationRequired);
+            return Result<ParcelError>.Failure(ParcelError.StorageLocationRequired);
         }
 
         LockerCode = lockerCode.Trim();
@@ -95,30 +89,30 @@ public sealed class Parcel
         StoredAt = now;
         Status = ParcelStatus.Stored;
 
-        return Result.Success();
+        return Result<ParcelError>.Success();
     }
 
-    public Result MarkPickedUp(DateTimeOffset now)
+    public Result<ParcelError> MarkPickedUp(DateTimeOffset now)
     {
         if (!CanBePickedUp)
         {
-            return Result.Failure(ParcelErrors.NotStoredForPickup);
+            return Result<ParcelError>.Failure(ParcelError.NotStoredForPickup);
         }
 
         PickedUpAt = now;
         Status = ParcelStatus.PickedUp;
 
-        return Result.Success();
+        return Result<ParcelError>.Success();
     }
 
-    public Result Cancel()
+    public Result<ParcelError> Cancel()
     {
         if (Status != ParcelStatus.Registered)
         {
-            return Result.Failure(ParcelErrors.NotRegisteredForCancellation);
+            return Result<ParcelError>.Failure(ParcelError.NotRegisteredForCancellation);
         }
 
         Status = ParcelStatus.Cancelled;
-        return Result.Success();
+        return Result<ParcelError>.Success();
     }
 }

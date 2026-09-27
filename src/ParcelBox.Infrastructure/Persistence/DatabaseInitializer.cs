@@ -1,29 +1,36 @@
 using Microsoft.EntityFrameworkCore;
+using ParcelBox.Domain.Common.Enums;
 using ParcelBox.Domain.Common.Results;
 using ParcelBox.Domain.Lockers;
 
 namespace ParcelBox.Infrastructure.Persistence;
 
-public static class DatabaseInitializer
+public sealed class DatabaseInitializer
 {
-    public static async Task<Result> InitializeAsync(
-        ParcelBoxDbContext db,
+    private readonly ParcelBoxDbContext _db;
+
+    public DatabaseInitializer(ParcelBoxDbContext db)
+    {
+        _db = db;
+    }
+
+    public async Task<Result<CompartmentError>> InitializeAsync(
         CancellationToken cancellationToken = default)
     {
-        await db.Database.EnsureCreatedAsync(cancellationToken);
+        await _db.Database.EnsureCreatedAsync(cancellationToken);
 
-        if (await db.Compartments.AnyAsync(cancellationToken))
+        if (await _db.Compartments.AnyAsync(cancellationToken))
         {
-            return Result.Success();
+            return Result<CompartmentError>.Success();
         }
 
-        var definitions = new (string LockerCode, string Number, CompartmentSize Size)[]
+        var definitions = new (string LockerCode, string Number, SizeCategory Size)[]
         {
-            ("PB-01", "A1", CompartmentSize.Small),
-            ("PB-01", "A2", CompartmentSize.Small),
-            ("PB-01", "B1", CompartmentSize.Medium),
-            ("PB-01", "B2", CompartmentSize.Medium),
-            ("PB-01", "C1", CompartmentSize.Large)
+            ("PB-01", "A1", SizeCategory.Small),
+            ("PB-01", "A2", SizeCategory.Small),
+            ("PB-01", "B1", SizeCategory.Medium),
+            ("PB-01", "B2", SizeCategory.Medium),
+            ("PB-01", "C1", SizeCategory.Large)
         };
 
         var compartments = new List<Compartment>();
@@ -37,15 +44,15 @@ public static class DatabaseInitializer
 
             if (createResult.IsFailure)
             {
-                return Result.Failure(createResult.Error);
+                return Result<CompartmentError>.Failure(createResult.Error);
             }
 
             compartments.Add(createResult.Value);
         }
 
-        await db.Compartments.AddRangeAsync(compartments, cancellationToken);
-        await db.SaveChangesAsync(cancellationToken);
+        await _db.Compartments.AddRangeAsync(compartments, cancellationToken);
+        await _db.SaveChangesAsync(cancellationToken);
 
-        return Result.Success();
+        return Result<CompartmentError>.Success();
     }
 }

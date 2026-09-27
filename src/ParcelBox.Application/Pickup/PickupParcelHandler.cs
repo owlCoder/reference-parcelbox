@@ -1,8 +1,8 @@
 using ParcelBox.Application.Abstractions.External;
 using ParcelBox.Application.Abstractions.Persistence;
 using ParcelBox.Application.Abstractions.Security;
-using ParcelBox.Application.Parcels;
 using ParcelBox.Domain.Common.Results;
+using ParcelBox.Domain.Lockers;
 using ParcelBox.Domain.Parcels;
 using ParcelBox.Domain.Pickup;
 
@@ -36,38 +36,38 @@ public sealed class PickupParcelHandler
         _timeProvider = timeProvider;
     }
 
-    public async Task<Result> HandleAsync(
+    public async Task<Result<PickupOperationError>> HandleAsync(
         string trackingCode,
         string pickupCode,
         CancellationToken cancellationToken)
     {
         if (string.IsNullOrWhiteSpace(trackingCode))
         {
-            return Result.Failure(PickupApplicationErrors.TrackingCodeRequired);
+            return Result<PickupOperationError>.Failure(PickupOperationError.TrackingCodeRequired);
         }
 
         if (string.IsNullOrWhiteSpace(pickupCode))
         {
-            return Result.Failure(PickupApplicationErrors.PickupCodeRequired);
+            return Result<PickupOperationError>.Failure(PickupOperationError.PickupCodeRequired);
         }
 
         var parcel = await _parcels.GetByTrackingCodeAsync(trackingCode, cancellationToken);
 
         if (parcel is null)
         {
-            return Result.Failure(ParcelApplicationErrors.NotFound);
+            return Result<PickupOperationError>.Failure(PickupOperationError.ParcelNotFound);
         }
 
         if (!parcel.CanBePickedUp)
         {
-            return Result.Failure(ParcelErrors.NotStoredForPickup);
+            return Result<PickupOperationError>.Failure(PickupOperationError.ParcelNotStored);
         }
 
         var access = await _pickupAccesses.GetByParcelIdAsync(parcel.Id, cancellationToken);
 
         if (access is null)
         {
-            return Result.Failure(PickupApplicationErrors.AccessNotFound);
+            return Result<PickupOperationError>.Failure(PickupOperationError.PickupAccessNotFound);
         }
 
         var now = _timeProvider.GetUtcNow();
@@ -76,14 +76,14 @@ public sealed class PickupParcelHandler
 
         if (validation != PickupCodeValidation.Valid)
         {
-            return Result.Failure(PickupApplicationErrors.FromValidation(validation));
+            return Result<PickupOperationError>.Failure(MapValidation(validation));
         }
 
         var compartment = await _compartments.GetByParcelIdAsync(parcel.Id, cancellationToken);
 
         if (compartment is null)
         {
-            return Result.Failure(PickupApplicationErrors.CompartmentNotFound);
+            return Result<PickupOperationError>.Failure(PickupOperationError.CompartmentNotFound);
         }
 
         var openResult = await _lockerController.OpenAsync(
@@ -93,31 +93,81 @@ public sealed class PickupParcelHandler
 
         if (openResult.IsFailure)
         {
-            return openResult;
+            return Result<PickupOperationError>.Failure(MapLockerError(openResult.Error));
         }
 
         var markUsedResult = access.MarkUsed(now);
 
         if (markUsedResult.IsFailure)
         {
-            return markUsedResult;
+            return Result<PickupOperationError>.Failure(MapPickupAccessError(markUsedResult.Error));
         }
 
         var pickupResult = parcel.MarkPickedUp(now);
 
         if (pickupResult.IsFailure)
         {
-            return pickupResult;
+            return Result<PickupOperationError>.Failure(MapParcelError(pickupResult.Error));
         }
 
         var releaseResult = compartment.Release(parcel.Id);
 
         if (releaseResult.IsFailure)
         {
-            return releaseResult;
+            return Result<PickupOperationError>.Failure(MapCompartmentError(releaseResult.Error));
         }
 
         await _db.SaveChangesAsync(cancellationToken);
-        return Result.Success();
+        return Result<PickupOperationError>.Success();
+    }
+
+    private static PickupOperationError MapValidation(PickupCodeValidation validation)
+    {
+        return validation switch
+        {
+            PickupCodeValidation.Invalid => PickupOperationError.PickupCodeInvalid,
+            PickupCodeValidation.Expired => PickupOperationError.PickupCodeExpired,
+            PickupCodeValidation.Locked => PickupOperationError.PickupCodeLocked,
+            PickupCodeValidation.Used => PickupOperationError.PickupCodeUsed,
+            _ => PickupOperationError.UnexpectedDomainFailure
+        };
+    }
+
+    private static PickupOperationError MapLockerError(LockerControllerError error)
+    {
+        return error switch
+        {
+            LockerControllerError.Jammed => PickupOperationError.LockerJammed,
+            LockerControllerError.Unavailable => PickupOperationError.LockerUnavailable,
+            _ => PickupOperationError.UnexpectedDomainFailure
+        };
+    }
+
+    private static PickupOperationError MapPickupAccessError(PickupAccessError error)
+    {
+        return error switch
+        {
+            PickupAccessError.NotActive => PickupOperationError.PickupAccessNotActive,
+            PickupAccessError.Expired => PickupOperationError.PickupAccessExpired,
+            _ => PickupOperationError.UnexpectedDomainFailure
+        };
+    }
+
+    private static PickupOperationError MapParcelError(ParcelError error)
+    {
+        return error switch
+        {
+            ParcelError.NotStoredForPickup => PickupOperationError.ParcelNotStored,
+            _ => PickupOperationError.UnexpectedDomainFailure
+        };
+    }
+
+    private static PickupOperationError MapCompartmentError(CompartmentError error)
+    {
+        return error switch
+        {
+            CompartmentError.NotOccupiedByParcel => PickupOperationError.CompartmentStateConflict,
+            _ => PickupOperationError.UnexpectedDomainFailure
+        };
     }
 }

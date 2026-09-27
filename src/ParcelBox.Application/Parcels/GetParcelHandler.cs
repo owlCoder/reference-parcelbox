@@ -12,7 +12,7 @@ public sealed class GetParcelHandler
         _parcels = parcels;
     }
 
-    public async Task<Result<ParcelDetails>> HandleAsync(
+    public async Task<Result<ParcelDetails, ParcelOperationError>> HandleAsync(
         Guid id,
         CancellationToken cancellationToken)
     {
@@ -20,9 +20,9 @@ public sealed class GetParcelHandler
 
         if (parcel is null)
         {
-            return Result<ParcelDetails>.Failure(ParcelApplicationErrors.NotFound);
+            return Result<ParcelDetails, ParcelOperationError>.Failure(ParcelOperationError.NotFound);
         }
 
-        return Result<ParcelDetails>.Success(parcel.ToDetails());
+        return Result<ParcelDetails, ParcelOperationError>.Success(ParcelDetails.From(parcel));
     }
 }
