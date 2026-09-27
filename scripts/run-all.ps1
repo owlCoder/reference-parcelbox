@@ -34,7 +34,6 @@ try {
     foreach ($project in $projects) {
         $arguments = @(
             'run',
-            '--project', $project.Path,
             '--no-build',
             '--no-launch-profile',
             '--urls', $project.Url
@@ -43,6 +42,7 @@ try {
         $processes += Start-Process `
             -FilePath 'dotnet' `
             -ArgumentList $arguments `
+            -WorkingDirectory (Join-Path $repoRoot $project.Path) `
             -NoNewWindow `
             -PassThru
     }
