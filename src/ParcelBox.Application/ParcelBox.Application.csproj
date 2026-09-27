@@ -1,0 +1,5 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <ItemGroup>
+    <ProjectReference Include="../ParcelBox.Domain/ParcelBox.Domain.csproj" />
+  </ItemGroup>
+</Project>
