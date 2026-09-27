@@ -1,6 +1,7 @@
 using ParcelBox.Application.Abstractions.External;
 using ParcelBox.Application.Abstractions.Persistence;
 using ParcelBox.Application.Abstractions.Security;
+using ParcelBox.Application.Parcels;
 using ParcelBox.Domain.Common.Results;
 using ParcelBox.Domain.Parcels;
 using ParcelBox.Domain.Pickup;
