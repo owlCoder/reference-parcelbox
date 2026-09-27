@@ -234,17 +234,17 @@
                 {
                     @foreach (var message in _messages.OrderByDescending(x => x.SentAt))
                     {
-                        var code = ExtractPickupCode(message.Text);
+                        var pickupCode = ExtractPickupCode(message.Text);
                         <div class="message-card">
                             <div class="message-meta">
                                 <strong>@message.Destination</strong>
                                 <span>@message.SentAt.ToLocalTime().ToString("HH:mm:ss")</span>
                             </div>
                             <p>@message.Text</p>
-                            @if (code is not null)
+                            @if (pickupCode is not null)
                             {
-                                <button class="button secondary compact" type="button" @onclick="() => UsePickupCode(code)">
-                                    Use code @code
+                                <button class="button secondary compact" type="button" @onclick="() => UsePickupCode(pickupCode)">
+                                    Use code @pickupCode
                                 </button>
                             }
                         </div>
@@ -459,9 +459,9 @@
         _activity.Clear();
     }
 
-    private void UsePickupCode(string code)
+    private void UsePickupCode(string pickupCode)
     {
-        _pickupCode = code;
+        _pickupCode = pickupCode;
     }
 
     private string GetLockerModeClass(LockerMode mode)
@@ -484,7 +484,7 @@
             return null;
         }
 
-        var code = text[(index + marker.Length)..].Trim();
-        return code.Length == 6 && code.All(char.IsDigit) ? code : null;
+        var pickupCode = text[(index + marker.Length)..].Trim();
+        return pickupCode.Length == 6 && pickupCode.All(char.IsDigit) ? pickupCode : null;
     }
 }
