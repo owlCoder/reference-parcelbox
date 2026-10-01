@@ -23,21 +23,9 @@
     color: var(--navy-950);
 }
 
-.simulator-zone-header p:not(.section-kicker),
-.simulator-title p,
 .inbox-card p {
     margin: 0.3rem 0 0;
     color: var(--slate-500);
-}
-
-.simulator-zone .section-kicker {
-    color: #0f766e;
-}
-
-.boundary-chip {
-    color: #476176;
-    background: #eef6f7;
-    border-color: #d5e8e8;
 }
 
 .simulator-grid {
@@ -55,13 +43,6 @@
     color: var(--slate-900);
     background: #fff;
     box-shadow: 0 8px 22px rgba(15, 35, 68, 0.05);
-}
-
-.simulator-title {
-    display: flex;
-    align-items: flex-start;
-    justify-content: space-between;
-    gap: 1rem;
 }
 
 .current-mode {

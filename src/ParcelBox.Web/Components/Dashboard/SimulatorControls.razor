@@ -1,21 +1,13 @@
 <section class="simulator-zone">
     <div class="simulator-zone-header">
         <div>
-            <p class="section-kicker">TEACHING / TEST HARNESS</p>
-            <h2>External system controls</h2>
-            <p>Change simulator behaviour to demonstrate successful and failing integrations.</p>
+            <h2>Simulators</h2>
         </div>
-        <span class="boundary-chip">outside business domain</span>
     </div>
 
     <div class="simulator-grid">
         <article class="simulator-card @GetLockerCardClass(CurrentLockerMode)">
-            <div class="simulator-title">
-                <div>
-                    <h3>Locker Controller</h3>
-                    <p>Physical compartment controller simulator</p>
-                </div>
-            </div>
+            <h3>Locker Controller</h3>
 
             <div class="current-mode">
                 <span>Current mode</span>
@@ -36,12 +28,7 @@
         </article>
 
         <article class="simulator-card @GetMessageCardClass(CurrentMessageMode)">
-            <div class="simulator-title">
-                <div>
-                    <h3>Message Gateway</h3>
-                    <p>External delivery provider simulator</p>
-                </div>
-            </div>
+            <h3>Message Gateway</h3>
 
             <div class="current-mode">
                 <span>Current mode</span>
@@ -65,7 +52,6 @@
             <div class="section-heading-row compact-heading">
                 <div>
                     <h3>Gateway inbox</h3>
-                    <p>Messages are exposed here only for the classroom demo.</p>
                 </div>
                 <button class="button quiet small" type="button" @onclick="ClearMessagesRequested" disabled="@Busy">Clear</button>
             </div>

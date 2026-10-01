@@ -79,29 +79,12 @@ button:disabled {
     letter-spacing: -0.055em;
 }
 
-.subtitle {
-    max-width: 680px;
-    margin: 0.55rem 0 0;
-    color: #c7d2e2;
-    font-size: 0.96rem;
-}
-
-.eyebrow,
-.section-kicker,
 .summary-label {
     margin: 0 0 0.35rem;
     font-size: 0.69rem;
     font-weight: 850;
     letter-spacing: 0.14em;
     text-transform: uppercase;
-}
-
-.eyebrow {
-    color: #67e8cf;
-}
-
-.section-kicker,
-.summary-label {
     color: #6b7d94;
 }
 
@@ -178,16 +161,11 @@ main {
 }
 
 .hero-card {
-    display: grid;
-    grid-template-columns: minmax(0, 1.15fr) minmax(420px, 0.85fr);
-    gap: 2rem;
-    align-items: center;
     padding: 1.6rem;
     border-radius: 1.35rem;
     background: linear-gradient(135deg, rgba(255, 255, 255, 0.98), rgba(247, 250, 253, 0.98));
 }
 
-.hero-card h2,
 .card-title-row h2,
 .section-heading-row h2 {
     margin: 0;
@@ -195,13 +173,8 @@ main {
     letter-spacing: -0.035em;
 }
 
-.hero-card h2 {
-    font-size: clamp(1.35rem, 2.2vw, 2.05rem);
-}
-
-.hero-card p:not(.section-kicker),
-.card-title-row p:not(.section-kicker),
-.section-heading-row p:not(.section-kicker) {
+.card-title-row p,
+.section-heading-row p {
     margin: 0.45rem 0 0;
     color: var(--slate-500);
     line-height: 1.5;
@@ -422,7 +395,6 @@ select:focus {
 
 .status-badge,
 .count-chip,
-.boundary-chip,
 .size-chip {
     display: inline-flex;
     align-items: center;
@@ -498,8 +470,7 @@ select:focus {
     font-size: 0.82rem;
 }
 
-.count-chip,
-.boundary-chip {
+.count-chip {
     padding: 0.4rem 0.62rem;
     color: #53657a;
     background: #f2f6fa;
@@ -669,7 +640,6 @@ select:focus {
 }
 
 @media (max-width: 1180px) {
-    .hero-card,
     .workspace-grid {
         grid-template-columns: 1fr;
     }

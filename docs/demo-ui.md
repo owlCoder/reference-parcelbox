@@ -9,9 +9,9 @@ Stranica ima četiri jasno odvojena dela:
 1. **Flow overview** — Register → Store → Pickup.
 2. **Business workflow** — registracija paketa, stanje trenutnog paketa i pickup forma.
 3. **Locker wall / Activity** — trenutno stanje pretinaca i istorija akcija u sesiji.
-4. **External system controls** — nastavničke kontrole za oba simulatora i Message Gateway inbox.
+4. **Simulators** — kontrole za oba simulatora i Message Gateway inbox.
 
-Simulator kontrole nisu deo ParcelBox poslovnog domena. Vizuelno su označene kao teaching/test harness, ali koriste isti dizajn sistem kao ostatak stranice.
+Simulator kontrole nisu deo ParcelBox poslovnog domena. Zato su vizuelno izdvojene u zasebnu sekciju „Simulators”.
 
 ## Komponente
 
