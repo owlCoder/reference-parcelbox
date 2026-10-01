@@ -1,34 +1,17 @@
 using System.Text.Json;
 using ParcelBox.Web.Contracts;
+using ParcelBox.Web.Interfaces;
 
 namespace ParcelBox.Web.Clients;
 
-public sealed class ParcelBoxApiClient
+public sealed class ParcelBoxApiClient : ServiceClientBase, IParcelBoxApiClient
 {
-    private readonly HttpClient _httpClient;
     private readonly JsonSerializerOptions _jsonOptions;
 
     public ParcelBoxApiClient(HttpClient httpClient, JsonSerializerOptions jsonOptions)
+        : base(httpClient)
     {
-        _httpClient = httpClient;
         _jsonOptions = jsonOptions;
-    }
-
-    public async Task<bool> IsHealthyAsync(CancellationToken cancellationToken = default)
-    {
-        try
-        {
-            using var response = await _httpClient.GetAsync("health", cancellationToken);
-            return response.IsSuccessStatusCode;
-        }
-        catch (HttpRequestException)
-        {
-            return false;
-        }
-        catch (OperationCanceledException) when (!cancellationToken.IsCancellationRequested)
-        {
-            return false;
-        }
     }
 
     public async Task<(ParcelDetails? Value, string? Error)> RegisterAsync(
@@ -37,7 +20,7 @@ public sealed class ParcelBoxApiClient
     {
         try
         {
-            using var response = await _httpClient.PostAsJsonAsync(
+            using var response = await HttpClient.PostAsJsonAsync(
                 "api/parcels",
                 request,
                 _jsonOptions,
@@ -76,7 +59,7 @@ public sealed class ParcelBoxApiClient
     {
         try
         {
-            using var response = await _httpClient.GetAsync($"api/parcels/{id}", cancellationToken);
+            using var response = await HttpClient.GetAsync($"api/parcels/{id}", cancellationToken);
 
             if (!response.IsSuccessStatusCode)
             {
@@ -111,7 +94,7 @@ public sealed class ParcelBoxApiClient
     {
         try
         {
-            using var response = await _httpClient.PostAsync(
+            using var response = await HttpClient.PostAsync(
                 $"api/parcels/{parcelId}/store",
                 null,
                 cancellationToken);
@@ -148,7 +131,7 @@ public sealed class ParcelBoxApiClient
     {
         try
         {
-            using var response = await _httpClient.GetAsync("api/compartments", cancellationToken);
+            using var response = await HttpClient.GetAsync("api/lockers/compartments", cancellationToken);
 
             if (!response.IsSuccessStatusCode)
             {
@@ -182,7 +165,7 @@ public sealed class ParcelBoxApiClient
     {
         try
         {
-            using var response = await _httpClient.PostAsJsonAsync(
+            using var response = await HttpClient.PostAsJsonAsync(
                 $"api/pickup/{Uri.EscapeDataString(trackingCode)}",
                 new PickupRequest(pickupCode),
                 _jsonOptions,

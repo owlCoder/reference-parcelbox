@@ -1,5 +1,6 @@
 using ParcelBox.Application.Enums;
 using ParcelBox.Application.Services;
+using ParcelBox.Application.Tests.TestContexts;
 using ParcelBox.Application.Tests.TestDoubles;
 using ParcelBox.Domain.Common.Enums;
 using ParcelBox.Domain.Lockers.Enums;
@@ -9,7 +10,7 @@ using ParcelBox.Domain.Parcels.Models;
 using ParcelBox.Domain.Pickup.Enums;
 using ParcelBox.Domain.Pickup.Models;
 
-namespace ParcelBox.Application.Tests;
+namespace ParcelBox.Application.Tests.Services;
 
 public sealed class PickupServiceTests
 {
@@ -59,7 +60,7 @@ public sealed class PickupServiceTests
         Assert.Equal(3, context.UnitOfWork.SaveCalls);
     }
 
-    private static TestContext CreateContext()
+    private static PickupTestContext CreateContext()
     {
         var parcels = new ParcelRepositoryFake();
         var compartments = new CompartmentRepositoryFake();
@@ -112,7 +113,7 @@ public sealed class PickupServiceTests
             unitOfWork,
             new FixedTimeProvider(Now));
 
-        return new TestContext(
+        return new PickupTestContext(
             service,
             parcel,
             compartment,
@@ -120,12 +121,4 @@ public sealed class PickupServiceTests
             unitOfWork,
             lockerController);
     }
-
-    private sealed record TestContext(
-        PickupService Service,
-        Parcel Parcel,
-        Compartment Compartment,
-        PickupAccess Access,
-        UnitOfWorkFake UnitOfWork,
-        LockerControllerFake LockerController);
 }

@@ -130,7 +130,7 @@ Poznati poslovni i integracioni ishodi predstavljeni su enum vrednostima. API ih
 
 ## Dependency injection
 
-`Api` je composition root. Application servisi i Infrastructure implementacije registruju se kroz DI:
+`Api` je composition root. Svaki sloj izlaže sopstvenu registraciju (`AddApplication()` u `Application/DependencyInjection.cs`, `AddInfrastructure()` u `Infrastructure/DependencyInjection.cs`), a `Program.cs` ih samo poziva:
 
 ```text
 IParcelService        -> ParcelService
@@ -164,7 +164,7 @@ Endpoint zavisi od service interfejsa. Application servis zavisi od repository/e
 
 Dve provere čuvaju dogovorene granice:
 
-- `scripts/check-architecture.sh` proverava folder/namespace taksonomiju i zabranjene zavisnosti;
+- `scripts/check-architecture.sh` proverava folder/namespace taksonomiju, pravilo „jedan tip po fajlu” i zabranjene zavisnosti;
 - `ArchitectureTests` refleksijom proverava interface namespace, enum namespace, service constructor zavisnosti i state-only Domain modele.
 
 CI pokreće obe provere pre finalnih smoke testova.

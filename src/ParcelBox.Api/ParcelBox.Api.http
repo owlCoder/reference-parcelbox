@@ -16,7 +16,7 @@ Content-Type: application/json
 }
 
 ### List compartments
-GET {{api}}/api/compartments
+GET {{api}}/api/lockers/compartments
 
 ### Store parcel - replace id
 POST {{api}}/api/parcels/00000000-0000-0000-0000-000000000000/store

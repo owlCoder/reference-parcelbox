@@ -1,3 +1,5 @@
+using ParcelBox.Web.Enums;
+
 namespace ParcelBox.Web.Contracts;
 
 public sealed record ParcelDetails(

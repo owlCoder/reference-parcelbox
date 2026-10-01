@@ -32,6 +32,8 @@ Components/
 
 `Home` je orchestration komponenta. Manje komponente dobijaju stanje preko parametara i vraćaju korisničke akcije preko `EventCallback`-a. Mutable stanje formi je u malim Web view-model klasama (`RegisterParcelForm`, `PickupForm`), dok activity timeline koristi `ActivityEntry`.
 
+Web klijenti su iza uskih interfejsa (`Web/Interfaces`: `IParcelBoxApiClient`, `ILockerControllerClient`, `IMessageGatewayClient`), pa `Home` zavisi od apstrakcija, ne od konkretnih HTTP klasa. Zajedničko ponašanje (health check, čitanje/promena simulator moda) nalazi se u `ServiceClientBase` i `SimulatorClientBase<TMode>`. DTO tipovi su u `Web/Contracts`, a enum-i u `Web/Enums`.
+
 Web poziva isključivo HTTP granice. Locker wall dobija read model preko API endpointa, dok business akcije idu preko Parcel/Storage/Pickup application servisa iza API-ja. UI ne pristupa repository-ju ili Domain modelu direktno.
 
 ## Demonstracija failure scenarija

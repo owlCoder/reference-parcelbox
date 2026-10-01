@@ -1,4 +1,4 @@
-namespace ParcelBox.Web.Contracts;
+namespace ParcelBox.Web.Enums;
 
 public enum LockerMode
 {

@@ -1,11 +1,12 @@
+using Microsoft.Extensions.DependencyInjection;
 using ParcelBox.Application.Interfaces.Services;
 using ParcelBox.Application.Services;
 
-namespace ParcelBox.Api.Extensions;
+namespace ParcelBox.Application;
 
-public static class ApplicationServiceExtensions
+public static class DependencyInjection
 {
-    public static IServiceCollection AddApplicationServices(this IServiceCollection services)
+    public static IServiceCollection AddApplication(this IServiceCollection services)
     {
         services.AddScoped<IParcelService, ParcelService>();
         services.AddScoped<IParcelStorageService, ParcelStorageService>();

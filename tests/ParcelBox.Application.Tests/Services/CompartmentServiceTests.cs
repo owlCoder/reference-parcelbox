@@ -4,7 +4,7 @@ using ParcelBox.Domain.Common.Enums;
 using ParcelBox.Domain.Lockers.Enums;
 using ParcelBox.Domain.Lockers.Models;
 
-namespace ParcelBox.Application.Tests;
+namespace ParcelBox.Application.Tests.Services;
 
 public sealed class CompartmentServiceTests
 {

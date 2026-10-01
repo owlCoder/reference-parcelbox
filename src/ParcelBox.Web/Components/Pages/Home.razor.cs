@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Components;
-using ParcelBox.Web.Clients;
 using ParcelBox.Web.Contracts;
+using ParcelBox.Web.Enums;
+using ParcelBox.Web.Interfaces;
 using ParcelBox.Web.ViewModels;
 
 namespace ParcelBox.Web.Components.Pages;
@@ -8,13 +9,13 @@ namespace ParcelBox.Web.Components.Pages;
 public partial class Home
 {
     [Inject]
-    private ParcelBoxApiClient Api { get; set; } = default!;
+    private IParcelBoxApiClient Api { get; set; } = default!;
 
     [Inject]
-    private LockerControllerClient LockerController { get; set; } = default!;
+    private ILockerControllerClient LockerController { get; set; } = default!;
 
     [Inject]
-    private MessageGatewayClient MessageGateway { get; set; } = default!;
+    private IMessageGatewayClient MessageGateway { get; set; } = default!;
 
     private readonly RegisterParcelForm _registerForm = new();
     private readonly PickupForm _pickupForm = new();

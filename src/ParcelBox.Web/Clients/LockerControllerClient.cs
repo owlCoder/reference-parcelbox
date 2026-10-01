@@ -1,93 +1,13 @@
 using System.Text.Json;
-using ParcelBox.Web.Contracts;
+using ParcelBox.Web.Enums;
+using ParcelBox.Web.Interfaces;
 
 namespace ParcelBox.Web.Clients;
 
-public sealed class LockerControllerClient
+public sealed class LockerControllerClient : SimulatorClientBase<LockerMode>, ILockerControllerClient
 {
-    private readonly HttpClient _httpClient;
-    private readonly JsonSerializerOptions _jsonOptions;
-
     public LockerControllerClient(HttpClient httpClient, JsonSerializerOptions jsonOptions)
+        : base(httpClient, jsonOptions)
     {
-        _httpClient = httpClient;
-        _jsonOptions = jsonOptions;
-    }
-
-    public async Task<bool> IsHealthyAsync(CancellationToken cancellationToken = default)
-    {
-        try
-        {
-            using var response = await _httpClient.GetAsync("health", cancellationToken);
-            return response.IsSuccessStatusCode;
-        }
-        catch (HttpRequestException)
-        {
-            return false;
-        }
-        catch (OperationCanceledException) when (!cancellationToken.IsCancellationRequested)
-        {
-            return false;
-        }
-    }
-
-    public async Task<LockerMode?> GetModeAsync(CancellationToken cancellationToken = default)
-    {
-        try
-        {
-            var response = await _httpClient.GetFromJsonAsync<SimulatorModeResponse<LockerMode>>(
-                "api/simulator/mode",
-                _jsonOptions,
-                cancellationToken);
-
-            return response?.Mode;
-        }
-        catch (HttpRequestException)
-        {
-            return null;
-        }
-        catch (OperationCanceledException) when (!cancellationToken.IsCancellationRequested)
-        {
-            return null;
-        }
-        catch (JsonException)
-        {
-            return null;
-        }
-    }
-
-    public async Task<bool> SetModeAsync(LockerMode mode, CancellationToken cancellationToken = default)
-    {
-        try
-        {
-            using var response = await _httpClient.PutAsJsonAsync(
-                "api/simulator/mode",
-                new SetSimulatorModeRequest<LockerMode>(mode),
-                _jsonOptions,
-                cancellationToken);
-
-            if (!response.IsSuccessStatusCode)
-            {
-                return false;
-            }
-
-            var confirmed = await response.Content.ReadFromJsonAsync<SimulatorModeResponse<LockerMode>>(
-                _jsonOptions,
-                cancellationToken);
-
-            return confirmed?.Mode == mode;
-        }
-        catch (HttpRequestException)
-        {
-            return false;
-        }
-        catch (OperationCanceledException) when (!cancellationToken.IsCancellationRequested)
-        {
-            return false;
-        }
-        catch (JsonException)
-        {
-            return false;
-        }
     }
 }

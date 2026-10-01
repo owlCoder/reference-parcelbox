@@ -68,6 +68,18 @@ while IFS= read -r file; do
   fi
 done < <(find simulators -type f -name '*.cs' -print | sort)
 
+while IFS= read -r file; do
+  type_count=$(grep -cE '^(public |internal )?(sealed |static |abstract |readonly |partial )*(class|interface|record|enum|struct) ' "$file" || true)
+
+  if [[ "$type_count" -gt 1 ]]; then
+    report "$file declares $type_count top-level types; keep one type per file."
+  fi
+done < <(find src simulators tests -type f -name '*.cs' ! -path '*/obj/*' ! -path '*/bin/*' -print | sort)
+
+if [[ -d src/ParcelBox.Web/Contracts ]] && grep -R -nE '^(public |internal )?enum ' src/ParcelBox.Web/Contracts --include='*.cs'; then
+  report "Web/Contracts contains an enum; enums belong in Web/Enums."
+fi
+
 if grep -R -nE 'Microsoft\.EntityFrameworkCore|ParcelBox\.Infrastructure' \
   src/ParcelBox.Application src/ParcelBox.Domain --include='*.cs'; then
   report "Application or Domain depends on Infrastructure/EF Core."

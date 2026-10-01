@@ -2,7 +2,7 @@ using System.Reflection;
 using ParcelBox.Application.Services;
 using ParcelBox.Domain.Lockers.Models;
 
-namespace ParcelBox.Application.Tests;
+namespace ParcelBox.Application.Tests.Architecture;
 
 public sealed class ArchitectureTests
 {

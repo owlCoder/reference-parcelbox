@@ -1,6 +1,6 @@
 using System.Text.Json.Serialization;
 using ParcelBox.Api.Endpoints;
-using ParcelBox.Api.Extensions;
+using ParcelBox.Application;
 using ParcelBox.Infrastructure;
 using ParcelBox.Infrastructure.Persistence;
 
@@ -13,7 +13,7 @@ builder.Services.ConfigureHttpJsonOptions(options =>
     options.SerializerOptions.Converters.Add(
         new JsonStringEnumConverter(allowIntegerValues: false));
 });
-builder.Services.AddApplicationServices();
+builder.Services.AddApplication();
 builder.Services.AddInfrastructure(builder.Configuration);
 
 var app = builder.Build();

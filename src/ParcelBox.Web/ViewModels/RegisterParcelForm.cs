@@ -1,4 +1,4 @@
-using ParcelBox.Web.Contracts;
+using ParcelBox.Web.Enums;
 
 namespace ParcelBox.Web.ViewModels;
 

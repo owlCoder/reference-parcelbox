@@ -6,7 +6,7 @@ using ParcelBox.Domain.Common.Enums;
 using ParcelBox.Domain.Parcels.Enums;
 using ParcelBox.Domain.Parcels.Models;
 
-namespace ParcelBox.Application.Tests;
+namespace ParcelBox.Application.Tests.Services;
 
 public sealed class ParcelServiceTests
 {
