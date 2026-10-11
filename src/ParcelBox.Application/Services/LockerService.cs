@@ -47,23 +47,24 @@ public sealed class LockerService : ILockerService
 
         foreach (var size in compatibleSizes)
         {
-            var candidate = available.FirstOrDefault(item => item.Size == size) ?? new Compartment();
-
-            if (candidate.Id == Guid.Empty)
+            foreach (var candidate in available.Where(item => item.Size == size))
             {
-                continue;
+                var claim = await _compartments.TryReserveAsync(candidate.Id, parcelId, cancellationToken);
+
+                if (claim == ClaimResult.Unavailable)
+                {
+                    return Result<Compartment, LockerOperationError>.Failure(LockerOperationError.PersistenceUnavailable);
+                }
+
+                if (claim == ClaimResult.Claimed)
+                {
+                    compartment = candidate;
+                    break;
+                }
             }
 
-            var claim = await _compartments.TryReserveAsync(candidate.Id, parcelId, cancellationToken);
-
-            if (claim == ClaimResult.Unavailable)
+            if (compartment.Id != Guid.Empty)
             {
-                return Result<Compartment, LockerOperationError>.Failure(LockerOperationError.PersistenceUnavailable);
-            }
-
-            if (claim == ClaimResult.Claimed)
-            {
-                compartment = candidate;
                 break;
             }
         }
