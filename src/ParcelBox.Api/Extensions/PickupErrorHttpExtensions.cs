@@ -21,6 +21,8 @@ internal static class PickupErrorHttpExtensions
             PickupOperationError.LockerJammed => ProblemResults.Create(error, 503, "Locker compartment is jammed."),
             PickupOperationError.LockerUnavailable => ProblemResults.Create(error, 503, "Locker controller is unavailable."),
             PickupOperationError.CompartmentStateConflict => ProblemResults.Create(error, 409, "Compartment state changed during pickup."),
+            PickupOperationError.PersistenceUnavailable => ProblemResults.Create(error, 503, "Database operation failed. Try again later."),
+            PickupOperationError.PickupRecoveryRequired => ProblemResults.Create(error, 503, "Pickup requires operator reconciliation before retrying."),
             _ => ProblemResults.Create(error, 500, "The operation could not be completed.")
         };
     }
