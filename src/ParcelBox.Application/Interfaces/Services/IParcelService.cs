@@ -6,11 +6,7 @@ namespace ParcelBox.Application.Interfaces.Services;
 
 public interface IParcelService
 {
-    Task<Result<ParcelDetails, ParcelOperationError>> RegisterAsync(
-        RegisterParcelInput input,
-        CancellationToken cancellationToken);
+    Task<Result<ParcelDetailsDto, ParcelOperationError>> RegisterAsync(RegisterParcelInputDto input, CancellationToken cancellationToken);
 
-    Task<Result<ParcelDetails, ParcelOperationError>> GetAsync(
-        Guid id,
-        CancellationToken cancellationToken);
+    Task<Result<ParcelDetailsDto, ParcelOperationError>> GetAsync(Guid id, CancellationToken cancellationToken);
 }

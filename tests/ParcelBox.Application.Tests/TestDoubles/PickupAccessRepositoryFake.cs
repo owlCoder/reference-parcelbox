@@ -7,9 +7,7 @@ internal sealed class PickupAccessRepositoryFake : IPickupAccessRepository
 {
     public List<PickupAccess> Items { get; } = [];
 
-    public Task<PickupAccess> GetByParcelIdAsync(
-        Guid parcelId,
-        CancellationToken cancellationToken)
+    public Task<PickupAccess> GetByParcelIdAsync(Guid parcelId, CancellationToken cancellationToken)
     {
         return Task.FromResult(
             Items.SingleOrDefault(access => access.ParcelId == parcelId) ?? new PickupAccess());

@@ -8,10 +8,7 @@ internal sealed class LockerControllerFake : ILockerController
 {
     public LockerControllerError Error { get; set; }
 
-    public Task<Result<LockerControllerError>> OpenAsync(
-        string lockerCode,
-        string compartmentNumber,
-        CancellationToken cancellationToken)
+    public Task<Result<LockerControllerError>> OpenAsync(string lockerCode, string compartmentNumber, CancellationToken cancellationToken)
     {
         var result = Error == LockerControllerError.None
             ? Result<LockerControllerError>.Success()

@@ -15,12 +15,7 @@ public sealed class PickupService : IPickupService
     private readonly IUnitOfWork _unitOfWork;
     private readonly TimeProvider _timeProvider;
 
-    public PickupService(
-        IParcelRepository parcels,
-        ILockerService lockers,
-        IPickupAccessService pickupAccess,
-        IUnitOfWork unitOfWork,
-        TimeProvider timeProvider)
+    public PickupService(IParcelRepository parcels, ILockerService lockers, IPickupAccessService pickupAccess, IUnitOfWork unitOfWork, TimeProvider timeProvider)
     {
         _parcels = parcels;
         _lockers = lockers;
@@ -29,10 +24,7 @@ public sealed class PickupService : IPickupService
         _timeProvider = timeProvider;
     }
 
-    public async Task<Result<PickupOperationError>> CompletePickupAsync(
-        string trackingCode,
-        string pickupCode,
-        CancellationToken cancellationToken)
+    public async Task<Result<PickupOperationError>> CompletePickupAsync(string trackingCode, string pickupCode, CancellationToken cancellationToken)
     {
         if (string.IsNullOrWhiteSpace(trackingCode))
         {

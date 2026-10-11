@@ -7,9 +7,7 @@ namespace ParcelBox.Web;
 
 public static class DependencyInjection
 {
-    public static IServiceCollection AddWebClients(
-        this IServiceCollection services,
-        IConfiguration configuration)
+    public static IServiceCollection AddWebClients(this IServiceCollection services, IConfiguration configuration)
     {
         var jsonOptions = new JsonSerializerOptions(JsonSerializerDefaults.Web);
         jsonOptions.Converters.Add(new JsonStringEnumConverter(allowIntegerValues: false));

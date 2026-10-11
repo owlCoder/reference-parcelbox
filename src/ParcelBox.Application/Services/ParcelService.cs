@@ -15,35 +15,30 @@ public sealed class ParcelService : IParcelService
     private readonly IUnitOfWork _unitOfWork;
     private readonly TimeProvider _timeProvider;
 
-    public ParcelService(
-        IParcelRepository parcels,
-        IUnitOfWork unitOfWork,
-        TimeProvider timeProvider)
+    public ParcelService(IParcelRepository parcels, IUnitOfWork unitOfWork, TimeProvider timeProvider)
     {
         _parcels = parcels;
         _unitOfWork = unitOfWork;
         _timeProvider = timeProvider;
     }
 
-    public async Task<Result<ParcelDetails, ParcelOperationError>> RegisterAsync(
-        RegisterParcelInput input,
-        CancellationToken cancellationToken)
+    public async Task<Result<ParcelDetailsDto, ParcelOperationError>> RegisterAsync(RegisterParcelInputDto input, CancellationToken cancellationToken)
     {
         if (string.IsNullOrWhiteSpace(input.TrackingCode))
         {
-            return Result<ParcelDetails, ParcelOperationError>.Failure(
+            return Result<ParcelDetailsDto, ParcelOperationError>.Failure(
                 ParcelOperationError.TrackingCodeRequired);
         }
 
         if (string.IsNullOrWhiteSpace(input.RecipientPhone))
         {
-            return Result<ParcelDetails, ParcelOperationError>.Failure(
+            return Result<ParcelDetailsDto, ParcelOperationError>.Failure(
                 ParcelOperationError.RecipientPhoneRequired);
         }
 
         if (!Enum.IsDefined(input.Size))
         {
-            return Result<ParcelDetails, ParcelOperationError>.Failure(
+            return Result<ParcelDetailsDto, ParcelOperationError>.Failure(
                 ParcelOperationError.InvalidSize);
         }
 
@@ -51,7 +46,7 @@ public sealed class ParcelService : IParcelService
 
         if (await _parcels.TrackingCodeExistsAsync(trackingCode, cancellationToken))
         {
-            return Result<ParcelDetails, ParcelOperationError>.Failure(
+            return Result<ParcelDetailsDto, ParcelOperationError>.Failure(
                 ParcelOperationError.TrackingCodeAlreadyExists);
         }
 
@@ -68,23 +63,21 @@ public sealed class ParcelService : IParcelService
         await _parcels.AddAsync(parcel, cancellationToken);
         await _unitOfWork.SaveChangesAsync(cancellationToken);
 
-        return Result<ParcelDetails, ParcelOperationError>.Success(ToDetails(parcel));
+        return Result<ParcelDetailsDto, ParcelOperationError>.Success(ToDetails(parcel));
     }
 
-    public async Task<Result<ParcelDetails, ParcelOperationError>> GetAsync(
-        Guid id,
-        CancellationToken cancellationToken)
+    public async Task<Result<ParcelDetailsDto, ParcelOperationError>> GetAsync(Guid id, CancellationToken cancellationToken)
     {
         var parcel = await _parcels.GetByIdAsync(id, cancellationToken);
 
         return parcel.Id == Guid.Empty
-            ? Result<ParcelDetails, ParcelOperationError>.Failure(ParcelOperationError.NotFound)
-            : Result<ParcelDetails, ParcelOperationError>.Success(ToDetails(parcel));
+            ? Result<ParcelDetailsDto, ParcelOperationError>.Failure(ParcelOperationError.NotFound)
+            : Result<ParcelDetailsDto, ParcelOperationError>.Success(ToDetails(parcel));
     }
 
-    private static ParcelDetails ToDetails(Parcel parcel)
+    private static ParcelDetailsDto ToDetails(Parcel parcel)
     {
-        return new ParcelDetails(
+        return new ParcelDetailsDto(
             parcel.Id,
             parcel.TrackingCode,
             parcel.RecipientPhone,

@@ -41,12 +41,12 @@
 
 @code {
     [Parameter, EditorRequired]
-    public IReadOnlyList<CompartmentDetails> Compartments { get; set; } = [];
+    public IReadOnlyList<CompartmentDetailsDto> Compartments { get; set; } = [];
 
     [Parameter]
-    public ParcelDetails? CurrentParcel { get; set; }
+    public ParcelDetailsDto? CurrentParcel { get; set; }
 
-    private string GetCompartmentClass(CompartmentDetails compartment)
+    private string GetCompartmentClass(CompartmentDetailsDto compartment)
     {
         var statusClass = compartment.Status == CompartmentStatus.Available ? "available" : "occupied";
         var currentClass = CurrentParcel?.CompartmentNumber == compartment.Number ? " current" : string.Empty;

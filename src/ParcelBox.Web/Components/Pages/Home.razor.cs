@@ -21,9 +21,9 @@ public partial class Home
     private readonly PickupForm _pickupForm = new();
     private readonly List<ActivityEntry> _activity = [];
 
-    private ParcelDetails? _currentParcel;
-    private List<CompartmentDetails> _compartments = [];
-    private List<SentMessage> _messages = [];
+    private ParcelDetailsDto? _currentParcel;
+    private List<CompartmentDetailsDto> _compartments = [];
+    private List<SentMessageDto> _messages = [];
     private LockerMode? _lockerMode;
     private MessageGatewayMode? _messageMode;
     private bool _apiOnline;
@@ -41,7 +41,7 @@ public partial class Home
         return ExecuteAsync(async () =>
         {
             var result = await Api.RegisterAsync(
-                new RegisterParcelRequest(
+                new RegisterParcelRequestDto(
                     _registerForm.TrackingCode,
                     _registerForm.RecipientPhone,
                     _registerForm.Size));

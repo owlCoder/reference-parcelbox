@@ -14,31 +14,31 @@ public sealed class ParcelBoxApiClient : ServiceClientBase, IParcelBoxApiClient
         _jsonOptions = jsonOptions;
     }
 
-    public Task<ClientResult<ParcelDetails>> RegisterAsync(RegisterParcelRequest request, CancellationToken cancellationToken = default)
+    public Task<ClientResult<ParcelDetailsDto>> RegisterAsync(RegisterParcelRequestDto request, CancellationToken cancellationToken = default)
     {
-        return SendAndReadAsync<ParcelDetails>(() => HttpClient.PostAsJsonAsync("api/parcels", request, _jsonOptions, cancellationToken), cancellationToken);
+        return SendAndReadAsync<ParcelDetailsDto>(() => HttpClient.PostAsJsonAsync("api/parcels", request, _jsonOptions, cancellationToken), cancellationToken);
     }
 
-    public Task<ClientResult<ParcelDetails>> GetAsync(Guid id, CancellationToken cancellationToken = default)
+    public Task<ClientResult<ParcelDetailsDto>> GetAsync(Guid id, CancellationToken cancellationToken = default)
     {
-        return SendAndReadAsync<ParcelDetails>(() => HttpClient.GetAsync($"api/parcels/{id}", cancellationToken), cancellationToken);
+        return SendAndReadAsync<ParcelDetailsDto>(() => HttpClient.GetAsync($"api/parcels/{id}", cancellationToken), cancellationToken);
     }
 
-    public Task<ClientResult<StoreParcelResult>> StoreAsync(Guid parcelId, CancellationToken cancellationToken = default)
+    public Task<ClientResult<StoreParcelResultDto>> StoreAsync(Guid parcelId, CancellationToken cancellationToken = default)
     {
-        return SendAndReadAsync<StoreParcelResult>(() => HttpClient.PostAsync($"api/parcels/{parcelId}/store", null, cancellationToken), cancellationToken);
+        return SendAndReadAsync<StoreParcelResultDto>(() => HttpClient.PostAsync($"api/parcels/{parcelId}/store", null, cancellationToken), cancellationToken);
     }
 
-    public Task<ClientResult<List<CompartmentDetails>>> ListCompartmentsAsync(CancellationToken cancellationToken = default)
+    public Task<ClientResult<List<CompartmentDetailsDto>>> ListCompartmentsAsync(CancellationToken cancellationToken = default)
     {
-        return SendAndReadAsync<List<CompartmentDetails>>(() => HttpClient.GetAsync("api/lockers/compartments", cancellationToken), cancellationToken);
+        return SendAndReadAsync<List<CompartmentDetailsDto>>(() => HttpClient.GetAsync("api/lockers/compartments", cancellationToken), cancellationToken);
     }
 
     public async Task<ClientResult> PickupAsync(string trackingCode, string pickupCode, CancellationToken cancellationToken = default)
     {
         try
         {
-            using var response = await HttpClient.PostAsJsonAsync($"api/pickup/{Uri.EscapeDataString(trackingCode)}", new PickupRequest(pickupCode), _jsonOptions, cancellationToken);
+            using var response = await HttpClient.PostAsJsonAsync($"api/pickup/{Uri.EscapeDataString(trackingCode)}", new PickupRequestDto(pickupCode), _jsonOptions, cancellationToken);
 
             return response.IsSuccessStatusCode
                 ? ClientResult.Success()
@@ -89,7 +89,7 @@ public sealed class ParcelBoxApiClient : ServiceClientBase, IParcelBoxApiClient
     {
         try
         {
-            var problem = await response.Content.ReadFromJsonAsync<ProblemDetailsResponse>(_jsonOptions, cancellationToken);
+            var problem = await response.Content.ReadFromJsonAsync<ProblemDetailsResponseDto>(_jsonOptions, cancellationToken);
 
             if (!string.IsNullOrWhiteSpace(problem?.Detail))
             {

@@ -29,10 +29,7 @@ public static class MessageEndpoints
         return Results.NoContent();
     }
 
-    private static IResult SendMessage(
-        SendMessageRequest request,
-        SimulatorState state,
-        TimeProvider timeProvider)
+    private static IResult SendMessage(SendMessageRequestDto request, SimulatorState state, TimeProvider timeProvider)
     {
         if (state.Mode == MessageGatewayMode.Unavailable)
         {

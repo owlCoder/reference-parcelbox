@@ -21,9 +21,7 @@ internal sealed class PickupAccessRepository : IPickupAccessRepository
             cancellationToken) ?? new PickupAccess();
     }
 
-    public async Task AddAsync(
-        PickupAccess pickupAccess,
-        CancellationToken cancellationToken)
+    public async Task AddAsync(PickupAccess pickupAccess, CancellationToken cancellationToken)
     {
         await _db.PickupAccesses.AddAsync(pickupAccess, cancellationToken);
     }

@@ -80,6 +80,20 @@ public sealed class ArchitectureTests
     }
 
     [Fact]
+    public void ApplicationDtos_UseClassesAndDtoSuffix()
+    {
+        var dtoTypes = typeof(ParcelService).Assembly.GetTypes()
+            .Where(type => type.IsPublic && type.Namespace?.Contains(".DTOs.", StringComparison.Ordinal) == true)
+            .ToArray();
+
+        Assert.All(dtoTypes, type =>
+        {
+            Assert.True(type.IsClass);
+            Assert.EndsWith("Dto", type.Name);
+        });
+    }
+
+    [Fact]
     public void DomainEnums_UseEnumsNamespace()
     {
         var invalidEnums = typeof(Compartment).Assembly

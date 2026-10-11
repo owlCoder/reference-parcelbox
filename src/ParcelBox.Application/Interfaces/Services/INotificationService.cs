@@ -5,7 +5,5 @@ namespace ParcelBox.Application.Interfaces.Services;
 
 public interface INotificationService
 {
-    Task<PickupMessageStatus> SendPickupCodeAsync(
-        PickupNotification notification,
-        CancellationToken cancellationToken);
+    Task<PickupMessageStatus> SendPickupCodeAsync(PickupNotificationDto notification, CancellationToken cancellationToken);
 }

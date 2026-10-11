@@ -8,8 +8,7 @@ internal sealed class CompartmentRepositoryFake : ICompartmentRepository
 {
     public List<Compartment> Items { get; } = [];
 
-    public Task<IReadOnlyList<Compartment>> GetAvailableAsync(
-        CancellationToken cancellationToken)
+    public Task<IReadOnlyList<Compartment>> GetAvailableAsync(CancellationToken cancellationToken)
     {
         IReadOnlyList<Compartment> result = Items
             .Where(compartment => compartment.Status == CompartmentStatus.Available)
@@ -20,9 +19,7 @@ internal sealed class CompartmentRepositoryFake : ICompartmentRepository
         return Task.FromResult(result);
     }
 
-    public Task<Compartment> GetByParcelIdAsync(
-        Guid parcelId,
-        CancellationToken cancellationToken)
+    public Task<Compartment> GetByParcelIdAsync(Guid parcelId, CancellationToken cancellationToken)
     {
         return Task.FromResult(
             Items.SingleOrDefault(compartment => compartment.ParcelId == parcelId) ?? new Compartment());

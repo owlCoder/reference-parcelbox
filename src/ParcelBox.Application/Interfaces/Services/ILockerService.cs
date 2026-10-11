@@ -7,14 +7,9 @@ namespace ParcelBox.Application.Interfaces.Services;
 
 public interface ILockerService
 {
-    Task<Result<Compartment, LockerOperationError>> AssignAsync(
-        Guid parcelId,
-        SizeCategory requiredSize,
-        CancellationToken cancellationToken);
+    Task<Result<Compartment, LockerOperationError>> AssignAsync(Guid parcelId, SizeCategory requiredSize, CancellationToken cancellationToken);
 
-    Task<Result<Compartment, LockerOperationError>> OpenForPickupAsync(
-        Guid parcelId,
-        CancellationToken cancellationToken);
+    Task<Result<Compartment, LockerOperationError>> OpenForPickupAsync(Guid parcelId, CancellationToken cancellationToken);
 
     Result<LockerOperationError> Release(Compartment compartment, Guid parcelId);
 }

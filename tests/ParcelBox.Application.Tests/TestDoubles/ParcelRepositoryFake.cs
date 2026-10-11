@@ -7,9 +7,7 @@ internal sealed class ParcelRepositoryFake : IParcelRepository
 {
     public List<Parcel> Items { get; } = [];
 
-    public Task<bool> TrackingCodeExistsAsync(
-        string trackingCode,
-        CancellationToken cancellationToken)
+    public Task<bool> TrackingCodeExistsAsync(string trackingCode, CancellationToken cancellationToken)
     {
         return Task.FromResult(
             Items.Any(parcel => parcel.TrackingCode == trackingCode));
@@ -20,9 +18,7 @@ internal sealed class ParcelRepositoryFake : IParcelRepository
         return Task.FromResult(Items.SingleOrDefault(parcel => parcel.Id == id) ?? new Parcel());
     }
 
-    public Task<Parcel> GetByTrackingCodeAsync(
-        string trackingCode,
-        CancellationToken cancellationToken)
+    public Task<Parcel> GetByTrackingCodeAsync(string trackingCode, CancellationToken cancellationToken)
     {
         return Task.FromResult(
             Items.SingleOrDefault(parcel => parcel.TrackingCode == trackingCode) ?? new Parcel());

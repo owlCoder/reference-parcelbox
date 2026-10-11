@@ -24,7 +24,7 @@ public sealed class ParcelServiceTests
             new FixedTimeProvider(Now));
 
         var result = await service.RegisterAsync(
-            new RegisterParcelInput("PKG-001", "+38160111222", SizeCategory.Medium),
+            new RegisterParcelInputDto("PKG-001", "+38160111222", SizeCategory.Medium),
             CancellationToken.None);
 
         Assert.True(result.IsSuccess);
@@ -54,7 +54,7 @@ public sealed class ParcelServiceTests
             new FixedTimeProvider(Now));
 
         var result = await service.RegisterAsync(
-            new RegisterParcelInput("PKG-001", "+38160111333", SizeCategory.Medium),
+            new RegisterParcelInputDto("PKG-001", "+38160111333", SizeCategory.Medium),
             CancellationToken.None);
 
         Assert.True(result.IsFailure);

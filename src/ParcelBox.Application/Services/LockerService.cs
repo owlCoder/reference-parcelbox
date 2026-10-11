@@ -14,18 +14,13 @@ public sealed class LockerService : ILockerService
     private readonly ICompartmentRepository _compartments;
     private readonly ILockerController _lockerController;
 
-    public LockerService(
-        ICompartmentRepository compartments,
-        ILockerController lockerController)
+    public LockerService(ICompartmentRepository compartments, ILockerController lockerController)
     {
         _compartments = compartments;
         _lockerController = lockerController;
     }
 
-    public async Task<Result<Compartment, LockerOperationError>> AssignAsync(
-        Guid parcelId,
-        SizeCategory requiredSize,
-        CancellationToken cancellationToken)
+    public async Task<Result<Compartment, LockerOperationError>> AssignAsync(Guid parcelId, SizeCategory requiredSize, CancellationToken cancellationToken)
     {
         if (parcelId == Guid.Empty)
         {
@@ -89,9 +84,7 @@ public sealed class LockerService : ILockerService
         return Result<Compartment, LockerOperationError>.Success(compartment);
     }
 
-    public async Task<Result<Compartment, LockerOperationError>> OpenForPickupAsync(
-        Guid parcelId,
-        CancellationToken cancellationToken)
+    public async Task<Result<Compartment, LockerOperationError>> OpenForPickupAsync(Guid parcelId, CancellationToken cancellationToken)
     {
         var compartment = await _compartments.GetByParcelIdAsync(parcelId, cancellationToken);
 

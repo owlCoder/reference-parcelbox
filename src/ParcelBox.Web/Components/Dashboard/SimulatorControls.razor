@@ -100,7 +100,7 @@
     public MessageGatewayMode? CurrentMessageMode { get; set; }
 
     [Parameter, EditorRequired]
-    public IReadOnlyList<SentMessage> Messages { get; set; } = [];
+    public IReadOnlyList<SentMessageDto> Messages { get; set; } = [];
 
     [Parameter]
     public bool Busy { get; set; }

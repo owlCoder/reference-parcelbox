@@ -5,8 +5,5 @@ namespace ParcelBox.Application.Interfaces.Services;
 
 public interface IPickupService
 {
-    Task<Result<PickupOperationError>> CompletePickupAsync(
-        string trackingCode,
-        string pickupCode,
-        CancellationToken cancellationToken);
+    Task<Result<PickupOperationError>> CompletePickupAsync(string trackingCode, string pickupCode, CancellationToken cancellationToken);
 }

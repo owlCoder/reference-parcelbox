@@ -4,6 +4,5 @@ namespace ParcelBox.Application.Interfaces.Services;
 
 public interface ICompartmentService
 {
-    Task<IReadOnlyList<CompartmentDetails>> GetAllAsync(
-        CancellationToken cancellationToken);
+    Task<IReadOnlyList<CompartmentDetailsDto>> GetAllAsync(CancellationToken cancellationToken);
 }

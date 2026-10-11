@@ -2,17 +2,17 @@ using ParcelBox.Domain.Common.Enums;
 
 namespace ParcelBox.Api.Contracts;
 
-public sealed class RegisterParcelRequest
+public sealed class RegisterParcelRequestDto
 {
     public string TrackingCode { get; set; } = string.Empty;
     public string RecipientPhone { get; set; } = string.Empty;
     public SizeCategory Size { get; set; }
 
-    public RegisterParcelRequest()
+    public RegisterParcelRequestDto()
     {
     }
 
-    public RegisterParcelRequest(string trackingCode, string recipientPhone, SizeCategory size)
+    public RegisterParcelRequestDto(string trackingCode, string recipientPhone, SizeCategory size)
     {
         TrackingCode = trackingCode;
         RecipientPhone = recipientPhone;

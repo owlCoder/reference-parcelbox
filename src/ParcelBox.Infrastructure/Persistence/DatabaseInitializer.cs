@@ -36,10 +36,7 @@ public sealed class DatabaseInitializer
         await _db.SaveChangesAsync(cancellationToken);
     }
 
-    private static Compartment NewCompartment(
-        string lockerCode,
-        string number,
-        SizeCategory size)
+    private static Compartment NewCompartment(string lockerCode, string number, SizeCategory size)
     {
         return new Compartment
         {

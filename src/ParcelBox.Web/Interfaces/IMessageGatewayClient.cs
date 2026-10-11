@@ -5,8 +5,7 @@ namespace ParcelBox.Web.Interfaces;
 
 public interface IMessageGatewayClient : ISimulatorClient<MessageGatewayMode>
 {
-    Task<IReadOnlyList<SentMessage>> ListMessagesAsync(
-        CancellationToken cancellationToken = default);
+    Task<IReadOnlyList<SentMessageDto>> ListMessagesAsync(CancellationToken cancellationToken = default);
 
     Task<bool> ClearMessagesAsync(CancellationToken cancellationToken = default);
 }

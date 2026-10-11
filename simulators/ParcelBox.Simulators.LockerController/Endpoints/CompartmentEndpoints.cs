@@ -15,17 +15,14 @@ public static class CompartmentEndpoints
         return endpoints;
     }
 
-    private static IResult OpenCompartment(
-        string lockerCode,
-        string number,
-        SimulatorState state)
+    private static IResult OpenCompartment(string lockerCode, string number, SimulatorState state)
     {
         return state.Mode switch
         {
             LockerMode.Normal => Results.Ok(
-                new OpenCompartmentResponse(lockerCode, number, LockerOpenStatus.Opened)),
+                new OpenCompartmentResponseDto(lockerCode, number, LockerOpenStatus.Opened)),
             LockerMode.Jammed => Results.Conflict(
-                new OpenCompartmentResponse(lockerCode, number, LockerOpenStatus.Jammed)),
+                new OpenCompartmentResponseDto(lockerCode, number, LockerOpenStatus.Jammed)),
             _ => Results.StatusCode(StatusCodes.Status503ServiceUnavailable)
         };
     }

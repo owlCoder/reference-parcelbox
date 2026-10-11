@@ -12,9 +12,7 @@ public static class LockerEndpoints
         return endpoints;
     }
 
-    private static async Task<IResult> GetCompartmentsAsync(
-        ICompartmentService service,
-        CancellationToken cancellationToken)
+    private static async Task<IResult> GetCompartmentsAsync(ICompartmentService service, CancellationToken cancellationToken)
     {
         var compartments = await service.GetAllAsync(cancellationToken);
         return Results.Ok(compartments);

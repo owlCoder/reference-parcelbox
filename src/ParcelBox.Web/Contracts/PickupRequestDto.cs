@@ -1,14 +1,14 @@
 namespace ParcelBox.Web.Contracts;
 
-public sealed class PickupRequest
+public sealed class PickupRequestDto
 {
     public string Code { get; set; } = string.Empty;
 
-    public PickupRequest()
+    public PickupRequestDto()
     {
     }
 
-    public PickupRequest(string code)
+    public PickupRequestDto(string code)
     {
         Code = code;
     }

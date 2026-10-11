@@ -17,22 +17,17 @@ public sealed class PickupAccessService : IPickupAccessService
     private readonly IPickupAccessRepository _pickupAccesses;
     private readonly IPickupCodeService _pickupCodes;
 
-    public PickupAccessService(
-        IPickupAccessRepository pickupAccesses,
-        IPickupCodeService pickupCodes)
+    public PickupAccessService(IPickupAccessRepository pickupAccesses, IPickupCodeService pickupCodes)
     {
         _pickupAccesses = pickupAccesses;
         _pickupCodes = pickupCodes;
     }
 
-    public async Task<Result<PickupAccessPreparation, PickupOperationError>> CreateAsync(
-        Guid parcelId,
-        DateTimeOffset now,
-        CancellationToken cancellationToken)
+    public async Task<Result<PickupAccessPreparationDto, PickupOperationError>> CreateAsync(Guid parcelId, DateTimeOffset now, CancellationToken cancellationToken)
     {
         if (parcelId == Guid.Empty)
         {
-            return Result<PickupAccessPreparation, PickupOperationError>.Failure(
+            return Result<PickupAccessPreparationDto, PickupOperationError>.Failure(
                 PickupOperationError.ParcelNotFound);
         }
 
@@ -49,15 +44,11 @@ public sealed class PickupAccessService : IPickupAccessService
 
         await _pickupAccesses.AddAsync(access, cancellationToken);
 
-        return Result<PickupAccessPreparation, PickupOperationError>.Success(
-            new PickupAccessPreparation(code));
+        return Result<PickupAccessPreparationDto, PickupOperationError>.Success(
+            new PickupAccessPreparationDto(code));
     }
 
-    public async Task<Result<PickupAccess, PickupOperationError>> ValidateAsync(
-        Guid parcelId,
-        string pickupCode,
-        DateTimeOffset now,
-        CancellationToken cancellationToken)
+    public async Task<Result<PickupAccess, PickupOperationError>> ValidateAsync(Guid parcelId, string pickupCode, DateTimeOffset now, CancellationToken cancellationToken)
     {
         var access = await _pickupAccesses.GetByParcelIdAsync(parcelId, cancellationToken);
 

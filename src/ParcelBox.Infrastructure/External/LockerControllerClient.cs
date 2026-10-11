@@ -14,10 +14,7 @@ internal sealed class LockerControllerClient : ILockerController
         _httpClient = httpClient;
     }
 
-    public async Task<Result<LockerControllerError>> OpenAsync(
-        string lockerCode,
-        string compartmentNumber,
-        CancellationToken cancellationToken)
+    public async Task<Result<LockerControllerError>> OpenAsync(string lockerCode, string compartmentNumber, CancellationToken cancellationToken)
     {
         try
         {

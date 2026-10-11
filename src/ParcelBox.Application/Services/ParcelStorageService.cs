@@ -18,13 +18,7 @@ public sealed class ParcelStorageService : IParcelStorageService
     private readonly IUnitOfWork _unitOfWork;
     private readonly TimeProvider _timeProvider;
 
-    public ParcelStorageService(
-        IParcelRepository parcels,
-        ILockerService lockers,
-        IPickupAccessService pickupAccess,
-        INotificationService notifications,
-        IUnitOfWork unitOfWork,
-        TimeProvider timeProvider)
+    public ParcelStorageService(IParcelRepository parcels, ILockerService lockers, IPickupAccessService pickupAccess, INotificationService notifications, IUnitOfWork unitOfWork, TimeProvider timeProvider)
     {
         _parcels = parcels;
         _lockers = lockers;
@@ -34,21 +28,19 @@ public sealed class ParcelStorageService : IParcelStorageService
         _timeProvider = timeProvider;
     }
 
-    public async Task<Result<StoreParcelResult, ParcelOperationError>> StoreAsync(
-        Guid parcelId,
-        CancellationToken cancellationToken)
+    public async Task<Result<StoreParcelResultDto, ParcelOperationError>> StoreAsync(Guid parcelId, CancellationToken cancellationToken)
     {
         var parcel = await _parcels.GetByIdAsync(parcelId, cancellationToken);
 
         if (parcel.Id == Guid.Empty)
         {
-            return Result<StoreParcelResult, ParcelOperationError>.Failure(
+            return Result<StoreParcelResultDto, ParcelOperationError>.Failure(
                 ParcelOperationError.NotFound);
         }
 
         if (parcel.Status != ParcelStatus.Registered)
         {
-            return Result<StoreParcelResult, ParcelOperationError>.Failure(
+            return Result<StoreParcelResultDto, ParcelOperationError>.Failure(
                 ParcelOperationError.NotRegisteredForStorage);
         }
 
@@ -56,7 +48,7 @@ public sealed class ParcelStorageService : IParcelStorageService
 
         if (assignment.IsFailure)
         {
-            return Result<StoreParcelResult, ParcelOperationError>.Failure(
+            return Result<StoreParcelResultDto, ParcelOperationError>.Failure(
                 MapLockerError(assignment.Error));
         }
 
@@ -65,7 +57,7 @@ public sealed class ParcelStorageService : IParcelStorageService
 
         if (preparation.IsFailure)
         {
-            return Result<StoreParcelResult, ParcelOperationError>.Failure(
+            return Result<StoreParcelResultDto, ParcelOperationError>.Failure(
                 ParcelOperationError.PickupAccessInvalid);
         }
 
@@ -76,7 +68,7 @@ public sealed class ParcelStorageService : IParcelStorageService
 
         await _unitOfWork.SaveChangesAsync(cancellationToken);
 
-        var notification = new PickupNotification(
+        var notification = new PickupNotificationDto(
             parcel.RecipientPhone,
             parcel.TrackingCode,
             preparation.Value.Code);
@@ -85,8 +77,8 @@ public sealed class ParcelStorageService : IParcelStorageService
             notification,
             cancellationToken);
 
-        return Result<StoreParcelResult, ParcelOperationError>.Success(
-            new StoreParcelResult(
+        return Result<StoreParcelResultDto, ParcelOperationError>.Success(
+            new StoreParcelResultDto(
                 assignment.Value.LockerCode,
                 assignment.Value.Number,
                 messageStatus));

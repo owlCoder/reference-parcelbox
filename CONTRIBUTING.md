@@ -23,7 +23,7 @@ Za UI ili integracione izmene pokrenite i kompletan demo preko `scripts/run-all.
 - model nema repository/service zavisnost, Result tip ili business helper metode (`CanFit`, `Validate...`, `Mark...` i slično);
 - `Application/Interfaces` sadrži samo interface tipove;
 - application/integration enum-i su u `Application/Enums`;
-- DTO klase su u `Application/DTOs`;
+- DTO klase su u `Application/DTOs`, a HTTP DTO-i u odgovarajućem API/Web sloju i nazivaju se `*Dto`;
 - repository interfejsi su u `Application/Interfaces/Repositories` i nazivaju se `I*Repository`;
 - `IUnitOfWork` pripada `Application/Interfaces/Persistence`;
 - repository implementacije su u `Infrastructure/Persistence/Repositories`;
@@ -49,7 +49,7 @@ Produkcione konkretne implementacije vezuju se kroz DI. Endpoint i application s
 - ne uvoditi static helper klasu za poslovna pravila;
 - ne duplirati mapiranje ili validaciju kroz više slojeva;
 - ne držati više nepovezanih odgovornosti u istom servisu ili fajlu;
-- koristiti standardni Visual Studio / `dotnet format` stil;
+- koristiti standardni Visual Studio / `dotnet format` stil, potpise metoda sa parametrima držati u jednom redu kad god je moguće;
 - koristiti opisna imena promenljivih umesto generičkih `x`, `item`, `data` kada kontekst nije očigledan;
 - komentarisati samo odluku koja nije očigledna iz naziva i strukture;
 - ne uvoditi novu apstrakciju bez stvarne granice ili razloga za zamenu implementacije.

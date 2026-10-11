@@ -13,13 +13,12 @@ public sealed class CompartmentService : ICompartmentService
         _compartments = compartments;
     }
 
-    public async Task<IReadOnlyList<CompartmentDetails>> GetAllAsync(
-        CancellationToken cancellationToken)
+    public async Task<IReadOnlyList<CompartmentDetailsDto>> GetAllAsync(CancellationToken cancellationToken)
     {
         var compartments = await _compartments.GetAllAsync(cancellationToken);
 
         return compartments
-            .Select(compartment => new CompartmentDetails(
+            .Select(compartment => new CompartmentDetailsDto(
                 compartment.Id,
                 compartment.LockerCode,
                 compartment.Number,

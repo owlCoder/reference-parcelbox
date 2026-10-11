@@ -14,8 +14,7 @@ internal sealed class CompartmentRepository : ICompartmentRepository
         _db = db;
     }
 
-    public async Task<IReadOnlyList<Compartment>> GetAvailableAsync(
-        CancellationToken cancellationToken)
+    public async Task<IReadOnlyList<Compartment>> GetAvailableAsync(CancellationToken cancellationToken)
     {
         return await _db.Compartments
             .Where(compartment => compartment.Status == CompartmentStatus.Available)
@@ -32,8 +31,7 @@ internal sealed class CompartmentRepository : ICompartmentRepository
             cancellationToken) ?? new Compartment();
     }
 
-    public async Task<IReadOnlyList<Compartment>> GetAllAsync(
-        CancellationToken cancellationToken)
+    public async Task<IReadOnlyList<Compartment>> GetAllAsync(CancellationToken cancellationToken)
     {
         return await _db.Compartments
             .AsNoTracking()

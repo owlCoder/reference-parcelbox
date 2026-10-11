@@ -1,15 +1,15 @@
 namespace ParcelBox.Application.DTOs.External;
 
-public sealed class OutboundMessage
+public sealed class OutboundMessageDto
 {
     public string Destination { get; set; } = string.Empty;
     public string Text { get; set; } = string.Empty;
 
-    public OutboundMessage()
+    public OutboundMessageDto()
     {
     }
 
-    public OutboundMessage(string destination, string text)
+    public OutboundMessageDto(string destination, string text)
     {
         Destination = destination;
         Text = text;

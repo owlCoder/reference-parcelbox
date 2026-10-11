@@ -2,17 +2,17 @@ using ParcelBox.Application.Enums;
 
 namespace ParcelBox.Application.DTOs.Parcels;
 
-public sealed class StoreParcelResult
+public sealed class StoreParcelResultDto
 {
     public string LockerCode { get; set; } = string.Empty;
     public string CompartmentNumber { get; set; } = string.Empty;
     public PickupMessageStatus MessageDelivery { get; set; }
 
-    public StoreParcelResult()
+    public StoreParcelResultDto()
     {
     }
 
-    public StoreParcelResult(string lockerCode, string compartmentNumber, PickupMessageStatus messageDelivery)
+    public StoreParcelResultDto(string lockerCode, string compartmentNumber, PickupMessageStatus messageDelivery)
     {
         LockerCode = lockerCode;
         CompartmentNumber = compartmentNumber;

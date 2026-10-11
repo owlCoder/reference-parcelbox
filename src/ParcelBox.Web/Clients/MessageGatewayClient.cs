@@ -12,12 +12,11 @@ public sealed class MessageGatewayClient : SimulatorClientBase<MessageGatewayMod
     {
     }
 
-    public async Task<IReadOnlyList<SentMessage>> ListMessagesAsync(
-        CancellationToken cancellationToken = default)
+    public async Task<IReadOnlyList<SentMessageDto>> ListMessagesAsync(CancellationToken cancellationToken = default)
     {
         try
         {
-            var messages = await HttpClient.GetFromJsonAsync<List<SentMessage>>(
+            var messages = await HttpClient.GetFromJsonAsync<List<SentMessageDto>>(
                 "api/messages",
                 JsonOptions,
                 cancellationToken);

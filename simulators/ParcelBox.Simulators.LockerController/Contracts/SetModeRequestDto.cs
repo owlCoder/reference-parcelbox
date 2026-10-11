@@ -2,15 +2,15 @@ using ParcelBox.Simulators.LockerController.Enums;
 
 namespace ParcelBox.Simulators.LockerController.Contracts;
 
-public sealed class SetModeRequest
+public sealed class SetModeRequestDto
 {
     public LockerMode Mode { get; set; }
 
-    public SetModeRequest()
+    public SetModeRequestDto()
     {
     }
 
-    public SetModeRequest(LockerMode mode)
+    public SetModeRequestDto(LockerMode mode)
     {
         Mode = mode;
     }

@@ -90,6 +90,17 @@ if grep -R -nE 'Application\.Interfaces\.(Repositories|Persistence)|ParcelBoxDbC
   report "API endpoint depends directly on persistence instead of a service interface."
 fi
 
+if grep -R -nE '^[[:space:]]*(public|internal)[[:space:]]+(sealed[[:space:]]+)?record[[:space:]]+' src simulators --include='*.cs'; then
+  report "Production C# must use ordinary classes instead of record types."
+fi
+
+while IFS= read -r file; do
+  if [[ "$(basename "$file")" != *Dto.cs ]]; then
+    report "$file is a DTO/contract but its file name does not end in Dto.cs."
+  fi
+done < <(find src/ParcelBox.Application/DTOs src/ParcelBox.Api/Contracts src/ParcelBox.Web/Contracts \
+  -type f -name '*.cs' -print | sort)
+
 if [[ "$status" -ne 0 ]]; then
   exit "$status"
 fi

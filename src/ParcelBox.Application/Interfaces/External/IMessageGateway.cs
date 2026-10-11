@@ -6,7 +6,5 @@ namespace ParcelBox.Application.Interfaces.External;
 
 public interface IMessageGateway
 {
-    Task<Result<MessageGatewayError>> SendAsync(
-        OutboundMessage message,
-        CancellationToken cancellationToken);
+    Task<Result<MessageGatewayError>> SendAsync(OutboundMessageDto message, CancellationToken cancellationToken);
 }

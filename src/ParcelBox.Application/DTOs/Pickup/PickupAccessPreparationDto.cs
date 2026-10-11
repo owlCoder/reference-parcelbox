@@ -1,14 +1,14 @@
 namespace ParcelBox.Application.DTOs.Pickup;
 
-public sealed class PickupAccessPreparation
+public sealed class PickupAccessPreparationDto
 {
     public string Code { get; set; } = string.Empty;
 
-    public PickupAccessPreparation()
+    public PickupAccessPreparationDto()
     {
     }
 
-    public PickupAccessPreparation(string code)
+    public PickupAccessPreparationDto(string code)
     {
         Code = code;
     }

@@ -2,7 +2,7 @@ using ParcelBox.Web.Enums;
 
 namespace ParcelBox.Web.Contracts;
 
-public sealed class CompartmentDetails
+public sealed class CompartmentDetailsDto
 {
     public Guid Id { get; set; } = Guid.Empty;
     public string LockerCode { get; set; } = string.Empty;
@@ -11,11 +11,11 @@ public sealed class CompartmentDetails
     public CompartmentStatus Status { get; set; }
     public Guid? ParcelId { get; set; }
 
-    public CompartmentDetails()
+    public CompartmentDetailsDto()
     {
     }
 
-    public CompartmentDetails(Guid id, string lockerCode, string number, SizeCategory size, CompartmentStatus status, Guid? parcelId)
+    public CompartmentDetailsDto(Guid id, string lockerCode, string number, SizeCategory size, CompartmentStatus status, Guid? parcelId)
     {
         Id = id;
         LockerCode = lockerCode;

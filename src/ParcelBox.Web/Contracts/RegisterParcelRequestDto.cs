@@ -1,18 +1,18 @@
-using ParcelBox.Domain.Common.Enums;
+using ParcelBox.Web.Enums;
 
-namespace ParcelBox.Application.DTOs.Parcels;
+namespace ParcelBox.Web.Contracts;
 
-public sealed class RegisterParcelInput
+public sealed class RegisterParcelRequestDto
 {
     public string TrackingCode { get; set; } = string.Empty;
     public string RecipientPhone { get; set; } = string.Empty;
     public SizeCategory Size { get; set; }
 
-    public RegisterParcelInput()
+    public RegisterParcelRequestDto()
     {
     }
 
-    public RegisterParcelInput(string trackingCode, string recipientPhone, SizeCategory size)
+    public RegisterParcelRequestDto(string trackingCode, string recipientPhone, SizeCategory size)
     {
         TrackingCode = trackingCode;
         RecipientPhone = recipientPhone;

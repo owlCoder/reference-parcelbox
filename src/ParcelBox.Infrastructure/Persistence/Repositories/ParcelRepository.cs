@@ -13,9 +13,7 @@ internal sealed class ParcelRepository : IParcelRepository
         _db = db;
     }
 
-    public Task<bool> TrackingCodeExistsAsync(
-        string trackingCode,
-        CancellationToken cancellationToken)
+    public Task<bool> TrackingCodeExistsAsync(string trackingCode, CancellationToken cancellationToken)
     {
         return _db.Parcels.AnyAsync(
             parcel => parcel.TrackingCode == trackingCode,

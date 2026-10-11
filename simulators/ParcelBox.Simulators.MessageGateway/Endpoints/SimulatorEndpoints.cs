@@ -24,12 +24,12 @@ public static class SimulatorEndpoints
 
     private static IResult GetMode(SimulatorState state)
     {
-        return Results.Ok(new SimulatorModeResponse(state.Mode));
+        return Results.Ok(new SimulatorModeResponseDto(state.Mode));
     }
 
-    private static IResult SetMode(SetModeRequest request, SimulatorState state)
+    private static IResult SetMode(SetModeRequestDto request, SimulatorState state)
     {
         state.Mode = request.Mode;
-        return Results.Ok(new SimulatorModeResponse(state.Mode));
+        return Results.Ok(new SimulatorModeResponseDto(state.Mode));
     }
 }

@@ -2,15 +2,15 @@ using ParcelBox.Simulators.MessageGateway.Enums;
 
 namespace ParcelBox.Simulators.MessageGateway.Contracts;
 
-public sealed class SetModeRequest
+public sealed class SimulatorModeResponseDto
 {
     public MessageGatewayMode Mode { get; set; }
 
-    public SetModeRequest()
+    public SimulatorModeResponseDto()
     {
     }
 
-    public SetModeRequest(MessageGatewayMode mode)
+    public SimulatorModeResponseDto(MessageGatewayMode mode)
     {
         Mode = mode;
     }

@@ -1,9 +1,8 @@
-using ParcelBox.Domain.Common.Enums;
-using ParcelBox.Domain.Parcels.Enums;
+using ParcelBox.Web.Enums;
 
-namespace ParcelBox.Application.DTOs.Parcels;
+namespace ParcelBox.Web.Contracts;
 
-public sealed class ParcelDetails
+public sealed class ParcelDetailsDto
 {
     public Guid Id { get; set; } = Guid.Empty;
     public string TrackingCode { get; set; } = string.Empty;
@@ -16,11 +15,11 @@ public sealed class ParcelDetails
     public DateTimeOffset? StoredAt { get; set; }
     public DateTimeOffset? PickedUpAt { get; set; }
 
-    public ParcelDetails()
+    public ParcelDetailsDto()
     {
     }
 
-    public ParcelDetails(Guid id, string trackingCode, string recipientPhone, SizeCategory size, ParcelStatus status, string? lockerCode, string? compartmentNumber, DateTimeOffset createdAt, DateTimeOffset? storedAt, DateTimeOffset? pickedUpAt)
+    public ParcelDetailsDto(Guid id, string trackingCode, string recipientPhone, SizeCategory size, ParcelStatus status, string? lockerCode, string? compartmentNumber, DateTimeOffset createdAt, DateTimeOffset? storedAt, DateTimeOffset? pickedUpAt)
     {
         Id = id;
         TrackingCode = trackingCode;

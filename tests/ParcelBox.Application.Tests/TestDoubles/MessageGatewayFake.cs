@@ -8,11 +8,9 @@ namespace ParcelBox.Application.Tests.TestDoubles;
 internal sealed class MessageGatewayFake : IMessageGateway
 {
     public MessageGatewayError Error { get; set; }
-    public OutboundMessage? LastMessage { get; private set; }
+    public OutboundMessageDto? LastMessage { get; private set; }
 
-    public Task<Result<MessageGatewayError>> SendAsync(
-        OutboundMessage message,
-        CancellationToken cancellationToken)
+    public Task<Result<MessageGatewayError>> SendAsync(OutboundMessageDto message, CancellationToken cancellationToken)
     {
         LastMessage = message;
 

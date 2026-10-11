@@ -15,9 +15,7 @@ internal sealed class MessageGatewayClient : IMessageGateway
         _httpClient = httpClient;
     }
 
-    public async Task<Result<MessageGatewayError>> SendAsync(
-        OutboundMessage message,
-        CancellationToken cancellationToken)
+    public async Task<Result<MessageGatewayError>> SendAsync(OutboundMessageDto message, CancellationToken cancellationToken)
     {
         try
         {

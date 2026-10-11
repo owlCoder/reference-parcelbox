@@ -18,12 +18,9 @@ public static class ParcelEndpoints
         return endpoints;
     }
 
-    private static async Task<IResult> RegisterAsync(
-        RegisterParcelRequest request,
-        IParcelService service,
-        CancellationToken cancellationToken)
+    private static async Task<IResult> RegisterAsync(RegisterParcelRequestDto request, IParcelService service, CancellationToken cancellationToken)
     {
-        var input = new RegisterParcelInput(
+        var input = new RegisterParcelInputDto(
             request.TrackingCode,
             request.RecipientPhone,
             request.Size);
@@ -35,10 +32,7 @@ public static class ParcelEndpoints
             : Results.Created($"/api/parcels/{result.Value.Id}", result.Value);
     }
 
-    private static async Task<IResult> GetAsync(
-        Guid id,
-        IParcelService service,
-        CancellationToken cancellationToken)
+    private static async Task<IResult> GetAsync(Guid id, IParcelService service, CancellationToken cancellationToken)
     {
         var result = await service.GetAsync(id, cancellationToken);
 
@@ -47,10 +41,7 @@ public static class ParcelEndpoints
             : Results.Ok(result.Value);
     }
 
-    private static async Task<IResult> StoreAsync(
-        Guid id,
-        IParcelStorageService service,
-        CancellationToken cancellationToken)
+    private static async Task<IResult> StoreAsync(Guid id, IParcelStorageService service, CancellationToken cancellationToken)
     {
         var result = await service.StoreAsync(id, cancellationToken);
 

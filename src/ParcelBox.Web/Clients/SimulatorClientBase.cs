@@ -21,7 +21,7 @@ public abstract class SimulatorClientBase<TMode> : ServiceClientBase, ISimulator
     {
         try
         {
-            var response = await HttpClient.GetFromJsonAsync<SimulatorModeResponse<TMode>>(
+            var response = await HttpClient.GetFromJsonAsync<SimulatorModeResponseDto<TMode>>(
                 ModePath,
                 JsonOptions,
                 cancellationToken);
@@ -48,7 +48,7 @@ public abstract class SimulatorClientBase<TMode> : ServiceClientBase, ISimulator
         {
             using var response = await HttpClient.PutAsJsonAsync(
                 ModePath,
-                new SetSimulatorModeRequest<TMode>(mode),
+                new SetSimulatorModeRequestDto<TMode>(mode),
                 JsonOptions,
                 cancellationToken);
 
@@ -57,7 +57,7 @@ public abstract class SimulatorClientBase<TMode> : ServiceClientBase, ISimulator
                 return false;
             }
 
-            var confirmed = await response.Content.ReadFromJsonAsync<SimulatorModeResponse<TMode>>(
+            var confirmed = await response.Content.ReadFromJsonAsync<SimulatorModeResponseDto<TMode>>(
                 JsonOptions,
                 cancellationToken);
 

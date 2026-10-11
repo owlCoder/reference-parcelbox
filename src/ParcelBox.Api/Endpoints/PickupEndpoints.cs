@@ -14,11 +14,7 @@ public static class PickupEndpoints
         return endpoints;
     }
 
-    private static async Task<IResult> PickupAsync(
-        string trackingCode,
-        PickupRequest request,
-        IPickupService service,
-        CancellationToken cancellationToken)
+    private static async Task<IResult> PickupAsync(string trackingCode, PickupRequestDto request, IPickupService service, CancellationToken cancellationToken)
     {
         var result = await service.CompletePickupAsync(
             trackingCode,

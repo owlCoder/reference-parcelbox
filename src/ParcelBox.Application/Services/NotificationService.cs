@@ -15,11 +15,9 @@ public sealed class NotificationService : INotificationService
         _messageGateway = messageGateway;
     }
 
-    public async Task<PickupMessageStatus> SendPickupCodeAsync(
-        PickupNotification notification,
-        CancellationToken cancellationToken)
+    public async Task<PickupMessageStatus> SendPickupCodeAsync(PickupNotificationDto notification, CancellationToken cancellationToken)
     {
-        var message = new OutboundMessage(
+        var message = new OutboundMessageDto(
             notification.RecipientPhone,
             $"Parcel {notification.TrackingCode} is ready. Pickup code: {notification.PickupCode}");
 

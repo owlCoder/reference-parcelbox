@@ -1,16 +1,16 @@
 namespace ParcelBox.Application.DTOs.Notifications;
 
-public sealed class PickupNotification
+public sealed class PickupNotificationDto
 {
     public string RecipientPhone { get; set; } = string.Empty;
     public string TrackingCode { get; set; } = string.Empty;
     public string PickupCode { get; set; } = string.Empty;
 
-    public PickupNotification()
+    public PickupNotificationDto()
     {
     }
 
-    public PickupNotification(string recipientPhone, string trackingCode, string pickupCode)
+    public PickupNotificationDto(string recipientPhone, string trackingCode, string pickupCode)
     {
         RecipientPhone = recipientPhone;
         TrackingCode = trackingCode;
