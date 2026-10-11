@@ -10,5 +10,6 @@ public enum LockerOperationError
     CompartmentUnavailable = 5,
     CompartmentStateConflict = 6,
     Jammed = 7,
-    Unavailable = 8
+    Unavailable = 8,
+    PersistenceUnavailable = 9
 }
