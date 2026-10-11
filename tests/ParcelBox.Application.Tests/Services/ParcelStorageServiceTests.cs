@@ -107,8 +107,8 @@ public sealed class ParcelStorageServiceTests
             context.Service.StoreAsync(context.Parcel.Id, CancellationToken.None),
             context.Service.StoreAsync(context.Parcel.Id, CancellationToken.None));
 
-        Assert.Single(results.Where(result => result.IsSuccess));
-        Assert.Single(results.Where(result => result.IsFailure));
+        Assert.Single(results, result => result.IsSuccess);
+        Assert.Single(results, result => result.IsFailure);
         Assert.Equal(1, context.UnitOfWork.SaveCalls);
     }
 
