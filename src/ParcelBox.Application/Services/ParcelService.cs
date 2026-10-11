@@ -61,7 +61,10 @@ public sealed class ParcelService : IParcelService
         };
 
         await _parcels.AddAsync(parcel, cancellationToken);
-        await _unitOfWork.SaveChangesAsync(cancellationToken);
+        if (!await _unitOfWork.TrySaveChangesAsync(cancellationToken))
+        {
+            return Result<ParcelDetailsDto, ParcelOperationError>.Failure(ParcelOperationError.PersistenceUnavailable);
+        }
 
         return Result<ParcelDetailsDto, ParcelOperationError>.Success(ToDetails(parcel));
     }
