@@ -13,8 +13,9 @@ internal sealed class ParcelStorageTestContext
     public PickupAccessRepositoryFake PickupAccesses { get; set; }
     public UnitOfWorkFake UnitOfWork { get; set; }
     public MessageGatewayFake MessageGateway { get; set; }
+    public LockerControllerFake LockerController { get; set; }
 
-    public ParcelStorageTestContext(ParcelStorageService service, Parcel parcel, Compartment compartment, PickupAccessRepositoryFake pickupAccesses, UnitOfWorkFake unitOfWork, MessageGatewayFake messageGateway)
+    public ParcelStorageTestContext(ParcelStorageService service, Parcel parcel, Compartment compartment, PickupAccessRepositoryFake pickupAccesses, UnitOfWorkFake unitOfWork, MessageGatewayFake messageGateway, LockerControllerFake lockerController)
     {
         Service = service;
         Parcel = parcel;
@@ -22,5 +23,6 @@ internal sealed class ParcelStorageTestContext
         PickupAccesses = pickupAccesses;
         UnitOfWork = unitOfWork;
         MessageGateway = messageGateway;
+        LockerController = lockerController;
     }
 }
