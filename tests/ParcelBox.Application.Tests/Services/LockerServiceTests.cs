@@ -51,6 +51,41 @@ public sealed class LockerServiceTests
         Assert.Equal(LockerOperationError.NoCompatibleCompartment, result.Error);
     }
 
+
+    [Fact]
+    public async Task AssignAsync_ReservesDifferentCompartments_ForConcurrentParcels()
+    {
+        var repository = new CompartmentRepositoryFake();
+        repository.Items.Add(NewCompartment("B1", SizeCategory.Medium));
+        repository.Items.Add(NewCompartment("B2", SizeCategory.Medium));
+        var service = new LockerService(repository, new LockerControllerFake());
+
+        var results = await Task.WhenAll(
+            service.AssignAsync(Guid.NewGuid(), SizeCategory.Medium, CancellationToken.None),
+            service.AssignAsync(Guid.NewGuid(), SizeCategory.Medium, CancellationToken.None));
+
+        Assert.All(results, result => Assert.True(result.IsSuccess));
+        Assert.NotEqual(results[0].Value.Id, results[1].Value.Id);
+        Assert.All(repository.Items, compartment => Assert.Equal(CompartmentStatus.Occupied, compartment.Status));
+    }
+
+    [Fact]
+    public async Task AssignAsync_DoesNotReuseClaimedCompartment_WhenControllerFails()
+    {
+        var repository = new CompartmentRepositoryFake();
+        repository.Items.Add(NewCompartment("B1", SizeCategory.Medium));
+        var controller = new LockerControllerFake { Error = LockerControllerError.Jammed };
+        var service = new LockerService(repository, controller);
+
+        var first = await service.AssignAsync(Guid.NewGuid(), SizeCategory.Medium, CancellationToken.None);
+        controller.Error = LockerControllerError.None;
+        var second = await service.AssignAsync(Guid.NewGuid(), SizeCategory.Medium, CancellationToken.None);
+
+        Assert.Equal(LockerOperationError.Jammed, first.Error);
+        Assert.Equal(LockerOperationError.NoCompatibleCompartment, second.Error);
+        Assert.Equal(CompartmentStatus.Reserved, repository.Items[0].Status);
+    }
+
     private static Compartment NewCompartment(string number, SizeCategory size)
     {
         return new Compartment
