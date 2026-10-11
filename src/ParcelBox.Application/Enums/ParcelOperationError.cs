@@ -13,5 +13,7 @@ public enum ParcelOperationError
     LockerJammed = 8,
     LockerUnavailable = 9,
     CompartmentUnavailable = 10,
-    PickupAccessInvalid = 11
+    PickupAccessInvalid = 11,
+    PersistenceUnavailable = 12,
+    StorageRecoveryRequired = 13
 }
