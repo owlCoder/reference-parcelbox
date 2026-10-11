@@ -2,7 +2,20 @@ using ParcelBox.Web.Enums;
 
 namespace ParcelBox.Web.Contracts;
 
-public sealed record StoreParcelResult(
-    string LockerCode,
-    string CompartmentNumber,
-    PickupMessageStatus MessageDelivery);
+public sealed class StoreParcelResult
+{
+    public string LockerCode { get; set; } = string.Empty;
+    public string CompartmentNumber { get; set; } = string.Empty;
+    public PickupMessageStatus MessageDelivery { get; set; };
+
+    public StoreParcelResult()
+    {
+    }
+
+    public StoreParcelResult(string lockerCode, string compartmentNumber, PickupMessageStatus messageDelivery)
+    {
+        LockerCode = lockerCode;
+        CompartmentNumber = compartmentNumber;
+        MessageDelivery = messageDelivery;
+    }
+}
