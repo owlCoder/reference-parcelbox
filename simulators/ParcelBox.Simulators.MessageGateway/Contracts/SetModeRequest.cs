@@ -4,7 +4,7 @@ namespace ParcelBox.Simulators.MessageGateway.Contracts;
 
 public sealed class SetModeRequest
 {
-    public MessageGatewayMode Mode { get; set; };
+    public MessageGatewayMode Mode { get; set; }
 
     public SetModeRequest()
     {

@@ -8,12 +8,12 @@ namespace ParcelBox.Application.Tests.TestContexts;
 
 internal sealed class PickupTestContext
 {
-    public PickupService Service { get; set; };
-    public Parcel Parcel { get; set; };
-    public Compartment Compartment { get; set; };
-    public PickupAccess Access { get; set; };
-    public UnitOfWorkFake UnitOfWork { get; set; };
-    public LockerControllerFake LockerController { get; set; };
+    public PickupService Service { get; set; }
+    public Parcel Parcel { get; set; }
+    public Compartment Compartment { get; set; }
+    public PickupAccess Access { get; set; }
+    public UnitOfWorkFake UnitOfWork { get; set; }
+    public LockerControllerFake LockerController { get; set; }
 
     public PickupTestContext()
     {

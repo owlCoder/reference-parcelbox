@@ -5,7 +5,7 @@ public sealed class SentMessage
     public Guid Id { get; set; } = Guid.Empty;
     public string Destination { get; set; } = string.Empty;
     public string Text { get; set; } = string.Empty;
-    public DateTimeOffset SentAt { get; set; };
+    public DateTimeOffset SentAt { get; set; }
 
     public SentMessage()
     {

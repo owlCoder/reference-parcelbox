@@ -7,12 +7,12 @@ namespace ParcelBox.Application.Tests.TestContexts;
 
 internal sealed class ParcelStorageTestContext
 {
-    public ParcelStorageService Service { get; set; };
-    public Parcel Parcel { get; set; };
-    public Compartment Compartment { get; set; };
-    public PickupAccessRepositoryFake PickupAccesses { get; set; };
-    public UnitOfWorkFake UnitOfWork { get; set; };
-    public MessageGatewayFake MessageGateway { get; set; };
+    public ParcelStorageService Service { get; set; }
+    public Parcel Parcel { get; set; }
+    public Compartment Compartment { get; set; }
+    public PickupAccessRepositoryFake PickupAccesses { get; set; }
+    public UnitOfWorkFake UnitOfWork { get; set; }
+    public MessageGatewayFake MessageGateway { get; set; }
 
     public ParcelStorageTestContext()
     {
