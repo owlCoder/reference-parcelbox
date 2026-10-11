@@ -47,8 +47,7 @@ internal sealed class CompartmentRepository : ICompartmentRepository
         }
     }
 
-    public async Task<Compartment> GetByParcelIdAsync(Guid parcelId,
-        CancellationToken cancellationToken)
+    public async Task<Compartment> GetByParcelIdAsync(Guid parcelId, CancellationToken cancellationToken)
     {
         return await _db.Compartments.SingleOrDefaultAsync(
             compartment => compartment.ParcelId == parcelId,
