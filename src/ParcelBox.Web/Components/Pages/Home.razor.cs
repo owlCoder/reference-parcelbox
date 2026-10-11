@@ -46,7 +46,7 @@ public partial class Home
                     _registerForm.RecipientPhone,
                     _registerForm.Size));
 
-            if (result.Value is null)
+            if (result.IsFailure)
             {
                 AddActivity($"Registration failed: {result.Error}");
                 return;
@@ -69,7 +69,7 @@ public partial class Home
         {
             var result = await Api.StoreAsync(_currentParcel.Id);
 
-            if (result.Value is null)
+            if (result.IsFailure)
             {
                 AddActivity($"Store failed: {result.Error}");
                 await RefreshOperationalStateAsync();
@@ -88,11 +88,11 @@ public partial class Home
     {
         return ExecuteAsync(async () =>
         {
-            var error = await Api.PickupAsync(_pickupForm.TrackingCode, _pickupForm.Code);
+            var pickup = await Api.PickupAsync(_pickupForm.TrackingCode, _pickupForm.Code);
 
-            if (error is not null)
+            if (pickup.IsFailure)
             {
-                AddActivity($"Pickup failed: {error}");
+                AddActivity($"Pickup failed: {pickup.Error}");
                 await RefreshOperationalStateAsync();
                 return;
             }
@@ -120,9 +120,11 @@ public partial class Home
     {
         var compartments = await Api.ListCompartmentsAsync();
 
-        _compartments = compartments.Value?.ToList() ?? [];
-        _lockerMode = await LockerController.GetModeAsync();
-        _messageMode = await MessageGateway.GetModeAsync();
+        _compartments = compartments.IsSuccess ? compartments.Value : [];
+        var lockerMode = await LockerController.GetModeAsync();
+        _lockerMode = lockerMode.IsSuccess ? lockerMode.Value : null;
+        var messageMode = await MessageGateway.GetModeAsync();
+        _messageMode = messageMode.IsSuccess ? messageMode.Value : null;
         _messages = (await MessageGateway.ListMessagesAsync()).ToList();
 
         _apiOnline = await Api.IsHealthyAsync();
@@ -139,7 +141,7 @@ public partial class Home
 
         var result = await Api.GetAsync(_currentParcel.Id);
 
-        if (result.Value is not null)
+        if (result.IsSuccess)
         {
             _currentParcel = result.Value;
         }
@@ -150,7 +152,8 @@ public partial class Home
         return ExecuteAsync(async () =>
         {
             var changed = await LockerController.SetModeAsync(mode);
-            _lockerMode = await LockerController.GetModeAsync();
+            var lockerMode = await LockerController.GetModeAsync();
+            _lockerMode = lockerMode.IsSuccess ? lockerMode.Value : null;
             _lockerOnline = await LockerController.IsHealthyAsync();
 
             AddActivity(changed
@@ -164,7 +167,8 @@ public partial class Home
         return ExecuteAsync(async () =>
         {
             var changed = await MessageGateway.SetModeAsync(mode);
-            _messageMode = await MessageGateway.GetModeAsync();
+            var messageMode = await MessageGateway.GetModeAsync();
+            _messageMode = messageMode.IsSuccess ? messageMode.Value : null;
             _messageOnline = await MessageGateway.IsHealthyAsync();
 
             AddActivity(changed

@@ -74,7 +74,7 @@
                             </div>
                             <p>@message.Text</p>
 
-                            @if (pickupCode is not null)
+                            @if (!string.IsNullOrEmpty(pickupCode))
                             {
                                 <button class="code-button"
                                         type="button"
@@ -144,17 +144,17 @@
         };
     }
 
-    private static string? ExtractPickupCode(string text)
+    private static string ExtractPickupCode(string text)
     {
         const string marker = "Pickup code: ";
         var index = text.LastIndexOf(marker, StringComparison.OrdinalIgnoreCase);
 
         if (index < 0)
         {
-            return null;
+            return string.Empty;
         }
 
         var pickupCode = text[(index + marker.Length)..].Trim();
-        return pickupCode.Length == 6 && pickupCode.All(char.IsDigit) ? pickupCode : null;
+        return pickupCode.Length == 6 && pickupCode.All(char.IsDigit) ? pickupCode : string.Empty;
     }
 }

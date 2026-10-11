@@ -17,7 +17,7 @@ public abstract class SimulatorClientBase<TMode> : ServiceClientBase, ISimulator
 
     protected JsonSerializerOptions JsonOptions { get; }
 
-    public async Task<TMode?> GetModeAsync(CancellationToken cancellationToken = default)
+    public async Task<(bool IsSuccess, TMode Value)> GetModeAsync(CancellationToken cancellationToken = default)
     {
         try
         {
@@ -26,19 +26,19 @@ public abstract class SimulatorClientBase<TMode> : ServiceClientBase, ISimulator
                 JsonOptions,
                 cancellationToken);
 
-            return response?.Mode;
+            return response is null ? (false, default) : (true, response.Mode);
         }
         catch (HttpRequestException)
         {
-            return null;
+            return (false, default);
         }
         catch (OperationCanceledException) when (!cancellationToken.IsCancellationRequested)
         {
-            return null;
+            return (false, default);
         }
         catch (JsonException)
         {
-            return null;
+            return (false, default);
         }
     }
 

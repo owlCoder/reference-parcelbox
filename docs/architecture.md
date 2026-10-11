@@ -172,3 +172,7 @@ CI pokreće obe provere pre finalnih smoke testova.
 ## Namerna ograničenja
 
 Primer ne uvodi MediatR, generic repository, message bus, outbox ili dodatni framework sloj. Cilj je čitljiv referentni kod za vežbe, ne produkcioni paketomat.
+
+## Web klijenti i greške
+
+Web HTTP klijent vraća `ClientResult`/`ClientResult<T>` sa eksplicitnim stanjem uspeha, greškom i inicijalizovanim podacima. Neuspešan HTTP odgovor, timeout i neuspešna deserijalizacija ne označavaju se `null` povratnom vrednošću. Nedostupan simulator ima poseban status uspeha upita, kako podrazumevana enum vrednost ne bi izgledala kao stvarni režim rada.
