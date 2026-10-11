@@ -3,7 +3,9 @@ using ParcelBox.Application.Enums;
 using ParcelBox.Application.Interfaces.Persistence;
 using ParcelBox.Application.Interfaces.Repositories;
 using ParcelBox.Application.Interfaces.Services;
+using ParcelBox.Domain.Lockers.Enums;
 using ParcelBox.Domain.Parcels.Enums;
+using ParcelBox.Domain.Pickup.Enums;
 
 namespace ParcelBox.Application.Services;
 
@@ -61,18 +63,45 @@ public sealed class PickupService : IPickupService
 
         if (access.IsFailure)
         {
-            await _unitOfWork.SaveChangesAsync(cancellationToken);
+            if (!await _unitOfWork.TrySaveChangesAsync(cancellationToken))
+            {
+                return Result<PickupOperationError>.Failure(PickupOperationError.PersistenceUnavailable);
+            }
+
             return Result<PickupOperationError>.Failure(access.Error);
         }
 
-        var openedCompartment = await _lockers.OpenForPickupAsync(
-            parcel.Id,
-            cancellationToken);
+        var claim = await _parcels.TryBeginPickupAsync(parcel.Id, cancellationToken);
+
+        if (claim == ClaimResult.Unavailable)
+        {
+            return Result<PickupOperationError>.Failure(PickupOperationError.PersistenceUnavailable);
+        }
+
+        if (claim != ClaimResult.Claimed)
+        {
+            return Result<PickupOperationError>.Failure(PickupOperationError.ParcelNotStored);
+        }
+
+        parcel.Status = ParcelStatus.PickupPending;
+        var openedCompartment = await _lockers.OpenForPickupAsync(parcel.Id, cancellationToken);
 
         if (openedCompartment.IsFailure)
         {
-            return Result<PickupOperationError>.Failure(
-                MapLockerError(openedCompartment.Error));
+            if (openedCompartment.Error == LockerOperationError.CompartmentNotFound ||
+                openedCompartment.Error == LockerOperationError.CompartmentStateConflict)
+            {
+                var reset = await _parcels.TryResetPickupAsync(parcel.Id, cancellationToken);
+
+                if (reset == ClaimResult.Claimed)
+                {
+                    parcel.Status = ParcelStatus.Stored;
+                    return Result<PickupOperationError>.Failure(MapLockerError(openedCompartment.Error));
+                }
+            }
+
+            // If the controller was contacted, physical state is uncertain; require reconciliation.
+            return Result<PickupOperationError>.Failure(PickupOperationError.PickupRecoveryRequired);
         }
 
         var releaseResult = _lockers.Release(openedCompartment.Value, parcel.Id);
@@ -80,14 +109,22 @@ public sealed class PickupService : IPickupService
         if (releaseResult.IsFailure)
         {
             return Result<PickupOperationError>.Failure(
-                PickupOperationError.CompartmentStateConflict);
+                PickupOperationError.PickupRecoveryRequired);
         }
 
         _pickupAccess.MarkUsed(access.Value, now);
         parcel.Status = ParcelStatus.PickedUp;
         parcel.PickedUpAt = now;
 
-        await _unitOfWork.SaveChangesAsync(cancellationToken);
+        if (!await _unitOfWork.TrySaveChangesAsync(cancellationToken))
+        {
+            parcel.Status = ParcelStatus.PickupPending;
+            openedCompartment.Value.Status = CompartmentStatus.Occupied;
+            openedCompartment.Value.ParcelId = parcel.Id;
+            access.Value.Status = PickupStatus.Active;
+            access.Value.UsedAt = null;
+            return Result<PickupOperationError>.Failure(PickupOperationError.PickupRecoveryRequired);
+        }
 
         return Result<PickupOperationError>.Success();
     }
