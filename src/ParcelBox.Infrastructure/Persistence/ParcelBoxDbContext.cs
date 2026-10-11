@@ -1,3 +1,4 @@
+using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
 using ParcelBox.Application.Interfaces.Persistence;
 using ParcelBox.Domain.Lockers.Models;
@@ -16,6 +17,23 @@ public sealed class ParcelBoxDbContext : DbContext, IUnitOfWork
     public DbSet<Parcel> Parcels => Set<Parcel>();
     public DbSet<Compartment> Compartments => Set<Compartment>();
     public DbSet<PickupAccess> PickupAccesses => Set<PickupAccess>();
+
+    public async Task<bool> TrySaveChangesAsync(CancellationToken cancellationToken)
+    {
+        try
+        {
+            await SaveChangesAsync(cancellationToken);
+            return true;
+        }
+        catch (DbUpdateException)
+        {
+            return false;
+        }
+        catch (SqliteException)
+        {
+            return false;
+        }
+    }
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
