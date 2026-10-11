@@ -1,3 +1,4 @@
+using ParcelBox.Application.Enums;
 using ParcelBox.Application.Interfaces.Repositories;
 using ParcelBox.Domain.Lockers.Enums;
 using ParcelBox.Domain.Lockers.Models;
@@ -17,6 +18,23 @@ internal sealed class CompartmentRepositoryFake : ICompartmentRepository
             .ToList();
 
         return Task.FromResult(result);
+    }
+
+    public Task<ClaimResult> TryReserveAsync(Guid compartmentId, Guid parcelId, CancellationToken cancellationToken)
+    {
+        lock (Items)
+        {
+            var compartment = Items.FirstOrDefault(item => item.Id == compartmentId);
+
+            if (compartment is null || compartment.Status != CompartmentStatus.Available)
+            {
+                return Task.FromResult(ClaimResult.Conflict);
+            }
+
+            compartment.Status = CompartmentStatus.Reserved;
+            compartment.ParcelId = parcelId;
+            return Task.FromResult(ClaimResult.Claimed);
+        }
     }
 
     public Task<Compartment> GetByParcelIdAsync(Guid parcelId, CancellationToken cancellationToken)
