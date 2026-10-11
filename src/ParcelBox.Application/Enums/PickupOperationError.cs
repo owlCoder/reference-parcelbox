@@ -15,5 +15,7 @@ public enum PickupOperationError
     CompartmentNotFound = 10,
     LockerJammed = 11,
     LockerUnavailable = 12,
-    CompartmentStateConflict = 13
+    CompartmentStateConflict = 13,
+    PersistenceUnavailable = 14,
+    PickupRecoveryRequired = 15
 }
