@@ -58,6 +58,9 @@ public sealed class LockerService : ILockerService
 
                 if (claim == ClaimResult.Claimed)
                 {
+                    // ExecuteUpdateAsync bypasses EF change tracking; synchronize the in-memory model.
+                    candidate.Status = CompartmentStatus.Reserved;
+                    candidate.ParcelId = parcelId;
                     compartment = candidate;
                     break;
                 }
@@ -75,10 +78,10 @@ public sealed class LockerService : ILockerService
                 LockerOperationError.NoCompatibleCompartment);
         }
 
-        if (compartment.Status != CompartmentStatus.Available)
+        if (compartment.Status != CompartmentStatus.Reserved || compartment.ParcelId != parcelId)
         {
             return Result<Compartment, LockerOperationError>.Failure(
-                LockerOperationError.CompartmentUnavailable);
+                LockerOperationError.CompartmentStateConflict);
         }
 
         var openResult = await _lockerController.OpenAsync(
