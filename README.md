@@ -81,6 +81,14 @@ Glavne odgovornosti servisa su razdvojene:
 
 Modeli su state-only. Repository radi data access. Poslovna pravila i orkestracija su u application servisima. Produkcione implementacije se povezuju kroz dependency injection.
 
+## Konkurentni zahtevi i oporavak
+
+ParcelBox trajno rezerviše paket i pretinac u SQLite bazi **pre** otvaranja vrata.
+Ako mrežni poziv ili završno čuvanje ne uspe, operacija ostaje u bezbednom
+međustanju, bez automatske ponovne dodele fizičkog pretinca.
+Zašto se to radi i kako se proverava neusaglašeno stanje objašnjeno je u
+[docs/recovery.md](docs/recovery.md).
+
 ## Pokretanje
 
 Potreban je .NET SDK 10.
