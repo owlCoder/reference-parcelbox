@@ -61,7 +61,7 @@ public sealed class PickupAccessService : IPickupAccessService
     {
         var access = await _pickupAccesses.GetByParcelIdAsync(parcelId, cancellationToken);
 
-        if (access is null)
+        if (access.Id == Guid.Empty)
         {
             return Result<PickupAccess, PickupOperationError>.Failure(
                 PickupOperationError.PickupAccessNotFound);

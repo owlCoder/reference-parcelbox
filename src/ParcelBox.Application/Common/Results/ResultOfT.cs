@@ -1,6 +1,7 @@
 namespace ParcelBox.Application.Common.Results;
 
 public sealed class Result<TValue, TError>
+    where TValue : class, new()
     where TError : struct, Enum
 {
     private Result(bool isSuccess, TValue value, TError error)
@@ -22,6 +23,6 @@ public sealed class Result<TValue, TError>
 
     public static Result<TValue, TError> Failure(TError error)
     {
-        return new Result<TValue, TError>(false, default!, error);
+        return new Result<TValue, TError>(false, new TValue(), error);
     }
 }

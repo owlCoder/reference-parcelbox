@@ -95,7 +95,7 @@ public sealed class LockerService : ILockerService
     {
         var compartment = await _compartments.GetByParcelIdAsync(parcelId, cancellationToken);
 
-        if (compartment is null)
+        if (compartment.Id == Guid.Empty)
         {
             return Result<Compartment, LockerOperationError>.Failure(
                 LockerOperationError.CompartmentNotFound);

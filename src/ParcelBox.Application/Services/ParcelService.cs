@@ -77,7 +77,7 @@ public sealed class ParcelService : IParcelService
     {
         var parcel = await _parcels.GetByIdAsync(id, cancellationToken);
 
-        return parcel is null
+        return parcel.Id == Guid.Empty
             ? Result<ParcelDetails, ParcelOperationError>.Failure(ParcelOperationError.NotFound)
             : Result<ParcelDetails, ParcelOperationError>.Success(ToDetails(parcel));
     }

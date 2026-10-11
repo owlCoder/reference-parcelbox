@@ -20,12 +20,12 @@ internal sealed class CompartmentRepositoryFake : ICompartmentRepository
         return Task.FromResult(result);
     }
 
-    public Task<Compartment?> GetByParcelIdAsync(
+    public Task<Compartment> GetByParcelIdAsync(
         Guid parcelId,
         CancellationToken cancellationToken)
     {
         return Task.FromResult(
-            Items.SingleOrDefault(compartment => compartment.ParcelId == parcelId));
+            Items.SingleOrDefault(compartment => compartment.ParcelId == parcelId) ?? new Compartment());
     }
 
     public Task<IReadOnlyList<Compartment>> GetAllAsync(CancellationToken cancellationToken)

@@ -24,13 +24,12 @@ internal sealed class CompartmentRepository : ICompartmentRepository
             .ToListAsync(cancellationToken);
     }
 
-    public Task<Compartment?> GetByParcelIdAsync(
-        Guid parcelId,
+    public async Task<Compartment> GetByParcelIdAsync(Guid parcelId,
         CancellationToken cancellationToken)
     {
-        return _db.Compartments.SingleOrDefaultAsync(
+        return await _db.Compartments.SingleOrDefaultAsync(
             compartment => compartment.ParcelId == parcelId,
-            cancellationToken);
+            cancellationToken) ?? new Compartment();
     }
 
     public async Task<IReadOnlyList<Compartment>> GetAllAsync(

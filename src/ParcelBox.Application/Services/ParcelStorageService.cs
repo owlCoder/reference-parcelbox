@@ -40,7 +40,7 @@ public sealed class ParcelStorageService : IParcelStorageService
     {
         var parcel = await _parcels.GetByIdAsync(parcelId, cancellationToken);
 
-        if (parcel is null)
+        if (parcel.Id == Guid.Empty)
         {
             return Result<StoreParcelResult, ParcelOperationError>.Failure(
                 ParcelOperationError.NotFound);

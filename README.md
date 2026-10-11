@@ -38,7 +38,7 @@ Web -------- HTTP --------> Api
 ```
 
 - `Domain` sadrži samo modele i domenske enum-e. Namespace prati folder: `*.Models` i `*.Enums`.
-- `Application` sadrži service/repository ugovore, servise, DTO-e, application enum-e i Result pattern.
+- `Application` sadrži service/repository ugovore, servise, DTO klase, application enum-e i Result pattern.
 - `Infrastructure` implementira persistence, external i security portove.
 - `Api` je HTTP granica i composition root.
 - `Web` je zaseban Blazor Web App bez project reference ka backend slojevima.
@@ -67,7 +67,7 @@ ParcelBox.Application/
 └── Services/
 ```
 
-`Interfaces` sadrži isključivo interface tipove. Enum-i su u `Enums`, DTO/record ugovori u `DTOs`, a `IUnitOfWork` je persistence ugovor i nalazi se u `Interfaces/Persistence`.
+`Interfaces` sadrži isključivo interface tipove. Enum-i su u `Enums`, DTO ugovori u `DTOs`, a `IUnitOfWork` je persistence ugovor i nalazi se u `Interfaces/Persistence`.
 
 Glavne odgovornosti servisa su razdvojene:
 

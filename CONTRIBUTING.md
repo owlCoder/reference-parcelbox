@@ -16,14 +16,14 @@ Za UI ili integracione izmene pokrenite i kompletan demo preko `scripts/run-all.
 
 ## Pravila strukture
 
-- jedna javna klasa, record, interface ili enum po fajlu;
+- jedna javna klasa, interface ili enum po fajlu;
 - naziv fajla prati naziv glavnog tipa;
 - folder i namespace moraju da budu usklađeni;
 - `Domain/*/Models` sadrži state-only modele, a `Domain/*/Enums` domenske enum-e;
 - model nema repository/service zavisnost, Result tip ili business helper metode (`CanFit`, `Validate...`, `Mark...` i slično);
 - `Application/Interfaces` sadrži samo interface tipove;
 - application/integration enum-i su u `Application/Enums`;
-- DTO/record ugovori su u `Application/DTOs`;
+- DTO klase su u `Application/DTOs`;
 - repository interfejsi su u `Application/Interfaces/Repositories` i nazivaju se `I*Repository`;
 - `IUnitOfWork` pripada `Application/Interfaces/Persistence`;
 - repository implementacije su u `Infrastructure/Persistence/Repositories`;
@@ -36,7 +36,9 @@ Za UI ili integracione izmene pokrenite i kompletan demo preko `scripts/run-all.
 - `Infrastructure` implementira persistence, external i security portove;
 - `Web` nema project reference prema backend slojevima i komunicira HTTP-om;
 - simulator ne sadrži poslovna pravila ParcelBox-a;
-- očekivani neuspeh vraća typed `Result`, ne exception-based kontrolni tok.
+- očekivani neuspeh vraća typed `Result`, ne exception-based kontrolni tok;
+- ne koristiti `record` u produkcionom C# kodu;
+- metode koje traže entitet vraćaju prazan model (`Id == Guid.Empty`) kada entitet nije pronađen, a servis vraća odgovarajući Result.
 
 ## Dependency injection
 

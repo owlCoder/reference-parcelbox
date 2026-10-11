@@ -60,4 +60,16 @@ public sealed class ParcelServiceTests
         Assert.True(result.IsFailure);
         Assert.Equal(ParcelOperationError.TrackingCodeAlreadyExists, result.Error);
     }
+    [Fact]
+    public async Task GetAsync_ReturnsNotFound_WhenParcelDoesNotExist()
+    {
+        var service = new ParcelService(new ParcelRepositoryFake(), new UnitOfWorkFake(), new FixedTimeProvider(Now));
+
+        var result = await service.GetAsync(Guid.NewGuid(), CancellationToken.None);
+
+        Assert.True(result.IsFailure);
+        Assert.Equal(ParcelOperationError.NotFound, result.Error);
+        Assert.Equal(Guid.Empty, result.Value.Id);
+    }
+
 }

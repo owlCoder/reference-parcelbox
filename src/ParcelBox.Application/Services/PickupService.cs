@@ -50,7 +50,7 @@ public sealed class PickupService : IPickupService
             trackingCode.Trim(),
             cancellationToken);
 
-        if (parcel is null)
+        if (parcel.Id == Guid.Empty)
         {
             return Result<PickupOperationError>.Failure(PickupOperationError.ParcelNotFound);
         }

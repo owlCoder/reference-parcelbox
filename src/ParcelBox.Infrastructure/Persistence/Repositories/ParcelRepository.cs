@@ -22,18 +22,17 @@ internal sealed class ParcelRepository : IParcelRepository
             cancellationToken);
     }
 
-    public Task<Parcel?> GetByIdAsync(Guid id, CancellationToken cancellationToken)
+    public async Task<Parcel> GetByIdAsync(Guid id, CancellationToken cancellationToken)
     {
-        return _db.Parcels.SingleOrDefaultAsync(parcel => parcel.Id == id, cancellationToken);
+        return await _db.Parcels.SingleOrDefaultAsync(parcel => parcel.Id == id, cancellationToken) ?? new Parcel();
     }
 
-    public Task<Parcel?> GetByTrackingCodeAsync(
-        string trackingCode,
+    public async Task<Parcel> GetByTrackingCodeAsync(string trackingCode,
         CancellationToken cancellationToken)
     {
-        return _db.Parcels.SingleOrDefaultAsync(
+        return await _db.Parcels.SingleOrDefaultAsync(
             parcel => parcel.TrackingCode == trackingCode,
-            cancellationToken);
+            cancellationToken) ?? new Parcel();
     }
 
     public async Task AddAsync(Parcel parcel, CancellationToken cancellationToken)

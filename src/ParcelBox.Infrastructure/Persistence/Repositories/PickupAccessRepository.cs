@@ -13,13 +13,12 @@ internal sealed class PickupAccessRepository : IPickupAccessRepository
         _db = db;
     }
 
-    public Task<PickupAccess?> GetByParcelIdAsync(
-        Guid parcelId,
+    public async Task<PickupAccess> GetByParcelIdAsync(Guid parcelId,
         CancellationToken cancellationToken)
     {
-        return _db.PickupAccesses.SingleOrDefaultAsync(
+        return await _db.PickupAccesses.SingleOrDefaultAsync(
             access => access.ParcelId == parcelId,
-            cancellationToken);
+            cancellationToken) ?? new PickupAccess();
     }
 
     public async Task AddAsync(

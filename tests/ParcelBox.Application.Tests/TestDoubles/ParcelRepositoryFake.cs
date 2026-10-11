@@ -15,17 +15,17 @@ internal sealed class ParcelRepositoryFake : IParcelRepository
             Items.Any(parcel => parcel.TrackingCode == trackingCode));
     }
 
-    public Task<Parcel?> GetByIdAsync(Guid id, CancellationToken cancellationToken)
+    public Task<Parcel> GetByIdAsync(Guid id, CancellationToken cancellationToken)
     {
-        return Task.FromResult(Items.SingleOrDefault(parcel => parcel.Id == id));
+        return Task.FromResult(Items.SingleOrDefault(parcel => parcel.Id == id) ?? new Parcel());
     }
 
-    public Task<Parcel?> GetByTrackingCodeAsync(
+    public Task<Parcel> GetByTrackingCodeAsync(
         string trackingCode,
         CancellationToken cancellationToken)
     {
         return Task.FromResult(
-            Items.SingleOrDefault(parcel => parcel.TrackingCode == trackingCode));
+            Items.SingleOrDefault(parcel => parcel.TrackingCode == trackingCode) ?? new Parcel());
     }
 
     public Task AddAsync(Parcel parcel, CancellationToken cancellationToken)
