@@ -43,19 +43,20 @@ public sealed class LockerService : ILockerService
             _ => Array.Empty<SizeCategory>()
         };
 
-        Compartment? compartment = null;
+        var compartment = new Compartment();
 
         foreach (var size in compatibleSizes)
         {
-            compartment = available.FirstOrDefault(candidate => candidate.Size == size);
+            var candidate = available.FirstOrDefault(item => item.Size == size) ?? new Compartment();
 
-            if (compartment is not null)
+            if (candidate.Id != Guid.Empty)
             {
+                compartment = candidate;
                 break;
             }
         }
 
-        if (compartment is null)
+        if (compartment.Id == Guid.Empty)
         {
             return Result<Compartment, LockerOperationError>.Failure(
                 LockerOperationError.NoCompatibleCompartment);
