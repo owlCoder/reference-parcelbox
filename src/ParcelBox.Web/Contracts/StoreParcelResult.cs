@@ -6,7 +6,7 @@ public sealed class StoreParcelResult
 {
     public string LockerCode { get; set; } = string.Empty;
     public string CompartmentNumber { get; set; } = string.Empty;
-    public PickupMessageStatus MessageDelivery { get; set; };
+    public PickupMessageStatus MessageDelivery { get; set; }
 
     public StoreParcelResult()
     {

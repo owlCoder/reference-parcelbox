@@ -4,7 +4,7 @@ namespace ParcelBox.Simulators.LockerController.Contracts;
 
 public sealed class SimulatorModeResponse
 {
-    public LockerMode Mode { get; set; };
+    public LockerMode Mode { get; set; }
 
     public SimulatorModeResponse()
     {

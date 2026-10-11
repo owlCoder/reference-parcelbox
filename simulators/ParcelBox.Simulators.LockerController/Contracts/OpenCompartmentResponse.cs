@@ -6,7 +6,7 @@ public sealed class OpenCompartmentResponse
 {
     public string LockerCode { get; set; } = string.Empty;
     public string CompartmentNumber { get; set; } = string.Empty;
-    public LockerOpenStatus Status { get; set; };
+    public LockerOpenStatus Status { get; set; }
 
     public OpenCompartmentResponse()
     {
