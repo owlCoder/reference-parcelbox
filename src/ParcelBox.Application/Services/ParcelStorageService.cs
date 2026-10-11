@@ -114,5 +114,4 @@ public sealed class ParcelStorageService : IParcelStorageService
                 assignment.Value.Number,
                 messageStatus));
     }
-
 }
