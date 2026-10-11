@@ -29,8 +29,8 @@ public sealed class PickupServiceTests
             CancellationToken.None);
 
         Assert.True(result.IsFailure);
-        Assert.Equal(PickupOperationError.LockerJammed, result.Error);
-        Assert.Equal(ParcelStatus.Stored, context.Parcel.Status);
+        Assert.Equal(PickupOperationError.PickupRecoveryRequired, result.Error);
+        Assert.Equal(ParcelStatus.PickupPending, context.Parcel.Status);
         Assert.Equal(PickupStatus.Active, context.Access.Status);
         Assert.Equal(CompartmentStatus.Occupied, context.Compartment.Status);
     }
@@ -58,6 +58,37 @@ public sealed class PickupServiceTests
         Assert.Equal(PickupStatus.Locked, context.Access.Status);
         Assert.Equal(3, context.Access.FailedAttempts);
         Assert.Equal(3, context.UnitOfWork.SaveCalls);
+    }
+
+
+    [Fact]
+    public async Task CompletePickupAsync_PreservesClaim_WhenFinalSaveFails()
+    {
+        var context = CreateContext();
+        context.UnitOfWork.CanSave = false;
+
+        var result = await context.Service.CompletePickupAsync(context.Parcel.TrackingCode, "123456", CancellationToken.None);
+
+        Assert.Equal(PickupOperationError.PickupRecoveryRequired, result.Error);
+        Assert.Equal(ParcelStatus.PickupPending, context.Parcel.Status);
+        Assert.Equal(CompartmentStatus.Occupied, context.Compartment.Status);
+        Assert.Equal(PickupStatus.Active, context.Access.Status);
+
+        var retry = await context.Service.CompletePickupAsync(context.Parcel.TrackingCode, "123456", CancellationToken.None);
+        Assert.Equal(PickupOperationError.ParcelNotStored, retry.Error);
+    }
+
+    [Fact]
+    public async Task CompletePickupAsync_DoesNotOpenLocker_WhenSavingInvalidAttemptFails()
+    {
+        var context = CreateContext();
+        context.UnitOfWork.CanSave = false;
+
+        var result = await context.Service.CompletePickupAsync(context.Parcel.TrackingCode, "000000", CancellationToken.None);
+
+        Assert.Equal(PickupOperationError.PersistenceUnavailable, result.Error);
+        Assert.Equal(ParcelStatus.Stored, context.Parcel.Status);
+        Assert.Equal(CompartmentStatus.Occupied, context.Compartment.Status);
     }
 
     private static PickupTestContext CreateContext()
