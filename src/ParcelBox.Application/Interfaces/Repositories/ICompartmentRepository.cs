@@ -1,3 +1,4 @@
+using ParcelBox.Application.Enums;
 using ParcelBox.Domain.Lockers.Models;
 
 namespace ParcelBox.Application.Interfaces.Repositories;
@@ -5,6 +6,8 @@ namespace ParcelBox.Application.Interfaces.Repositories;
 public interface ICompartmentRepository
 {
     Task<IReadOnlyList<Compartment>> GetAvailableAsync(CancellationToken cancellationToken);
+
+    Task<ClaimResult> TryReserveAsync(Guid compartmentId, Guid parcelId, CancellationToken cancellationToken);
 
     Task<Compartment> GetByParcelIdAsync(Guid parcelId, CancellationToken cancellationToken);
 
