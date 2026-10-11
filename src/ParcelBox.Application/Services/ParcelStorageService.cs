@@ -115,14 +115,4 @@ public sealed class ParcelStorageService : IParcelStorageService
                 messageStatus));
     }
 
-    private static ParcelOperationError MapLockerError(LockerOperationError error)
-    {
-        return error switch
-        {
-            LockerOperationError.NoCompatibleCompartment => ParcelOperationError.NoCompatibleCompartment,
-            LockerOperationError.Jammed => ParcelOperationError.LockerJammed,
-            LockerOperationError.Unavailable => ParcelOperationError.LockerUnavailable,
-            _ => ParcelOperationError.CompartmentUnavailable
-        };
-    }
 }
