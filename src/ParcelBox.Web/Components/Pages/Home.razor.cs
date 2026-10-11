@@ -72,6 +72,7 @@ public partial class Home
             if (result.IsFailure)
             {
                 AddActivity($"Store failed: {result.Error}");
+                await RefreshCurrentParcelAsync();
                 await RefreshOperationalStateAsync();
                 return;
             }
@@ -93,6 +94,7 @@ public partial class Home
             if (pickup.IsFailure)
             {
                 AddActivity($"Pickup failed: {pickup.Error}");
+                await RefreshCurrentParcelAsync();
                 await RefreshOperationalStateAsync();
                 return;
             }
