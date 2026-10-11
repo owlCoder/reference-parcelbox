@@ -128,6 +128,32 @@ Application/Common/Results/
 
 Poznati poslovni i integracioni ishodi predstavljeni su enum vrednostima. API ih tek na HTTP granici prevodi u status kod i Problem Details odgovor.
 
+## Atomsko zauzimanje i oporavak
+
+Smeštanje i preuzimanje imaju **trajna međustanja** kako paralelni HTTP zahtevi ne bi
+koristili isti paket ili pretinac. Repository koristi uslovni `ExecuteUpdateAsync`
+(`WHERE` sa očekivanim statusom); samo jedan poziv može preći u sledeće stanje.
+
+- Smeštanje: `Registered → StoragePending` i `Available → Reserved` upisuju se **pre**
+  poziva fizičkom kontroleru. Ako nema slobodnog pretinca, `StoragePending` se atomski
+  vraća u `Registered`. Uspešan fizički poziv i završni upis prelaze u
+  `Stored` i `Occupied`.
+- Preuzimanje: nakon provere koda `Stored → PickupPending` rezerviše pravo da se
+  vrata otvore. Nakon uspešnog otvaranja, promene se zajedno čuvaju kao
+  `PickedUp` i `Available`. Kada provera pretinca ne uspe pre pozivanja
+  kontrolera, pokušava se vraćanje u `Stored`.
+- Neuspešan kontroler, neizvestan mrežni ishod ili neuspešan završni upis **ne
+  oslobađaju automatski** rezervaciju: stanje ostaje `StoragePending`,
+  `PickupPending` ili `Reserved`, a API vraća grešku za ručno usaglašavanje.
+  Fizičko otvaranje se ne može pouzdano poništiti SQL rollback-om.
+- `IUnitOfWork.TrySaveChangesAsync` prevodi očekivane SQLite/EF greške u
+  eksplicitni rezultat. Obaveštenje se šalje tek nakon uspešnog završnog upisa.
+
+Postupak bezbedne provere zadržanog stanja je u [recovery.md](recovery.md).
+Ovo je namerno mali primer *saga-like* postupka, a ne puna produkciona automatizacija
+oporavka. Za višestruke instance servisa bitan je uslovni upis u bazi, ne
+`lock` ili `SemaphoreSlim` u memoriji.
+
 ## Dependency injection
 
 `Api` je composition root. Svaki sloj izlaže sopstvenu registraciju (`AddApplication()` u `Application/DependencyInjection.cs`, `AddInfrastructure()` u `Infrastructure/DependencyInjection.cs`), a `Program.cs` ih samo poziva:
