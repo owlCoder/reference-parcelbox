@@ -19,6 +19,8 @@ internal static class ParcelErrorHttpExtensions
             ParcelOperationError.LockerUnavailable => ProblemResults.Create(error, 503, "Locker controller is unavailable."),
             ParcelOperationError.CompartmentUnavailable => ProblemResults.Create(error, 409, "Compartment is no longer available."),
             ParcelOperationError.PickupAccessInvalid => ProblemResults.Create(error, 500, "Pickup access could not be prepared."),
+            ParcelOperationError.PersistenceUnavailable => ProblemResults.Create(error, 503, "Database operation failed. Try again later."),
+            ParcelOperationError.StorageRecoveryRequired => ProblemResults.Create(error, 503, "Storage requires operator reconciliation before retrying."),
             _ => ProblemResults.Create(error, 500, "The operation could not be completed.")
         };
     }
