@@ -1,22 +1,69 @@
-# ParcelBox Reference
+# ParcelBox
 
-`ParcelBox` je mali .NET 10 referentni sistem za računarske vežbe iz predmeta Elementi razvoja softvera. Domen je namerno jednostavan i odvojen od studentskog projekta. Cilj repozitorijuma je da se na stvarnom kodu vidi jasan tok **Model → Repository → Service → API**, dependency injection, Result pattern i integracija sa spoljnim sistemima.
+A .NET 10 reference application for software engineering exercises. ParcelBox demonstrates layered design, dependency injection, repository and service interfaces, explicit operation results, and integration with external systems.
 
-## Scenario
+The project models a parcel locker workflow. It is deliberately small enough to study in class, rather than a production-ready parcel delivery platform.
 
-Kurir registruje paket, sistem bira odgovarajući pretinac i otvara ga preko Locker Controller simulatora. Nakon smeštanja kreira se pickup pristup i pokušava slanje koda preko Message Gateway simulatora. Primalac kasnije unosi kod i završava preuzimanje.
+## What it does
 
-Simulatori imaju kontrolisane failure režime, pa se na vežbama može videti kako aplikacija reaguje na zaglavljen ili nedostupan locker i nedostupan message gateway.
+1. A courier registers a parcel with a tracking code, recipient phone number, and size.
+2. The application selects a compatible available compartment and asks the **Locker Controller** simulator to open it.
+3. Once the parcel is stored, the application creates a pickup code and sends it through the **Message Gateway** simulator.
+4. The recipient enters the tracking code and pickup code to collect the parcel.
 
-## Projekti
+Both simulators provide failure modes so students can observe how the system handles unavailable services, jammed compartments, and unsuccessful notifications.
+
+## Run locally
+
+**Requirements:** [.NET SDK 10](https://dotnet.microsoft.com/download/dotnet/10). The launch scripts build and start the API, Web app, and both simulators.
+
+**Windows (PowerShell):**
+
+```powershell
+./scripts/run-all.ps1
+```
+
+**Linux/macOS (Bash):**
+
+```bash
+./scripts/run-all.sh
+```
+
+Or use Docker:
+
+```bash
+docker compose up --build
+```
+
+| Component | Local address |
+| --- | --- |
+| Blazor Web app | http://localhost:5200 |
+| ParcelBox API | http://localhost:5100 |
+| Locker Controller simulator | http://localhost:5101 |
+| Message Gateway simulator | http://localhost:5102 |
+
+The API uses SQLite. With Docker Compose, database data is kept in the `parcelbox-data` volume.
+
+## Try the demo
+
+Open **http://localhost:5200**, register a parcel, and select **Store in available compartment**. Find the pickup code in the Message Gateway inbox, then complete pickup using the parcel's tracking code and that code.
+
+Try changing the simulators' modes in the Web dashboard:
+
+- **Locker Controller — Jammed / Unavailable:** opening a compartment fails or becomes uncertain.
+- **Message Gateway — Unavailable:** notification delivery fails without undoing a successfully saved storage operation.
+
+**Recovery matters:** ParcelBox reserves parcel and compartment state before contacting the controller. If a physical operation or final database save has an uncertain outcome, the affected resource remains in a pending/reserved state for operator review. It is not automatically released or retried. See [recovery guidance](docs/recovery.md).
+
+## Architecture
 
 ```text
 src/
-├── ParcelBox.Domain/
-├── ParcelBox.Application/
-├── ParcelBox.Infrastructure/
-├── ParcelBox.Api/
-└── ParcelBox.Web/
+├── ParcelBox.Domain/          Domain models and enums
+├── ParcelBox.Application/     Interfaces, services, DTOs, results
+├── ParcelBox.Infrastructure/  EF Core, SQLite, HTTP and security adapters
+├── ParcelBox.Api/             HTTP endpoints and dependency injection
+└── ParcelBox.Web/             Standalone Blazor demo client
 
 simulators/
 ├── ParcelBox.Simulators.LockerController/
@@ -26,99 +73,35 @@ tests/
 └── ParcelBox.Application.Tests/
 ```
 
-Smer backend zavisnosti je:
+Backend dependencies point inward:
 
 ```text
-Api -------> Application -------> Domain
- |                 ^
- |                 |
- +-------> Infrastructure
+Api ──────────> Application ──────────> Domain
+ │                    ^
+ └──> Infrastructure ─┘
 
-Web -------- HTTP --------> Api
+Web ──HTTP──> Api
+Infrastructure ──HTTP──> Simulators
 ```
 
-- `Domain` sadrži samo modele i domenske enum-e. Namespace prati folder: `*.Models` i `*.Enums`.
-- `Application` sadrži service/repository ugovore, servise, DTO klase, application enum-e i Result pattern.
-- `Infrastructure` implementira persistence, external i security portove.
-- `Api` je HTTP granica i composition root.
-- `Web` je zaseban Blazor Web App bez project reference ka backend slojevima.
-- `simulators` predstavljaju spoljne sisteme i ne sadrže ParcelBox poslovna pravila.
+- **Domain** defines parcel, compartment, and pickup-access state. It does not depend on application services or database frameworks.
+- **Application** contains use-case services and small interfaces for repositories, persistence, external controllers, and security. Expected failures use typed `Result` values.
+- **Infrastructure** implements those interfaces using EF Core/SQLite and HTTP clients.
+- **API** exposes the operations over HTTP and configures dependency injection.
+- **Web** communicates through HTTP; it does not reference backend projects directly.
+- **Simulators** imitate external hardware and messaging systems without implementing ParcelBox business rules.
 
-Detalji su u [`docs/architecture.md`](docs/architecture.md), a odluka o granicama je zapisana u [`docs/adr/0001-clean-architecture.md`](docs/adr/0001-clean-architecture.md).
+For a more detailed walkthrough, see [architecture](docs/architecture.md) and the [architecture decision record](docs/adr/0001-clean-architecture.md).
 
-## Application struktura
+## Code conventions
 
-```text
-ParcelBox.Application/
-├── Common/Results/
-├── DTOs/
-│   ├── External/
-│   ├── Lockers/
-│   ├── Notifications/
-│   ├── Parcels/
-│   └── Pickup/
-├── Enums/
-├── Interfaces/
-│   ├── External/
-│   ├── Persistence/
-│   ├── Repositories/
-│   ├── Security/
-│   └── Services/
-└── Services/
-```
+This repository is intended as readable C# teaching material: one public type per file, interfaces separate from implementations, regular classes instead of `record`, initialized DTOs, explicit results for expected failures, and conventional Visual Studio formatting. Keep method and constructor signatures on one line when practical.
 
-`Interfaces` sadrži isključivo interface tipove. Enum-i su u `Enums`, DTO ugovori u `DTOs`, a `IUnitOfWork` je persistence ugovor i nalazi se u `Interfaces/Persistence`.
+See [CONTRIBUTING.md](CONTRIBUTING.md) for the detailed rules.
 
-Glavne odgovornosti servisa su razdvojene:
+## Validate changes
 
-- `ParcelService` — registracija i čitanje paketa;
-- `ParcelStorageService` — orkestracija smeštanja paketa;
-- `CompartmentService` — read-only prikaz pretinaca;
-- `LockerService` — izbor, otvaranje i oslobađanje pretinca;
-- `PickupAccessService` — pickup kod, rok i neuspešni pokušaji;
-- `PickupService` — završetak preuzimanja;
-- `NotificationService` — priprema poruke i poziv Message Gateway-a.
-
-Modeli su state-only. Repository radi data access. Poslovna pravila i orkestracija su u application servisima. Produkcione implementacije se povezuju kroz dependency injection.
-
-## Konkurentni zahtevi i oporavak
-
-ParcelBox trajno rezerviše paket i pretinac u SQLite bazi **pre** otvaranja vrata.
-Ako mrežni poziv ili završno čuvanje ne uspe, operacija ostaje u bezbednom
-međustanju, bez automatske ponovne dodele fizičkog pretinca.
-Zašto se to radi i kako se proverava neusaglašeno stanje objašnjeno je u
-[docs/recovery.md](docs/recovery.md).
-
-## Pokretanje
-
-Potreban je .NET SDK 10.
-
-Windows:
-
-```powershell
-./scripts/run-all.ps1
-```
-
-Linux/macOS:
-
-```bash
-./scripts/run-all.sh
-```
-
-| Komponenta | URL |
-| --- | --- |
-| ParcelBox Web | `http://localhost:5200` |
-| ParcelBox API | `http://localhost:5100` |
-| Locker Controller Simulator | `http://localhost:5101` |
-| Message Gateway Simulator | `http://localhost:5102` |
-
-Docker:
-
-```bash
-docker compose up --build
-```
-
-## Provera pre commita
+Run these commands from the repository root (the architecture script requires Bash):
 
 ```bash
 ./scripts/check-architecture.sh
@@ -128,6 +111,11 @@ dotnet build --configuration Release --no-restore
 dotnet test --configuration Release --no-build
 ```
 
-CI proverava arhitektonske granice, format, build, testove, simulator mode switching i Blazor static assets.
+GitHub Actions also checks architecture boundaries, formatting, compilation, tests, simulator mode switching, and Blazor static assets.
 
-UI demonstracija je opisana u [`docs/demo-ui.md`](docs/demo-ui.md).
+## Further reading
+
+- [Architecture and service responsibilities](docs/architecture.md)
+- [Safe recovery after uncertain external operations](docs/recovery.md)
+- [Blazor dashboard and simulator walkthrough](docs/demo-ui.md)
+- [Contribution guidelines](CONTRIBUTING.md)
