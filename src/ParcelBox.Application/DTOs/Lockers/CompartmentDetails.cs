@@ -8,9 +8,9 @@ public sealed class CompartmentDetails
     public Guid Id { get; set; } = Guid.Empty;
     public string LockerCode { get; set; } = string.Empty;
     public string Number { get; set; } = string.Empty;
-    public SizeCategory Size { get; set; };
-    public CompartmentStatus Status { get; set; };
-    public Guid? ParcelId { get; set; };
+    public SizeCategory Size { get; set; }
+    public CompartmentStatus Status { get; set; }
+    public Guid? ParcelId { get; set; }
 
     public CompartmentDetails()
     {

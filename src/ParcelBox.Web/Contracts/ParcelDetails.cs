@@ -7,13 +7,13 @@ public sealed class ParcelDetails
     public Guid Id { get; set; } = Guid.Empty;
     public string TrackingCode { get; set; } = string.Empty;
     public string RecipientPhone { get; set; } = string.Empty;
-    public SizeCategory Size { get; set; };
-    public ParcelStatus Status { get; set; };
+    public SizeCategory Size { get; set; }
+    public ParcelStatus Status { get; set; }
     public string? LockerCode { get; set; } = string.Empty;
     public string? CompartmentNumber { get; set; } = string.Empty;
-    public DateTimeOffset CreatedAt { get; set; };
-    public DateTimeOffset? StoredAt { get; set; };
-    public DateTimeOffset? PickedUpAt { get; set; };
+    public DateTimeOffset CreatedAt { get; set; }
+    public DateTimeOffset? StoredAt { get; set; }
+    public DateTimeOffset? PickedUpAt { get; set; }
 
     public ParcelDetails()
     {
