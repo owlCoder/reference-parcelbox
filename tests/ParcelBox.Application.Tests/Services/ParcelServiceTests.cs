@@ -60,6 +60,22 @@ public sealed class ParcelServiceTests
         Assert.True(result.IsFailure);
         Assert.Equal(ParcelOperationError.TrackingCodeAlreadyExists, result.Error);
     }
+
+    [Fact]
+    public async Task RegisterAsync_ReportsPersistenceError_WhenSaveFails()
+    {
+        var unitOfWork = new UnitOfWorkFake { CanSave = false };
+        var service = new ParcelService(new ParcelRepositoryFake(), unitOfWork, new FixedTimeProvider(Now));
+
+        var result = await service.RegisterAsync(
+            new RegisterParcelInputDto("PKG-FAIL", "+38160111222", SizeCategory.Small),
+            CancellationToken.None);
+
+        Assert.Equal(ParcelOperationError.PersistenceUnavailable, result.Error);
+        Assert.True(result.IsFailure);
+        Assert.Equal(1, unitOfWork.SaveCalls);
+    }
+
     [Fact]
     public async Task GetAsync_ReturnsNotFound_WhenParcelDoesNotExist()
     {
