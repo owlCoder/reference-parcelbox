@@ -28,8 +28,7 @@ internal sealed class ParcelRepository : IParcelRepository
         return await _db.Parcels.SingleOrDefaultAsync(parcel => parcel.Id == id, cancellationToken) ?? new Parcel();
     }
 
-    public async Task<Parcel> GetByTrackingCodeAsync(string trackingCode,
-        CancellationToken cancellationToken)
+    public async Task<Parcel> GetByTrackingCodeAsync(string trackingCode, CancellationToken cancellationToken)
     {
         return await _db.Parcels.SingleOrDefaultAsync(
             parcel => parcel.TrackingCode == trackingCode,
