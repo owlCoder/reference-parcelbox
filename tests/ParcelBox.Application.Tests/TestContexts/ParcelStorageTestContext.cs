@@ -5,10 +5,26 @@ using ParcelBox.Domain.Parcels.Models;
 
 namespace ParcelBox.Application.Tests.TestContexts;
 
-internal sealed record ParcelStorageTestContext(
-    ParcelStorageService Service,
-    Parcel Parcel,
-    Compartment Compartment,
-    PickupAccessRepositoryFake PickupAccesses,
-    UnitOfWorkFake UnitOfWork,
-    MessageGatewayFake MessageGateway);
+internal sealed class ParcelStorageTestContext
+{
+    public ParcelStorageService Service { get; set; };
+    public Parcel Parcel { get; set; };
+    public Compartment Compartment { get; set; };
+    public PickupAccessRepositoryFake PickupAccesses { get; set; };
+    public UnitOfWorkFake UnitOfWork { get; set; };
+    public MessageGatewayFake MessageGateway { get; set; };
+
+    public ParcelStorageTestContext()
+    {
+    }
+
+    public ParcelStorageTestContext(ParcelStorageService service, Parcel parcel, Compartment compartment, PickupAccessRepositoryFake pickupAccesses, UnitOfWorkFake unitOfWork, MessageGatewayFake messageGateway)
+    {
+        Service = service;
+        Parcel = parcel;
+        Compartment = compartment;
+        PickupAccesses = pickupAccesses;
+        UnitOfWork = unitOfWork;
+        MessageGateway = messageGateway;
+    }
+}
