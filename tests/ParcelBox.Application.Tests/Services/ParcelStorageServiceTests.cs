@@ -53,6 +53,65 @@ public sealed class ParcelStorageServiceTests
         Assert.Equal(1, context.UnitOfWork.SaveCalls);
     }
 
+
+    [Fact]
+    public async Task StoreAsync_LeavesDurableClaims_WhenFinalSaveFails()
+    {
+        var context = CreateContext();
+        context.UnitOfWork.CanSave = false;
+
+        var result = await context.Service.StoreAsync(context.Parcel.Id, CancellationToken.None);
+
+        Assert.True(result.IsFailure);
+        Assert.Equal(ParcelOperationError.StorageRecoveryRequired, result.Error);
+        Assert.Equal(ParcelStatus.StoragePending, context.Parcel.Status);
+        Assert.Equal(CompartmentStatus.Reserved, context.Compartment.Status);
+        Assert.Null(context.MessageGateway.LastMessage);
+
+        var retry = await context.Service.StoreAsync(context.Parcel.Id, CancellationToken.None);
+        Assert.Equal(ParcelOperationError.NotRegisteredForStorage, retry.Error);
+    }
+
+    [Fact]
+    public async Task StoreAsync_DoesNotReassign_WhenPhysicalOpenFails()
+    {
+        var context = CreateContext();
+        context.LockerController.Error = LockerControllerError.Jammed;
+
+        var result = await context.Service.StoreAsync(context.Parcel.Id, CancellationToken.None);
+
+        Assert.Equal(ParcelOperationError.StorageRecoveryRequired, result.Error);
+        Assert.Equal(ParcelStatus.StoragePending, context.Parcel.Status);
+        Assert.Equal(CompartmentStatus.Reserved, context.Compartment.Status);
+        Assert.Equal(0, context.UnitOfWork.SaveCalls);
+    }
+
+    [Fact]
+    public async Task StoreAsync_RestoresRegisteredStatus_WithoutAnyCompartmentClaim()
+    {
+        var context = CreateContext();
+        context.Compartment.Status = CompartmentStatus.Occupied;
+
+        var result = await context.Service.StoreAsync(context.Parcel.Id, CancellationToken.None);
+
+        Assert.Equal(ParcelOperationError.NoCompatibleCompartment, result.Error);
+        Assert.Equal(ParcelStatus.Registered, context.Parcel.Status);
+        Assert.Equal(0, context.UnitOfWork.SaveCalls);
+    }
+
+    [Fact]
+    public async Task StoreAsync_AllowsOnlyOneConcurrentRequestForTheSameParcel()
+    {
+        var context = CreateContext();
+        var results = await Task.WhenAll(
+            context.Service.StoreAsync(context.Parcel.Id, CancellationToken.None),
+            context.Service.StoreAsync(context.Parcel.Id, CancellationToken.None));
+
+        Assert.Single(results.Where(result => result.IsSuccess));
+        Assert.Single(results.Where(result => result.IsFailure));
+        Assert.Equal(1, context.UnitOfWork.SaveCalls);
+    }
+
     private static ParcelStorageTestContext CreateContext()
     {
         var parcels = new ParcelRepositoryFake();
@@ -101,6 +160,7 @@ public sealed class ParcelStorageServiceTests
             compartment,
             pickupAccesses,
             unitOfWork,
-            messageGateway);
+            messageGateway,
+            lockerController);
     }
 }
