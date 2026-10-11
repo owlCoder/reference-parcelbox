@@ -1,8 +1,8 @@
 using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
 using ParcelBox.Application.Enums;
-using ParcelBox.Domain.Parcels.Enums;
 using ParcelBox.Application.Interfaces.Repositories;
+using ParcelBox.Domain.Parcels.Enums;
 using ParcelBox.Domain.Parcels.Models;
 
 namespace ParcelBox.Infrastructure.Persistence.Repositories;
