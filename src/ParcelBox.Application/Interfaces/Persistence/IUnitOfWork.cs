@@ -2,5 +2,5 @@ namespace ParcelBox.Application.Interfaces.Persistence;
 
 public interface IUnitOfWork
 {
-    Task<int> SaveChangesAsync(CancellationToken cancellationToken);
+    Task<bool> TrySaveChangesAsync(CancellationToken cancellationToken);
 }
