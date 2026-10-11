@@ -14,10 +14,6 @@ internal sealed class ParcelStorageTestContext
     public UnitOfWorkFake UnitOfWork { get; set; }
     public MessageGatewayFake MessageGateway { get; set; }
 
-    public ParcelStorageTestContext()
-    {
-    }
-
     public ParcelStorageTestContext(ParcelStorageService service, Parcel parcel, Compartment compartment, PickupAccessRepositoryFake pickupAccesses, UnitOfWorkFake unitOfWork, MessageGatewayFake messageGateway)
     {
         Service = service;

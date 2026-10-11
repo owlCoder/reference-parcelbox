@@ -15,10 +15,6 @@ internal sealed class PickupTestContext
     public UnitOfWorkFake UnitOfWork { get; set; }
     public LockerControllerFake LockerController { get; set; }
 
-    public PickupTestContext()
-    {
-    }
-
     public PickupTestContext(PickupService service, Parcel parcel, Compartment compartment, PickupAccess access, UnitOfWorkFake unitOfWork, LockerControllerFake lockerController)
     {
         Service = service;
