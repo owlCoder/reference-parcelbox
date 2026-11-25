@@ -11,5 +11,6 @@ public enum LockerOperationError
     CompartmentStateConflict = 6,
     Jammed = 7,
     Unavailable = 8,
-    PersistenceUnavailable = 9
+    PersistenceUnavailable = 9,
+    InvalidStrategy = 10
 }

@@ -15,5 +15,6 @@ public enum ParcelOperationError
     CompartmentUnavailable = 10,
     PickupAccessInvalid = 11,
     PersistenceUnavailable = 12,
-    StorageRecoveryRequired = 13
+    StorageRecoveryRequired = 13,
+    InvalidStrategy = 14
 }

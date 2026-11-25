@@ -1,5 +1,7 @@
 using ParcelBox.Application.Enums;
+using ParcelBox.Application.Interfaces.Services;
 using ParcelBox.Application.Services;
+using ParcelBox.Application.Services.CompartmentSelection;
 using ParcelBox.Application.Tests.TestContexts;
 using ParcelBox.Application.Tests.TestDoubles;
 using ParcelBox.Domain.Common.Enums;
@@ -23,6 +25,7 @@ public sealed class ParcelStorageServiceTests
 
         var result = await context.Service.StoreAsync(
             context.Parcel.Id,
+            CompartmentSelectionStrategy.Compact,
             CancellationToken.None);
 
         Assert.True(result.IsSuccess);
@@ -44,6 +47,7 @@ public sealed class ParcelStorageServiceTests
 
         var result = await context.Service.StoreAsync(
             context.Parcel.Id,
+            CompartmentSelectionStrategy.Compact,
             CancellationToken.None);
 
         Assert.True(result.IsSuccess);
@@ -53,14 +57,16 @@ public sealed class ParcelStorageServiceTests
         Assert.Equal(1, context.UnitOfWork.SaveCalls);
     }
 
-
     [Fact]
     public async Task StoreAsync_LeavesDurableClaims_WhenFinalSaveFails()
     {
         var context = CreateContext();
         context.UnitOfWork.CanSave = false;
 
-        var result = await context.Service.StoreAsync(context.Parcel.Id, CancellationToken.None);
+        var result = await context.Service.StoreAsync(
+            context.Parcel.Id,
+            CompartmentSelectionStrategy.Compact,
+            CancellationToken.None);
 
         Assert.True(result.IsFailure);
         Assert.Equal(ParcelOperationError.StorageRecoveryRequired, result.Error);
@@ -68,7 +74,11 @@ public sealed class ParcelStorageServiceTests
         Assert.Equal(CompartmentStatus.Reserved, context.Compartment.Status);
         Assert.Null(context.MessageGateway.LastMessage);
 
-        var retry = await context.Service.StoreAsync(context.Parcel.Id, CancellationToken.None);
+        var retry = await context.Service.StoreAsync(
+            context.Parcel.Id,
+            CompartmentSelectionStrategy.Compact,
+            CancellationToken.None);
+
         Assert.Equal(ParcelOperationError.NotRegisteredForStorage, retry.Error);
     }
 
@@ -78,7 +88,10 @@ public sealed class ParcelStorageServiceTests
         var context = CreateContext();
         context.LockerController.Error = LockerControllerError.Jammed;
 
-        var result = await context.Service.StoreAsync(context.Parcel.Id, CancellationToken.None);
+        var result = await context.Service.StoreAsync(
+            context.Parcel.Id,
+            CompartmentSelectionStrategy.Compact,
+            CancellationToken.None);
 
         Assert.Equal(ParcelOperationError.StorageRecoveryRequired, result.Error);
         Assert.Equal(ParcelStatus.StoragePending, context.Parcel.Status);
@@ -92,7 +105,10 @@ public sealed class ParcelStorageServiceTests
         var context = CreateContext();
         context.Compartment.Status = CompartmentStatus.Occupied;
 
-        var result = await context.Service.StoreAsync(context.Parcel.Id, CancellationToken.None);
+        var result = await context.Service.StoreAsync(
+            context.Parcel.Id,
+            CompartmentSelectionStrategy.Compact,
+            CancellationToken.None);
 
         Assert.Equal(ParcelOperationError.NoCompatibleCompartment, result.Error);
         Assert.Equal(ParcelStatus.Registered, context.Parcel.Status);
@@ -103,9 +119,16 @@ public sealed class ParcelStorageServiceTests
     public async Task StoreAsync_AllowsOnlyOneConcurrentRequestForTheSameParcel()
     {
         var context = CreateContext();
+
         var results = await Task.WhenAll(
-            context.Service.StoreAsync(context.Parcel.Id, CancellationToken.None),
-            context.Service.StoreAsync(context.Parcel.Id, CancellationToken.None));
+            context.Service.StoreAsync(
+                context.Parcel.Id,
+                CompartmentSelectionStrategy.Compact,
+                CancellationToken.None),
+            context.Service.StoreAsync(
+                context.Parcel.Id,
+                CompartmentSelectionStrategy.Compact,
+                CancellationToken.None));
 
         Assert.Single(results, result => result.IsSuccess);
         Assert.Single(results, result => result.IsFailure);
@@ -143,7 +166,14 @@ public sealed class ParcelStorageServiceTests
         };
         compartments.Items.Add(compartment);
 
-        var lockerService = new LockerService(compartments, lockerController);
+        ICompartmentSelectionStrategy[] strategies =
+        [
+            new CompactCompartmentSelectionStrategy(),
+            new PreserveLargeCompartmentSelectionStrategy(),
+            new BalancedCompartmentSelectionStrategy()
+        ];
+
+        var lockerService = new LockerService(compartments, lockerController, strategies);
         var pickupAccessService = new PickupAccessService(pickupAccesses, pickupCodes);
         var notificationService = new NotificationService(messageGateway);
         var service = new ParcelStorageService(

@@ -1,5 +1,7 @@
 using ParcelBox.Application.Enums;
+using ParcelBox.Application.Interfaces.Services;
 using ParcelBox.Application.Services;
+using ParcelBox.Application.Services.CompartmentSelection;
 using ParcelBox.Application.Tests.TestContexts;
 using ParcelBox.Application.Tests.TestDoubles;
 using ParcelBox.Domain.Common.Enums;
@@ -60,21 +62,27 @@ public sealed class PickupServiceTests
         Assert.Equal(3, context.UnitOfWork.SaveCalls);
     }
 
-
     [Fact]
     public async Task CompletePickupAsync_PreservesClaim_WhenFinalSaveFails()
     {
         var context = CreateContext();
         context.UnitOfWork.CanSave = false;
 
-        var result = await context.Service.CompletePickupAsync(context.Parcel.TrackingCode, "123456", CancellationToken.None);
+        var result = await context.Service.CompletePickupAsync(
+            context.Parcel.TrackingCode,
+            "123456",
+            CancellationToken.None);
 
         Assert.Equal(PickupOperationError.PickupRecoveryRequired, result.Error);
         Assert.Equal(ParcelStatus.PickupPending, context.Parcel.Status);
         Assert.Equal(CompartmentStatus.Occupied, context.Compartment.Status);
         Assert.Equal(PickupStatus.Active, context.Access.Status);
 
-        var retry = await context.Service.CompletePickupAsync(context.Parcel.TrackingCode, "123456", CancellationToken.None);
+        var retry = await context.Service.CompletePickupAsync(
+            context.Parcel.TrackingCode,
+            "123456",
+            CancellationToken.None);
+
         Assert.Equal(PickupOperationError.ParcelNotStored, retry.Error);
     }
 
@@ -84,7 +92,10 @@ public sealed class PickupServiceTests
         var context = CreateContext();
         context.UnitOfWork.CanSave = false;
 
-        var result = await context.Service.CompletePickupAsync(context.Parcel.TrackingCode, "000000", CancellationToken.None);
+        var result = await context.Service.CompletePickupAsync(
+            context.Parcel.TrackingCode,
+            "000000",
+            CancellationToken.None);
 
         Assert.Equal(PickupOperationError.PersistenceUnavailable, result.Error);
         Assert.Equal(ParcelStatus.Stored, context.Parcel.Status);
@@ -135,7 +146,14 @@ public sealed class PickupServiceTests
         };
         pickupAccesses.Items.Add(access);
 
-        var lockerService = new LockerService(compartments, lockerController);
+        ICompartmentSelectionStrategy[] strategies =
+        [
+            new CompactCompartmentSelectionStrategy(),
+            new PreserveLargeCompartmentSelectionStrategy(),
+            new BalancedCompartmentSelectionStrategy()
+        ];
+
+        var lockerService = new LockerService(compartments, lockerController, strategies);
         var pickupAccessService = new PickupAccessService(pickupAccesses, pickupCodes);
         var service = new PickupService(
             parcels,

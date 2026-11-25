@@ -30,12 +30,16 @@ public partial class Home
     private bool _lockerOnline;
     private bool _messageOnline;
     private bool _busy;
+    private CompartmentSelectionStrategy _storageStrategy = CompartmentSelectionStrategy.Compact;
 
     protected override async Task OnInitializedAsync()
     {
         await RefreshDashboardAsync();
     }
-
+    private void SetStorageStrategy(CompartmentSelectionStrategy strategy)
+    {
+        _storageStrategy = strategy;
+    }
     private Task RegisterAsync()
     {
         return ExecuteAsync(async () =>
@@ -67,7 +71,7 @@ public partial class Home
 
         return ExecuteAsync(async () =>
         {
-            var result = await Api.StoreAsync(_currentParcel.Id);
+            var result = await Api.StoreAsync(_currentParcel.Id, _storageStrategy);
 
             if (result.IsFailure)
             {
@@ -77,8 +81,9 @@ public partial class Home
                 return;
             }
 
-            AddActivity(
-                $"Parcel stored in {result.Value.LockerCode}/{result.Value.CompartmentNumber}; message {result.Value.MessageDelivery}.");
+            AddActivity($"Parcel stored in {result.Value.LockerCode}/{result.Value.CompartmentNumber} " +
+    $"using {result.Value.Strategy}: {result.Value.SelectionReason} " +
+    $"Message: {result.Value.MessageDelivery}.");
 
             await RefreshCurrentParcelAsync();
             await RefreshOperationalStateAsync();

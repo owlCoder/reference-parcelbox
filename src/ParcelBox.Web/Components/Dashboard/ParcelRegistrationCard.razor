@@ -26,6 +26,17 @@
                 }
             </select>
         </label>
+
+        <label class="full-width">
+            <span>Compartment selection strategy</span>
+            <select value="@StorageStrategy" @onchange="OnStorageStrategyChanged">
+                @foreach (var strategy in Enum.GetValues<CompartmentSelectionStrategy>())
+                {
+                    <option value="@strategy">@strategy</option>
+                }
+            </select>
+            <small>@GetStrategyDescription(StorageStrategy)</small>
+        </label>
     </div>
 
     <button class="button primary full-button" type="button" @onclick="RegisterRequested" disabled="@Busy">
@@ -80,6 +91,12 @@
     public ParcelDetailsDto? CurrentParcel { get; set; }
 
     [Parameter]
+    public CompartmentSelectionStrategy StorageStrategy { get; set; }
+
+    [Parameter]
+    public EventCallback<CompartmentSelectionStrategy> StorageStrategyChanged { get; set; }
+
+    [Parameter]
     public bool Busy { get; set; }
 
     [Parameter]
@@ -87,6 +104,28 @@
 
     [Parameter]
     public EventCallback StoreRequested { get; set; }
+
+    private async Task OnStorageStrategyChanged(ChangeEventArgs args)
+    {
+        if (!Enum.TryParse<CompartmentSelectionStrategy>(args.Value?.ToString(), out var strategy)
+            || !Enum.IsDefined(strategy))
+        {
+            throw new InvalidOperationException("The selected compartment strategy is invalid.");
+        }
+
+        await StorageStrategyChanged.InvokeAsync(strategy);
+    }
+
+    private static string GetStrategyDescription(CompartmentSelectionStrategy strategy)
+    {
+        return strategy switch
+        {
+            CompartmentSelectionStrategy.Compact => "Choose the smallest compatible compartment.",
+            CompartmentSelectionStrategy.PreserveLarge => "Prefer lockers with fewer available Large compartments.",
+            CompartmentSelectionStrategy.Balanced => "Prefer the least-utilized compatible locker.",
+            _ => string.Empty
+        };
+    }
 
     private static string GetStatusClass(ParcelStatus status)
     {

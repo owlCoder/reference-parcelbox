@@ -2,6 +2,7 @@ using System.Text.Json;
 using ParcelBox.Web.Common.Results;
 using ParcelBox.Web.Contracts;
 using ParcelBox.Web.Interfaces;
+using ParcelBox.Web.Enums;
 
 namespace ParcelBox.Web.Clients;
 
@@ -24,9 +25,11 @@ public sealed class ParcelBoxApiClient : ServiceClientBase, IParcelBoxApiClient
         return SendAndReadAsync<ParcelDetailsDto>(() => HttpClient.GetAsync($"api/parcels/{id}", cancellationToken), cancellationToken);
     }
 
-    public Task<ClientResult<StoreParcelResultDto>> StoreAsync(Guid parcelId, CancellationToken cancellationToken = default)
+    public Task<ClientResult<StoreParcelResultDto>> StoreAsync(Guid parcelId, CompartmentSelectionStrategy strategy, CancellationToken cancellationToken = default)
     {
-        return SendAndReadAsync<StoreParcelResultDto>(() => HttpClient.PostAsync($"api/parcels/{parcelId}/store", null, cancellationToken), cancellationToken);
+        var strategyName = Uri.EscapeDataString(strategy.ToString());
+
+        return SendAndReadAsync<StoreParcelResultDto>(() => HttpClient.PostAsync($"api/parcels/{parcelId}/store?strategy={strategyName}", null, cancellationToken), cancellationToken);
     }
 
     public Task<ClientResult<List<CompartmentDetailsDto>>> ListCompartmentsAsync(CancellationToken cancellationToken = default)

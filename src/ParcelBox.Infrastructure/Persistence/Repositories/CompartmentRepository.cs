@@ -62,4 +62,12 @@ internal sealed class CompartmentRepository : ICompartmentRepository
             .ThenBy(compartment => compartment.Number)
             .ToListAsync(cancellationToken);
     }
+
+    public async Task<IReadOnlyList<Compartment>> GetAllForAssignmentAsync(CancellationToken cancellationToken)
+    {
+        return await _db.Compartments
+            .OrderBy(compartment => compartment.LockerCode)
+            .ThenBy(compartment => compartment.Number)
+            .ToListAsync(cancellationToken);
+    }
 }

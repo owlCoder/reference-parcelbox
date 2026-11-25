@@ -12,4 +12,6 @@ public interface ICompartmentRepository
     Task<Compartment> GetByParcelIdAsync(Guid parcelId, CancellationToken cancellationToken);
 
     Task<IReadOnlyList<Compartment>> GetAllAsync(CancellationToken cancellationToken);
+
+    Task<IReadOnlyList<Compartment>> GetAllForAssignmentAsync(CancellationToken cancellationToken);
 }

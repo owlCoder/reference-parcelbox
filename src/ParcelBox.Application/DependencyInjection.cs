@@ -1,6 +1,7 @@
 using Microsoft.Extensions.DependencyInjection;
 using ParcelBox.Application.Interfaces.Services;
 using ParcelBox.Application.Services;
+using ParcelBox.Application.Services.CompartmentSelection;
 
 namespace ParcelBox.Application;
 
@@ -16,6 +17,10 @@ public static class DependencyInjection
         services.AddScoped<IPickupService, PickupService>();
         services.AddScoped<INotificationService, NotificationService>();
         services.AddSingleton(TimeProvider.System);
+
+        services.AddSingleton<ICompartmentSelectionStrategy, CompactCompartmentSelectionStrategy>();
+        services.AddSingleton<ICompartmentSelectionStrategy, PreserveLargeCompartmentSelectionStrategy>();
+        services.AddSingleton<ICompartmentSelectionStrategy, BalancedCompartmentSelectionStrategy>();
 
         return services;
     }

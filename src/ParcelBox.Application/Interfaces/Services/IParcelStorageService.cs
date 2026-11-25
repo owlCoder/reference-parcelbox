@@ -6,5 +6,5 @@ namespace ParcelBox.Application.Interfaces.Services;
 
 public interface IParcelStorageService
 {
-    Task<Result<StoreParcelResultDto, ParcelOperationError>> StoreAsync(Guid parcelId, CancellationToken cancellationToken);
+    Task<Result<StoreParcelResultDto, ParcelOperationError>> StoreAsync(Guid parcelId, CompartmentSelectionStrategy strategy, CancellationToken cancellationToken);
 }

@@ -2,6 +2,8 @@ using ParcelBox.Api.Contracts;
 using ParcelBox.Api.Extensions;
 using ParcelBox.Application.DTOs.Parcels;
 using ParcelBox.Application.Interfaces.Services;
+using Microsoft.AspNetCore.Mvc;
+using ParcelBox.Application.Enums;
 
 namespace ParcelBox.Api.Endpoints;
 
@@ -41,12 +43,11 @@ public static class ParcelEndpoints
             : Results.Ok(result.Value);
     }
 
-    private static async Task<IResult> StoreAsync(Guid id, IParcelStorageService service, CancellationToken cancellationToken)
+    private static async Task<IResult> StoreAsync(Guid id, IParcelStorageService service, CancellationToken cancellationToken,
+        [FromQuery] CompartmentSelectionStrategy strategy = CompartmentSelectionStrategy.Compact)
     {
-        var result = await service.StoreAsync(id, cancellationToken);
+        var result = await service.StoreAsync(id, strategy, cancellationToken);
 
-        return result.IsFailure
-            ? result.Error.ToProblemResult()
-            : Results.Ok(result.Value);
+        return result.IsFailure ? result.Error.ToProblemResult() : Results.Ok(result.Value);
     }
 }

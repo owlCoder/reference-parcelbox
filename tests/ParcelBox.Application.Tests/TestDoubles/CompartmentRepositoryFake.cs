@@ -48,4 +48,10 @@ internal sealed class CompartmentRepositoryFake : ICompartmentRepository
         IReadOnlyList<Compartment> result = Items.ToList();
         return Task.FromResult(result);
     }
+
+    public Task<IReadOnlyList<Compartment>> GetAllForAssignmentAsync(CancellationToken cancellationToken)
+    {
+        IReadOnlyList<Compartment> result = Items.ToList();
+        return Task.FromResult(result);
+    }
 }

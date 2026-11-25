@@ -29,8 +29,14 @@ public sealed class ParcelStorageService : IParcelStorageService
         _timeProvider = timeProvider;
     }
 
-    public async Task<Result<StoreParcelResultDto, ParcelOperationError>> StoreAsync(Guid parcelId, CancellationToken cancellationToken)
+    public async Task<Result<StoreParcelResultDto, ParcelOperationError>> StoreAsync(Guid parcelId, CompartmentSelectionStrategy strategy, CancellationToken cancellationToken)
     {
+        if (!Enum.IsDefined(strategy))
+        {
+            return Result<StoreParcelResultDto, ParcelOperationError>.Failure(
+                ParcelOperationError.InvalidStrategy);
+        }
+
         var parcel = await _parcels.GetByIdAsync(parcelId, cancellationToken);
 
         if (parcel.Id == Guid.Empty)
@@ -58,7 +64,8 @@ public sealed class ParcelStorageService : IParcelStorageService
         }
 
         parcel.Status = ParcelStatus.StoragePending;
-        var assignment = await _lockers.AssignAsync(parcel.Id, parcel.Size, cancellationToken);
+
+        var assignment = await _lockers.AssignAsync(parcel.Id, parcel.Size, strategy, cancellationToken);
 
         if (assignment.IsFailure)
         {
@@ -85,9 +92,9 @@ public sealed class ParcelStorageService : IParcelStorageService
             return Result<StoreParcelResultDto, ParcelOperationError>.Failure(
                 ParcelOperationError.StorageRecoveryRequired);
         }
-
-        parcel.LockerCode = assignment.Value.LockerCode;
-        parcel.CompartmentNumber = assignment.Value.Number;
+        var compartment = assignment.Value.Compartment;
+        parcel.LockerCode = compartment.LockerCode;
+        parcel.CompartmentNumber = compartment.Number;
         parcel.StoredAt = now;
         parcel.Status = ParcelStatus.Stored;
 
@@ -95,7 +102,7 @@ public sealed class ParcelStorageService : IParcelStorageService
         {
             // The claim remains durable; do not reassign a compartment that may already be open.
             parcel.Status = ParcelStatus.StoragePending;
-            assignment.Value.Status = CompartmentStatus.Reserved;
+            compartment.Status = CompartmentStatus.Reserved;
             return Result<StoreParcelResultDto, ParcelOperationError>.Failure(ParcelOperationError.StorageRecoveryRequired);
         }
 
@@ -110,8 +117,10 @@ public sealed class ParcelStorageService : IParcelStorageService
 
         return Result<StoreParcelResultDto, ParcelOperationError>.Success(
             new StoreParcelResultDto(
-                assignment.Value.LockerCode,
-                assignment.Value.Number,
-                messageStatus));
+                compartment.LockerCode,
+                compartment.Number,
+                messageStatus,
+                assignment.Value.Strategy,
+                assignment.Value.SelectionReason));
     }
 }

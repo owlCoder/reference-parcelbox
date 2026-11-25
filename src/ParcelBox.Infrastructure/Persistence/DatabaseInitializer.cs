@@ -18,25 +18,39 @@ public sealed class DatabaseInitializer
     {
         await _db.Database.EnsureCreatedAsync(cancellationToken);
 
-        if (await _db.Compartments.AnyAsync(cancellationToken))
+        foreach (var lockerCode in new[] { "PB-01", "PB-02" })
         {
-            return;
+            if (await _db.Compartments.AnyAsync(
+                    compartment => compartment.LockerCode == lockerCode,
+                    cancellationToken))
+            {
+                continue;
+            }
+
+            await _db.Compartments.AddRangeAsync(
+                CreateCompartments(lockerCode),
+                cancellationToken);
         }
 
-        var compartments = new[]
-        {
-            NewCompartment("PB-01", "A1", SizeCategory.Small),
-            NewCompartment("PB-01", "A2", SizeCategory.Small),
-            NewCompartment("PB-01", "B1", SizeCategory.Medium),
-            NewCompartment("PB-01", "B2", SizeCategory.Medium),
-            NewCompartment("PB-01", "C1", SizeCategory.Large)
-        };
-
-        await _db.Compartments.AddRangeAsync(compartments, cancellationToken);
         await _db.SaveChangesAsync(cancellationToken);
     }
 
-    private static Compartment NewCompartment(string lockerCode, string number, SizeCategory size)
+    private static Compartment[] CreateCompartments(string lockerCode)
+    {
+        return
+        [
+            NewCompartment(lockerCode, "A1", SizeCategory.Small),
+            NewCompartment(lockerCode, "A2", SizeCategory.Small),
+            NewCompartment(lockerCode, "B1", SizeCategory.Medium),
+            NewCompartment(lockerCode, "B2", SizeCategory.Medium),
+            NewCompartment(lockerCode, "C1", SizeCategory.Large)
+        ];
+    }
+
+    private static Compartment NewCompartment(
+        string lockerCode,
+        string number,
+        SizeCategory size)
     {
         return new Compartment
         {
