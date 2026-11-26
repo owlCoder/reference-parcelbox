@@ -55,6 +55,20 @@ Try changing the simulators' modes in the Web dashboard:
 
 **Recovery matters:** ParcelBox reserves parcel and compartment state before contacting the controller. If a physical operation or final database save has an uncertain outcome, the affected resource remains in a pending/reserved state for operator review. It is not automatically released or retried. See [recovery guidance](docs/recovery.md).
 
+## Issuing a new pickup code
+
+A pickup code is valid for 24 hours and is locked after three invalid attempts. Previously a locked or expired code left the parcel stuck in its compartment with no way to recover. The recipient can now request a new code:
+
+- **Web:** enter the tracking code in **Open & pickup** and select **Send new pickup code**.
+- **API:** `POST /api/pickup/{trackingCode}/reissue`
+
+Rules:
+
+- Only a parcel in the `Stored` state can receive a new code. Picked-up parcels, parcels in a pending state and unknown tracking codes are rejected.
+- The existing pickup access is renewed in place: a new code and hash are generated, the 24-hour lifetime restarts, the failed-attempt counter is reset and the status returns to `Active`. The previous code stops working immediately.
+- The change is saved before the message is sent, so the recipient never receives a code that was not stored. If saving fails, no message is sent.
+- If the Message Gateway is unavailable, the new code remains valid and the response reports `MessageDelivery: Failed`, matching the behavior of the original storage flow.
+
 ## Architecture
 
 ```text

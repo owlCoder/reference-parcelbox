@@ -11,6 +11,9 @@ public static class PickupEndpoints
         endpoints.MapPost("/api/pickup/{trackingCode}", PickupAsync)
             .WithTags("Pickup");
 
+        endpoints.MapPost("/api/pickup/{trackingCode}/reissue", ReissueAsync)
+            .WithTags("Pickup");
+
         return endpoints;
     }
 
@@ -24,5 +27,16 @@ public static class PickupEndpoints
         return result.IsFailure
             ? result.Error.ToProblemResult()
             : Results.Ok(new { status = "picked-up" });
+    }
+
+    private static async Task<IResult> ReissueAsync(string trackingCode, IPickupCodeReissueService service, CancellationToken cancellationToken)
+    {
+        var result = await service.ReissueAsync(
+            trackingCode,
+            cancellationToken);
+
+        return result.IsFailure
+            ? result.Error.ToProblemResult()
+            : Results.Ok(result.Value);
     }
 }

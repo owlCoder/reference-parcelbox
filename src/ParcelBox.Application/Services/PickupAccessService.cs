@@ -94,6 +94,33 @@ public sealed class PickupAccessService : IPickupAccessService
                 : PickupOperationError.PickupCodeInvalid);
     }
 
+    public async Task<Result<PickupAccessPreparationDto, PickupOperationError>> ReissueAsync(Guid parcelId, DateTimeOffset now, CancellationToken cancellationToken)
+    {
+        var access = await _pickupAccesses.GetByParcelIdAsync(parcelId, cancellationToken);
+
+        if (access.Id == Guid.Empty)
+        {
+            return Result<PickupAccessPreparationDto, PickupOperationError>.Failure(
+                PickupOperationError.PickupAccessNotFound);
+        }
+
+        if (access.Status == PickupStatus.Used)
+        {
+            return Result<PickupAccessPreparationDto, PickupOperationError>.Failure(
+                PickupOperationError.PickupCodeUsed);
+        }
+
+        // The existing access is renewed in place, so the previous code stops working immediately.
+        var code = _pickupCodes.Generate();
+        access.CodeHash = _pickupCodes.Hash(code);
+        access.ExpiresAt = now.Add(AccessLifetime);
+        access.FailedAttempts = 0;
+        access.Status = PickupStatus.Active;
+
+        return Result<PickupAccessPreparationDto, PickupOperationError>.Success(
+            new PickupAccessPreparationDto(code));
+    }
+
     public void MarkUsed(PickupAccess access, DateTimeOffset now)
     {
         access.Status = PickupStatus.Used;

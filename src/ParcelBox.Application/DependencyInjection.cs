@@ -14,6 +14,7 @@ public static class DependencyInjection
         services.AddScoped<ILockerService, LockerService>();
         services.AddScoped<IPickupAccessService, PickupAccessService>();
         services.AddScoped<IPickupService, PickupService>();
+        services.AddScoped<IPickupCodeReissueService, PickupCodeReissueService>();
         services.AddScoped<INotificationService, NotificationService>();
         services.AddSingleton(TimeProvider.System);
 

@@ -22,6 +22,10 @@
         Open locker &amp; complete pickup
     </button>
 
+    <button class="button quiet full-button" type="button" @onclick="ReissueRequested" disabled="@Busy">
+        Send new pickup code
+    </button>
+
     @if (CurrentParcel?.Status == ParcelStatus.PickedUp)
     {
         <div class="notice success-notice">
@@ -46,4 +50,7 @@
 
     [Parameter]
     public EventCallback PickupRequested { get; set; }
+
+    [Parameter]
+    public EventCallback ReissueRequested { get; set; }
 }
