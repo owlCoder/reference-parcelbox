@@ -105,6 +105,27 @@ public partial class Home
         });
     }
 
+    private Task ReissuePickupCodeAsync()
+    {
+        return ExecuteAsync(async () =>
+        {
+            var result = await Api.ReissuePickupCodeAsync(_pickupForm.TrackingCode);
+
+            if (result.IsFailure)
+            {
+                AddActivity($"New pickup code failed: {result.Error}");
+                await RefreshCurrentParcelAsync();
+                await RefreshOperationalStateAsync();
+                return;
+            }
+
+            _pickupForm.Code = string.Empty;
+            AddActivity($"New pickup code issued for {result.Value.TrackingCode}; message {result.Value.MessageDelivery}.");
+            await RefreshCurrentParcelAsync();
+            await RefreshOperationalStateAsync();
+        });
+    }
+
     private Task RefreshDashboardAsync()
     {
         return ExecuteAsync(async () =>

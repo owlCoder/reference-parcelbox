@@ -14,4 +14,6 @@ public interface IParcelBoxApiClient : IServiceHealthClient
     Task<ClientResult<List<CompartmentDetailsDto>>> ListCompartmentsAsync(CancellationToken cancellationToken = default);
 
     Task<ClientResult> PickupAsync(string trackingCode, string pickupCode, CancellationToken cancellationToken = default);
+
+    Task<ClientResult<PickupCodeReissueResultDto>> ReissuePickupCodeAsync(string trackingCode, CancellationToken cancellationToken = default);
 }

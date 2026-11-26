@@ -54,6 +54,11 @@ public sealed class ParcelBoxApiClient : ServiceClientBase, IParcelBoxApiClient
         }
     }
 
+    public Task<ClientResult<PickupCodeReissueResultDto>> ReissuePickupCodeAsync(string trackingCode, CancellationToken cancellationToken = default)
+    {
+        return SendAndReadAsync<PickupCodeReissueResultDto>(() => HttpClient.PostAsync($"api/pickup/{Uri.EscapeDataString(trackingCode)}/reissue", null, cancellationToken), cancellationToken);
+    }
+
     private async Task<ClientResult<T>> SendAndReadAsync<T>(Func<Task<HttpResponseMessage>> request, CancellationToken cancellationToken) where T : class, new()
     {
         try
